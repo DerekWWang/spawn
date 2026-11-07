@@ -51,7 +51,7 @@ public final class ItemAging {
         long now=SurvivalApi.calendar(level);
         if(stored){var tag=data(stack);if(tag.contains("weatherTick")){tag.remove("weatherTick");data(stack,tag);}}
         if(stack.is(SurvivalContent.item("fired_pot"))) {
-            CompoundTag pot=data(stack); double preservation=pot.getBooleanOr("sealed",false)?RULES.sealedPotRate:1;
+            CompoundTag pot=data(stack); double preservation=pot.getBooleanOr("sealed",false)?Pottery.preservationRate(stack):1;
             var contents=stack.getOrDefault(DataComponents.CONTAINER,ItemContainerContents.EMPTY);
             var items=contents.itemCopies().toList(); for(var food:items)update(food,level,preservation);
             if(!items.isEmpty())stack.set(DataComponents.CONTAINER,ItemContainerContents.fromItems(items));

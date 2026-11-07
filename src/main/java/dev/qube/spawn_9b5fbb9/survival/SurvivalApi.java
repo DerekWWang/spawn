@@ -2,6 +2,7 @@ package dev.qube.spawn_9b5fbb9.survival;
 
 import dev.qube.spawn_9b5fbb9.Config;
 import dev.qube.spawn_9b5fbb9.content.Pottery;
+import dev.qube.spawn_9b5fbb9.content.Production;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
@@ -50,7 +51,7 @@ public final class SurvivalApi {
         SurvivalState s=state(entity);
         return String.format(Locale.ROOT,"%s | Recreation %.0f (%.1f/%.1fh) | Hunger %.1f | Thirst %.1f | Temperature %.1f C | Health %.1f/%.1f | Move %.0f%% Manipulation %.0f%% Mental %.0f%% | %s",
             entity.getName().getString(),s.recreation,s.recreationTicks/1000d,s.quotaTicks/1000d,s.hunger,s.thirst,s.temperature,
-            entity.getHealth(),entity.getMaxHealth(),s.movement()*100,s.manipulation()*100,s.mental()*100,s.conditions());
+            entity.getHealth(),entity.getMaxHealth(),s.movement()*100,s.manipulation()*100,s.mental()*100,s.conditions())+" | "+SkillApi.describe(s);
     }
     public record ActionResult(boolean success,String message){}
     private static ActionResult fail(String why){return new ActionResult(false,why);}
@@ -165,25 +166,36 @@ public final class SurvivalApi {
     }
     public static ActionResult work(LivingEntity actor,String operation,String recipe){
         if(!(actor.level() instanceof ServerLevel level)||!actor.isAlive()||!isHumanoid(actor))return fail("A living server humanoid is required");
+        if(operation==null||!java.util.Set.of("produce","fuel","collect","station","cancel").contains(operation))return fail("Unknown operation");
+        var process=operation.equals("produce")?Production.RECIPES.get(recipe):null;
+        if(operation.equals("produce")&&process==null)return fail("Unknown process");
         dev.qube.spawn_9b5fbb9.content.WorkstationEntity nearest=null;double distance=36;
         for(var pos:net.minecraft.core.BlockPos.betweenClosed(actor.blockPosition().offset(-6,-6,-6),actor.blockPosition().offset(6,6,6))){
+            if(!level.hasChunkAt(pos))continue;
+            double candidate=actor.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos));if(candidate>distance)continue;
             if(level.getBlockEntity(pos) instanceof dev.qube.spawn_9b5fbb9.content.WorkstationEntity station&&!station.getBlockState().is(dev.qube.spawn_9b5fbb9.content.SurvivalContent.TROUGH.get())){
-                double candidate=actor.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos));if(candidate<=distance){nearest=station;distance=candidate;}
+                String kind=Production.stationId(station);
+                if(process!=null&&!kind.equals(process.station()))continue;
+                if(operation.equals("fuel")&&!java.util.Set.of("kiln","forge","bloomery").contains(kind))continue;
+                if(operation.equals("collect")&&station.output.isEmpty())continue;
+                if(operation.equals("cancel")&&(station.input.isEmpty()||!station.worker.isEmpty()&&!station.worker.equals(actor.getUUID().toString())))continue;
+                nearest=station;distance=candidate;
             }
         }
-        if(nearest==null)return fail("Stand within six blocks of a kiln or forge");
+        if(nearest==null)return fail(process==null?"No matching workstation job within six loaded blocks":"Stand within six loaded blocks of a "+process.station());
         String result=switch(operation){
             case "produce"->dev.qube.spawn_9b5fbb9.content.Production.start(actor,nearest,recipe);
             case "fuel"->dev.qube.spawn_9b5fbb9.content.Production.fuel(actor,nearest);
             case "collect"->dev.qube.spawn_9b5fbb9.content.Production.collect(actor,nearest);
+            case "cancel"->Production.cancel(actor,nearest);
             case "station"->"Station "+nearest.getBlockPos().toShortString()+" | "+nearest.recipe+" "+nearest.elapsed+"/"+nearest.required+" | Fuel "+nearest.fuel+" | Output "+nearest.output;
             default->"Unknown operation";
         };
-        return new ActionResult(result.startsWith("Started")||result.startsWith("Collected")||result.startsWith("Heat reserve")||result.startsWith("Station"),result);
+        return new ActionResult(result.startsWith("Started")||result.startsWith("Collected")||result.startsWith("Heat reserve")||result.startsWith("Station")||result.startsWith("Removed unfinished"),result);
     }
     public static ActionResult vessel(LivingEntity actor,String operation){
         String result=dev.qube.spawn_9b5fbb9.content.Pottery.action(actor,operation);
-        boolean success=result.startsWith("Collected four")||result.startsWith("Hold the open pot")||result.startsWith("Opened pot")||result.startsWith("Pot sealed")||result.startsWith("Food stored")||result.startsWith("Retrieved food");
+        boolean success=result.startsWith("Collected ")||result.startsWith("Hold the open pot")||result.startsWith("Opened pot")||result.startsWith("Pot sealed")||result.startsWith("Food stored")||result.startsWith("Retrieved food");
         return new ActionResult(success,result);
     }
     public static boolean isWater(ItemStack stack){

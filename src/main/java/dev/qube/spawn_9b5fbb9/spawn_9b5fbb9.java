@@ -19,5 +19,6 @@ public final class spawn_9b5fbb9 {
         bus.addListener(SurvivalNetwork::register);
         SurvivalGameTests.register(bus);
         NeoForge.EVENT_BUS.register(SurvivalEvents.class);
+        NeoForge.EVENT_BUS.register(dev.qube.spawn_9b5fbb9.survival.SkillEvents.class);
     }
 }

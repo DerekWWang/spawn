@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "spawn_9b5fbb9:cordage",
+    "spawn_9b5fbb9:cordage"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:loom"
+  }
+}

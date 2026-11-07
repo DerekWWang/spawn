@@ -80,6 +80,22 @@ public final class SimulationTests {
         close(SurvivalState.decode(tuned.encode()).rules.number("hungerPerDay"),80,"body snapshots must carry server tuning to clients");
         boolean rejected=false;try{new SimulationRules(java.util.Map.of("waterPoisonChance",Double.NaN));}catch(IllegalArgumentException invalid){rejected=true;}
         check(rejected,"invalid nonfinite tuning must be rejected");
+        SkillSet learner=new SkillSet();
+        learner.practice(SkillSet.Skill.POTTERY,25);
+        check(learner.level(SkillSet.Skill.POTTERY)==10,"completed pottery practice must raise pottery skill");
+        check(learner.level(SkillSet.Skill.SMITHING)==0,"pottery practice must not train an unrelated profession");
+        learner.practice(SkillSet.Skill.POTTERY,75);
+        check(learner.level(SkillSet.Skill.POTTERY)==20,"later levels must require more accumulated practice");
+        learner.practice(SkillSet.Skill.POTTERY,-100);learner.practice(SkillSet.Skill.POTTERY,Double.NaN);learner.practice(SkillSet.Skill.POTTERY,Double.POSITIVE_INFINITY);
+        close(learner.experience(SkillSet.Skill.POTTERY),100,"invalid practice must not remove or create progress");
+        learner.practice(SkillSet.Skill.WEAVING,100000);
+        check(learner.level(SkillSet.Skill.WEAVING)==100,"practice is bounded to mastery");
+        SurvivalState trained=new SurvivalState();trained.skills.copyFrom(learner);trained.injure(SurvivalState.Part.LEFT_ARM,90,false);
+        var returned=SurvivalState.decode(trained.encode());
+        check(returned.skills.level(SkillSet.Skill.POTTERY)==20&&returned.skills.level(SkillSet.Skill.WEAVING)==100,"saved bodies and client snapshots retain independent skills");
+        check(migrated.skills.level(SkillSet.Skill.POTTERY)==0&&migrated.blind(),"old injured bodies migrate with novice skills without losing health");
+        byte[] versionFour=SimulationTests.class.getResourceAsStream("/survival-v4.bin").readAllBytes();var previousBody=SurvivalState.decode(versionFour);
+        check(previousBody.anatomy[0]==10&&previousBody.hunger==38.125&&previousBody.clothing[2].endsWith("wool_jacket")&&previousBody.skills.level(SkillSet.Skill.POTTERY)==0,"archived version four bodies remain readable after adding practice data");
         System.out.println("PASS: "+assertions+" survival behavior assertions");
     }
     private static void check(boolean ok,String message){assertions++;if(!ok)throw new AssertionError(message);}

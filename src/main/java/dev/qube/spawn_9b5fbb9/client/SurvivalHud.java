@@ -40,13 +40,13 @@ public final class SurvivalHud {
         if(SurvivalNetwork.openHealth&&Minecraft.getInstance().player!=null){SurvivalNetwork.openHealth=false;var mc=Minecraft.getInstance();mc.setScreenAndShow(mc.gui.screen() instanceof HealthScreen?null:new HealthScreen());}
     }
     public static final class HealthScreen extends Screen {
-        public HealthScreen(){super(Component.literal("Health & Clothing"));}
+        public HealthScreen(){super(Component.literal("Health, Clothing & Skills"));}
         @Override public boolean isPauseScreen(){return false;}
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float partial){
             g.fill(0,0,width,height,0xF0121C22);var font=Minecraft.getInstance().font;var s=SurvivalNetwork.clientState;
-            float scale=Math.min(1,Math.min((width-16)/460f,(height-16)/300f));g.pose().pushMatrix();g.pose().scale(scale,scale);
+            float scale=Math.min(1,Math.min((width-16)/460f,(height-16)/360f));g.pose().pushMatrix();g.pose().scale(scale,scale);
             int left=Math.max(12,(int)(width/scale/2)-225),top=12;
-            g.text(font,"HEALTH & CLOTHING",left,top,0xFFF1D5A0);
+            g.text(font,"HEALTH, CLOTHING & SKILLS",left,top,0xFFF1D5A0);
             g.text(font,SurvivalCommands.calendarText(SurvivalNetwork.clientCalendar,SurvivalNetwork.clientSeasonDays),left,top+16,0xFFB8CCC7);
             g.text(font,String.format(Locale.ROOT,"Movement %.0f%%    Manipulation %.0f%%    Mental %.0f%%",100*s.movement(),100*s.manipulation(),100*s.mental()),left,top+31,0xFFFFFFFF);
             g.text(font,"Limbs & digits",left,top+52,0xFFF1D5A0);
@@ -74,9 +74,15 @@ public final class SurvivalHud {
             g.fill(figureX+11,figureY+24,figureX+15,figureY+39,partColor(s.anatomy[3]));
             g.text(font,"Health effects",left,top+211,0xFFF1D5A0);
             g.text(font,s.conditions(),left,top+227,0xFFFFBE9D);
-            g.text(font,"Right-click medicine or clothing to use. Sneak-interact to inspect/socialize.",left,top+247,0xFFB8CCC7);
-            g.text(font,"Water: /survival act drink   |   Recreation: /survival act read or play",left,top+260,0xFFB8CCC7);
-            g.text(font,"Esc to return. Time continues while inspecting health.",left,top+276,0xFFB8CCC7);
+            g.text(font,"Practiced skills",left,top+247,0xFFF1D5A0);
+            for(var skill:SkillSet.Skill.values()){
+                int index=skill.ordinal(),x=left+(index%3)*150,y=top+264+(index/3)*20,level=s.skills.level(skill);
+                g.text(font,skill.label()+" "+level+"/100",x,y,0xFFD7E3DE);
+                g.text(font,level==100?"Mastered":String.format(Locale.ROOT,"Next: %.1f XP",s.skills.untilNext(skill)),x,y+10,0xFFB8CCC7);
+            }
+            g.text(font,"Completed work develops each skill. /survival skills shows progress.",left,top+308,0xFFB8CCC7);
+            g.text(font,"Water: /survival act drink   |   Recreation: /survival act read or play",left,top+321,0xFFB8CCC7);
+            g.text(font,"Esc to return. Time continues while inspecting health.",left,top+337,0xFFB8CCC7);
             g.pose().popMatrix();super.extractRenderState(g,mouseX,mouseY,partial);
         }
         private static int partColor(double condition){return condition<30?0xFFE78F80:condition<70?0xFFE2C27A:0xFF9FC2A5;}

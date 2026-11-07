@@ -62,7 +62,7 @@ public final class NaturalWorldRules {
         if (event.getEntity().level().isClientSide() || event.getEntity().tickCount % 20 != 0) return;
         if (prohibited(event.getEntity())) { event.getEntity().discard(); return; }
         if(event.getEntity() instanceof net.minecraft.world.entity.LivingEntity living)for(var slot:net.minecraft.world.entity.EquipmentSlot.values()){var stack=living.getItemBySlot(slot);sanitize(stack);ItemAging.update(stack,(net.minecraft.server.level.ServerLevel)living.level(),1);}
-        if(event.getEntity() instanceof net.minecraft.world.entity.npc.villager.AbstractVillager villager){villager.getOffers().removeIf(offer->prohibited(offer.getResult())||prohibited(offer.getCostA())||prohibited(offer.getCostB()));for(var offer:villager.getOffers())sanitize(offer.getResult());}
+        if(event.getEntity() instanceof net.minecraft.world.entity.npc.villager.AbstractVillager villager){villager.getOffers().removeIf(offer->prohibited(offer.getResult())||dev.qube.spawn_9b5fbb9.content.Production.requiresStation(offer.getResult())||prohibited(offer.getCostA())||prohibited(offer.getCostB()));for(var offer:villager.getOffers())sanitize(offer.getResult());}
         if (event.getEntity() instanceof Player player) {
             for (int i=0;i<player.getInventory().getContainerSize();i++) {
                 ItemStack stack=player.getInventory().getItem(i); sanitize(stack); ItemAging.update(stack, (net.minecraft.server.level.ServerLevel)player.level(),1);

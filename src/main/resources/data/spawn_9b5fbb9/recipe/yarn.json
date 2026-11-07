@@ -1,11 +1,9 @@
 {
   "type": "minecraft:crafting_shapeless",
-  "category": "misc",
   "ingredients": [
-    "minecraft:white_wool"
+    "minecraft:bedrock"
   ],
   "result": {
-    "id": "spawn_9b5fbb9:yarn",
-    "count": 4
+    "id": "minecraft:stick"
   }
 }

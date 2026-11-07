@@ -6,4 +6,10 @@ public interface SurvivalView {
     double getSpawnSurvivalTemperature();
     double getSpawnSurvivalMental();
     double getSpawnSurvivalMovement();
+    double getSpawnSurvivalPottery();
+    double getSpawnSurvivalSmithing();
+    double getSpawnSurvivalWeaving();
+    double getSpawnSurvivalFarming();
+    double getSpawnSurvivalForaging();
+    double getSpawnSurvivalHunting();
 }

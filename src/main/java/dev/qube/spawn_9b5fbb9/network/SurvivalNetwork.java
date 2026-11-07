@@ -24,7 +24,7 @@ public final class SurvivalNetwork {
         @Override public Type<Snapshot> type(){return TYPE;}
     }
     public static void register(RegisterPayloadHandlersEvent event){
-        event.registrar("1").playToClient(Snapshot.TYPE,Snapshot.CODEC,(payload,context)->context.enqueueWork(()->{
+        event.registrar("2").playToClient(Snapshot.TYPE,Snapshot.CODEC,(payload,context)->context.enqueueWork(()->{
             var decoded=SurvivalState.decode(payload.state);if(entityStates.size()>512)entityStates.clear();entityStates.put(payload.entityId,decoded);
             if(payload.entityId==context.player().getId()){
                 clientState=decoded;clientCalendar=payload.calendar;clientSeasonDays=Math.max(4,Math.min(112,payload.seasonDays));

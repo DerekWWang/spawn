@@ -21,6 +21,12 @@ public final class SurvivalGameTests {
     private static final DeferredRegister<Consumer<GameTestHelper>> FUNCTIONS=DeferredRegister.create(Registries.TEST_FUNCTION,NS);
     private static final Map<String,java.util.function.Supplier<Consumer<GameTestHelper>>> TESTS=new LinkedHashMap<>();
     public static void register(IEventBus bus){
+        add("skills_respawn",SurvivalGameTests::skillsRespawn);
+        add("skills_native_hunt",SurvivalGameTests::skillsNativeHunt);
+        add("skills_no_grid_bypass",SurvivalGameTests::skillsNoGridBypass);
+        add("skills_jar_action_result",SurvivalGameTests::skillsJarActionResult);
+        add("skills_station_selection",SurvivalGameTests::skillsStationSelection);
+        add("skills_no_trade_minting",SurvivalGameTests::skillsNoTradeMinting);
         add("starvation_speed",SurvivalGameTests::starvation);
         add("controller_parity",SurvivalGameTests::controllerParity);
         add("supplied_treatment",SurvivalGameTests::treatment);
@@ -39,6 +45,56 @@ public final class SurvivalGameTests {
         FUNCTIONS.register(bus);bus.addListener(SurvivalGameTests::instances);
     }
     private static void add(String name,Consumer<GameTestHelper> test){TESTS.put(name,FUNCTIONS.register(name,()->test));}
+    private static void skillsRespawn(GameTestHelper h){
+        var old=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);var fresh=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        var body=SurvivalApi.state(old);body.skills.practice(SkillSet.Skill.SMITHING,900);body.skills.practice(SkillSet.Skill.FARMING,100);body.injure(SurvivalState.Part.LEFT_ARM,90,false);SurvivalApi.save(old,body);
+        SurvivalEvents.clone(new net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone(fresh,old,true));
+        var returned=SurvivalApi.state(fresh);h.assertTrue(returned.skills.level(SkillSet.Skill.SMITHING)==60&&returned.skills.level(SkillSet.Skill.FARMING)==20,"respawn must retain independent learned skills");
+        h.assertTrue(returned.anatomy[0]==100,"respawn must reset injuries without resetting learned competence");h.succeed();
+    }
+    private static void skillsNativeHunt(GameTestHelper h){
+        var hunter=h.spawn(EntityTypes.VILLAGER,1,2,1);hunter.setNoAi(true);var quarry=h.spawn(EntityTypes.COW,2,2,1);
+        quarry.hurtServer(h.getLevel(),hunter.damageSources().mobAttack(hunter),100);
+        h.assertTrue(SurvivalApi.state(hunter).skills.level(SkillSet.Skill.HUNTING)==10,"a real supplied humanoid kill must train hunting once");
+        h.assertTrue(SurvivalApi.state(hunter).skills.level(SkillSet.Skill.FARMING)==0,"hunting must not grant another profession");h.succeed();
+    }
+    private static void skillsNoGridBypass(GameTestHelper h){
+        var actor=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);actor.getPersistentData().putDouble("survivalGridWork",100);
+        var body=SurvivalApi.state(actor);for(var skill:SkillSet.Skill.values())body.skills.setLevel(skill,100);SurvivalApi.save(actor,body);
+        for(Item item:List.of(dev.qube.spawn_9b5fbb9.content.SurvivalContent.item("fired_pot"),dev.qube.spawn_9b5fbb9.content.SurvivalContent.item("wool_jacket"),Items.IRON_CHESTPLATE)){
+            var output=new net.minecraft.world.inventory.ResultContainer();output.setItem(0,new ItemStack(item));
+            var slot=new net.minecraft.world.inventory.ResultSlot(actor,actor.inventoryMenu.getCraftSlots(),output,0,0,0);
+            h.assertTrue(!slot.mayPickup(actor),"An alternate grid recipe cannot bypass the specialist workstation for "+item);
+            h.assertTrue(output.getItem(0).getCount()==1,"Rejected alternate crafting must preserve ingredients/output");
+        }h.succeed();
+    }
+    private static void skillsJarActionResult(GameTestHelper h){
+        var actor=humanoid(h);h.setBlock(2,2,1,Blocks.WATER);String[] qualities={"rough","standard","fine"};
+        for(int i=0;i<qualities.length;i++){
+            var pot=new ItemStack(dev.qube.spawn_9b5fbb9.content.SurvivalContent.item("fired_pot"));var data=dev.qube.spawn_9b5fbb9.content.ItemAging.data(pot);data.putString("potQuality",qualities[i]);dev.qube.spawn_9b5fbb9.content.ItemAging.data(pot,data);actor.setItemSlot(EquipmentSlot.MAINHAND,pot);
+            h.assertTrue(SurvivalApi.vessel(actor,"fill").success(),"The shared action must report success when a "+qualities[i]+" jar really fills");
+            h.assertTrue(dev.qube.spawn_9b5fbb9.content.Pottery.waterUnits(pot)==i+2,"Jar capacity must match the filled physical vessel");
+        }actor.discard();h.succeed();
+    }
+    private static void skillsStationSelection(GameTestHelper h){
+        var actor=humanoid(h);
+        var forge=h.absolutePos(new net.minecraft.core.BlockPos(1,1,2));var loom=h.absolutePos(new net.minecraft.core.BlockPos(3,1,1));
+        h.getLevel().setBlock(forge,dev.qube.spawn_9b5fbb9.content.SurvivalContent.FORGE.get().defaultBlockState(),3);
+        var loomBlock=net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath(NS,"loom"));h.getLevel().setBlock(loom,loomBlock.defaultBlockState(),3);
+        actor.setItemSlot(EquipmentSlot.MAINHAND,new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(Identifier.withDefaultNamespace("white_wool"))));
+        h.assertTrue(SurvivalApi.work(actor,"produce","spin_wool").success(),"Production must choose the required nearby loom even when a forge is closer");
+        var selected=(dev.qube.spawn_9b5fbb9.content.WorkstationEntity)h.getLevel().getBlockEntity(loom);var other=(dev.qube.spawn_9b5fbb9.content.WorkstationEntity)h.getLevel().getBlockEntity(forge);
+        h.assertTrue(!selected.input.isEmpty()&&other.input.isEmpty(),"The correct station alone must reserve the real wool");actor.discard();h.succeed();
+    }
+    private static void skillsNoTradeMinting(GameTestHelper h){
+        var customer=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);var trader=h.spawn(EntityTypes.VILLAGER,1,2,1);trader.setNoAi(true);
+        trader.getOffers().clear();trader.getOffers().add(new net.minecraft.world.item.trading.MerchantOffer(new net.minecraft.world.item.trading.ItemCost(Items.EMERALD,1),new ItemStack(Items.IRON_CHESTPLATE),10,1,.05f));
+        var menu=new net.minecraft.world.inventory.MerchantMenu(22,customer.getInventory(),trader);menu.setSelectionHint(0);menu.getSlot(0).set(new ItemStack(Items.EMERALD));
+        h.assertTrue(menu.getSlot(2).getItem().is(Items.IRON_CHESTPLATE),"The real merchant fixture must present its finished armor offer before validation");
+        h.assertTrue(!menu.getSlot(2).mayPickup(customer),"A virtual merchant offer cannot mint specialist equipment outside the real production chain");
+        h.assertTrue(menu.quickMoveStack(customer,2).isEmpty(),"Shift trading must enforce the same station-output rule");
+        h.assertTrue(menu.getSlot(0).getItem().getCount()==1&&menu.getSlot(2).getItem().getCount()==1,"Rejected trading must preserve its payment and output");trader.discard();h.succeed();
+    }
     private static void instances(RegisterGameTestsEvent event){
         Holder<TestEnvironmentDefinition<?>> env=event.registerEnvironment(Identifier.fromNamespaceAndPath(NS,"survival"),new TestEnvironmentDefinition.AllOf(List.of()));
         var data=new TestData<Holder<TestEnvironmentDefinition<?>>>(env,Identifier.withDefaultNamespace("empty"),120,0,true,Rotation.NONE);
@@ -71,10 +127,11 @@ public final class SurvivalGameTests {
     private static void thirstDeath(GameTestHelper h){var entity=humanoid(h);var s=SurvivalApi.state(entity);s.thirst=0;SurvivalApi.save(entity,s);h.runAfterDelay(25,()->{h.assertTrue(!entity.isAlive(),"zero thirst must kill humanoids");h.succeed();});}
     private static void persistence(GameTestHelper h){var entity=humanoid(h);var s=SurvivalApi.state(entity);s.thirst=23.25;s.injure(SurvivalState.Part.LEFT_EYE,100,false);s.injure(SurvivalState.Part.RIGHT_EYE,100,false);SurvivalApi.save(entity,s);var read=SurvivalApi.state(entity);h.assertTrue(read.thirst==23.25&&read.blind(),"persisted fractions and permanent sensory injuries must survive reload");h.succeed();}
     private static void timedConsumption(GameTestHelper h){
-        var entity=humanoid(h);var s=SurvivalApi.state(entity);s.hunger=20;SurvivalApi.save(entity,s);entity.setItemSlot(EquipmentSlot.MAINHAND,new ItemStack(Items.BREAD,2));
+        var entity=humanoid(h);var isolated=entity.blockPosition().above(32);h.getLevel().setBlock(isolated.below(),Blocks.STONE.defaultBlockState(),3);entity.setPos(net.minecraft.world.phys.Vec3.atBottomCenterOf(isolated));
+        var s=SurvivalApi.state(entity);s.hunger=20;SurvivalApi.save(entity,s);entity.setItemSlot(EquipmentSlot.MAINHAND,new ItemStack(Items.BREAD,2));
         h.assertTrue(SurvivalApi.act(entity,"eat",null).success(),"scripted entity must be able to start eating");
         h.assertTrue(SurvivalApi.state(entity).hunger==20&&entity.getMainHandItem().getCount()==2,"nutrition and supply consumption must wait for food duration");
-        h.runAfterDelay(50,()->{h.assertTrue(SurvivalApi.state(entity).hunger>44&&entity.getMainHandItem().getCount()==1,"completed NPC consumption must grant nutrition once and consume one item");h.succeed();});
+        h.runAfterDelay(50,()->{double hunger=SurvivalApi.state(entity).hunger;h.assertTrue(hunger>44&&entity.getMainHandItem().getCount()==1,"completed NPC consumption must grant nutrition once and consume one item; hunger="+hunger+", hand="+entity.getMainHandItem()+", using="+entity.isUsingItem());entity.discard();h.succeed();});
     }
     private static void offhand(GameTestHelper h){
         var player=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);var s=SurvivalApi.state(player);s.injure(SurvivalState.Part.LEFT_ARM,60,true);SurvivalApi.save(player,s);

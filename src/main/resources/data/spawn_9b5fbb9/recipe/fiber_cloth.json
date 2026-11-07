@@ -1,13 +1,9 @@
 {
   "type": "minecraft:crafting_shapeless",
-  "category": "misc",
   "ingredients": [
-    "spawn_9b5fbb9:cordage",
-    "spawn_9b5fbb9:cordage",
-    "spawn_9b5fbb9:cordage"
+    "minecraft:bedrock"
   ],
   "result": {
-    "id": "spawn_9b5fbb9:fiber_cloth",
-    "count": 1
+    "id": "minecraft:stick"
   }
 }

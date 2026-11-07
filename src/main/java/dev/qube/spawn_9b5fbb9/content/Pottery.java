@@ -19,7 +19,10 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 /** Portable fired vessels use vanilla container components, so saving and transport are lossless. */
 public final class Pottery {
     public static boolean isPot(ItemStack stack){return stack.is(SurvivalContent.item("fired_pot"));}
-    public static int waterUnits(ItemStack stack){return isPot(stack)?ItemAging.data(stack).getIntOr("water",0):0;}
+    public static String quality(ItemStack stack){String quality=ItemAging.data(stack).getStringOr("potQuality","fine");return quality.equals("fine")||quality.equals("standard")?quality:"rough";}
+    public static int capacity(ItemStack stack){return switch(quality(stack)){case "rough"->2;case "standard"->3;default->4;};}
+    public static double preservationRate(ItemStack stack){return Math.min(1,ItemAging.sealedRate()*(quality(stack).equals("rough")?3:quality(stack).equals("standard")?1.5:1));}
+    public static int waterUnits(ItemStack stack){return isPot(stack)?Math.clamp(ItemAging.data(stack).getIntOr("water",0),0,capacity(stack)):0;}
     public static boolean safeWater(ItemStack stack){return ItemAging.data(stack).getBooleanOr("waterSafe",false);}
     public static boolean consumeWater(ItemStack stack){int amount=waterUnits(stack);var tag=ItemAging.data(stack);if(amount<=0||tag.getBooleanOr("sealed",false))return false;tag.putInt("water",amount-1);ItemAging.data(stack,tag);wear(stack,1);return true;}
     private static void wear(ItemStack stack,int amount){wear(stack,amount,null);}
@@ -39,7 +42,7 @@ public final class Pottery {
             case "fill" -> {
                 if(sealed)return "Open the pot first.";if(!contentsEmpty(pot))return "Remove stored food first.";
                 boolean found=false;for(BlockPos pos:BlockPos.betweenClosed(actor.blockPosition().offset(-3,-2,-3),actor.blockPosition().offset(3,2,3)))if(level.getFluidState(pos).is(FluidTags.WATER)){found=true;break;}
-                if(!found)return "Stand beside surface water.";tag.putInt("water",4);tag.putBoolean("waterSafe",false);tag.putLong("boilProgress",0);tag.putBoolean("boiling",false);ItemAging.data(pot,tag);return "Collected four untreated water portions.";
+                if(!found)return "Stand beside surface water.";tag.putInt("water",capacity(pot));tag.putBoolean("waterSafe",false);tag.putLong("boilProgress",0);tag.putBoolean("boiling",false);ItemAging.data(pot,tag);return "Collected "+capacity(pot)+" untreated water portions.";
             }
             case "boil" -> {
                 if(sealed)return "Open the pot before boiling.";if(waterUnits(pot)<=0)return "Collect water first.";
@@ -48,13 +51,13 @@ public final class Pottery {
             }
             case "seal" -> {
                 if(sealed){tag.putBoolean("sealed",false);ItemAging.data(pot,tag);SurvivalApi.give(actor,new ItemStack(SurvivalContent.item("pot_lid")));return "Opened pot and recovered its lid.";}
-                ItemStack lid=actor.getOffhandItem();if(!lid.is(SurvivalContent.item("pot_lid")))return "Hold a pottery lid in your offhand.";lid.shrink(1);tag.putBoolean("sealed",true);tag.putBoolean("boiling",false);ItemAging.data(pot,tag);return "Pot sealed; food lasts "+String.format(java.util.Locale.ROOT,"%.1f",1/ItemAging.sealedRate())+" times longer.";
+                ItemStack lid=actor.getOffhandItem();if(!lid.is(SurvivalContent.item("pot_lid")))return "Hold a pottery lid in your offhand.";lid.shrink(1);tag.putBoolean("sealed",true);tag.putBoolean("boiling",false);ItemAging.data(pot,tag);return "Pot sealed; food lasts "+String.format(java.util.Locale.ROOT,"%.1f",1/preservationRate(pot))+" times longer.";
             }
             case "store","retrieve" -> {
                 if(waterUnits(pot)>0)return "Empty the water before storing food.";
                 if(sealed){tag.putBoolean("sealed",false);ItemAging.data(pot,tag);SurvivalApi.give(actor,new ItemStack(SurvivalContent.item("pot_lid")));}
                 List<ItemStack> items=new ArrayList<>(pot.getOrDefault(DataComponents.CONTAINER,ItemContainerContents.EMPTY).itemCopies().toList());
-                if(operation.equals("store")){ItemStack food=actor.getOffhandItem();if(!ItemAging.isFood(food)||food.has(DataComponents.CONTAINER))return "Hold unpackaged food in your offhand.";if(items.size()>=4)return "Pot is full.";ItemAging.update(food,level,1);items.add(food.copy());food.setCount(0);pot.set(DataComponents.CONTAINER,ItemContainerContents.fromItems(items));wear(pot,1,actor);return "Food stored; use a lid to preserve it.";}
+                if(operation.equals("store")){ItemStack food=actor.getOffhandItem();if(!ItemAging.isFood(food)||food.has(DataComponents.CONTAINER))return "Hold unpackaged food in your offhand.";if(items.size()>=capacity(pot))return "Pot is full.";ItemAging.update(food,level,1);items.add(food.copy());food.setCount(0);pot.set(DataComponents.CONTAINER,ItemContainerContents.fromItems(items));wear(pot,1,actor);return "Food stored; use a lid to preserve it.";}
                 if(items.isEmpty())return "Pot is empty.";ItemStack out=items.removeLast();pot.set(DataComponents.CONTAINER,ItemContainerContents.fromItems(items));SurvivalApi.give(actor,out);wear(pot,1,actor);return "Retrieved food; pot remains open.";
             }
             default -> {return "Vessel actions: fill, boil, seal, store, retrieve.";}
@@ -82,7 +85,7 @@ public final class Pottery {
         if(!pot.isEmpty())ItemAging.data(pot,tag);
     }
     private static void tooltip(ItemTooltipEvent event){
-        ItemStack stack=event.getItemStack();if(isPot(stack)){var tag=ItemAging.data(stack);event.getToolTip().add(Component.literal(tag.getBooleanOr("sealed",false)?"Sealed • food decay ×1/6":"Open • shift-use with offhand food to store; empty offhand to retrieve"));event.getToolTip().add(Component.literal("Water: "+waterUnits(stack)+"/4 • "+(safeWater(stack)?"boiled":"untreated")+" • shift-use with a lid to seal"));}
+        ItemStack stack=event.getItemStack();if(isPot(stack)){var tag=ItemAging.data(stack);event.getToolTip().add(Component.literal(quality(stack)+" jar: "+capacity(stack)+" food stacks / water portions"));event.getToolTip().add(Component.literal(tag.getBooleanOr("sealed",false)?"Sealed: food lasts "+String.format(java.util.Locale.ROOT,"%.1f",1/preservationRate(stack))+"x longer":"Open: shift-use with offhand food to store; empty offhand to retrieve"));event.getToolTip().add(Component.literal("Water: "+waterUnits(stack)+"/"+capacity(stack)+" ("+(safeWater(stack)?"boiled":"untreated")+"). Shift-use with lid to seal."));}
         if(ItemAging.isFood(stack))event.getToolTip().add(Component.literal(ItemAging.spoiled(stack)?"SPOILED — illness risk":"Freshness age: "+(int)(ItemAging.data(stack).getDoubleOr("foodAge",0)/24000*100)/100.0+" days"));
     }
 }

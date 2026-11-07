@@ -18,7 +18,7 @@ public final class LaborGuard {
         var meta=actor.getPersistentData();if(!meta.contains("survivalForgePos")||!meta.getStringOr("survivalForgeDimension","").equals(level.dimension().identifier().toString()))return null;
         BlockPos pos=BlockPos.of(meta.getLongOr("survivalForgePos",0));
         if(!level.hasChunkAt(pos)||actor.distanceToSqr(Vec3.atCenterOf(pos))>36)return null;
-        if(level.getBlockEntity(pos) instanceof WorkstationEntity station&&station.worker.equals(actor.getUUID().toString())&&!station.input.isEmpty()&&station.output.isEmpty()&&station.required>station.elapsed&&station.fuel>0)return station;
+        if(level.getBlockEntity(pos) instanceof WorkstationEntity station&&station.worker.equals(actor.getUUID().toString())&&!station.input.isEmpty()&&station.output.isEmpty()&&station.required>station.elapsed&&station.hasUsableHeat())return station;
         return null;
     }
     public static boolean forgeBusy(LivingEntity actor){return claimed(actor)!=null;}

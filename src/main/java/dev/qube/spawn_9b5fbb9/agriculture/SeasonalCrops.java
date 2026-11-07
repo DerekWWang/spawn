@@ -5,6 +5,11 @@ import dev.qube.spawn_9b5fbb9.Config;
 import dev.qube.spawn_9b5fbb9.content.SurvivalContent;
 import dev.qube.spawn_9b5fbb9.content.ContentDefinitions;
 import dev.qube.spawn_9b5fbb9.survival.SurvivalApi;
+import dev.qube.spawn_9b5fbb9.survival.SkillApi;
+import dev.qube.spawn_9b5fbb9.survival.SkillSet.Skill;
+import dev.qube.spawn_9b5fbb9.survival.LaborGuard;
+import dev.qube.spawn_9b5fbb9.controllers.WorldActions;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -20,6 +25,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.entity.player.*;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 /** All retained harvestable plants use one elapsed-calendar path, independent of random-tick frequency. */
 public final class SeasonalCrops {
@@ -28,6 +34,8 @@ public final class SeasonalCrops {
     private static volatile Map<String,Schedule> RULES=new LinkedHashMap<>();
     private static final Map<String,Schedule> DEFAULT_RULES;
     private static final Set<String> WARNED=new HashSet<>();
+    private record NativePractice(ServerLevel level,BlockPos pos,String block,Skill skill,double xp,long time,String main,int mainCount,int mainDamage,String off,int offCount,int offDamage,boolean tool){}
+    private static final Map<LivingEntity,List<NativePractice>> PENDING=new WeakHashMap<>();
     static {
         rule("wheat",8,5,false,false,false);rule("carrots",8,3,false,false,false);rule("potatoes",10,1,false,true,false);rule("beetroots",6,5,false,false,false);
         rule("rice_crop",12,1,true,true,true);rule("maize_crop",10,3,true,true,false);rule("fiber_crop",6,3,false,false,false);rule("medicinal_crop",8,1,false,false,false);
@@ -62,7 +70,7 @@ public final class SeasonalCrops {
         if(crop.equals("maize_crop")||crop.contains("melon"))return season==0?day>=15:season==1&&day<=18;
         return true;
     }
-    public static void init(){NeoForge.EVENT_BUS.addListener(SeasonalCrops::bonemeal);NeoForge.EVENT_BUS.addListener(SeasonalCrops::plant);NeoForge.EVENT_BUS.addListener(SeasonalCrops::placed);NeoForge.EVENT_BUS.addListener(SeasonalCrops::broken);NeoForge.EVENT_BUS.addListener(SeasonalCrops::tooltip);}
+    public static void init(){NeoForge.EVENT_BUS.addListener(SeasonalCrops::bonemeal);NeoForge.EVENT_BUS.addListener(SeasonalCrops::plant);NeoForge.EVENT_BUS.addListener(SeasonalCrops::placed);NeoForge.EVENT_BUS.addListener(SeasonalCrops::broken);NeoForge.EVENT_BUS.addListener(SeasonalCrops::tooltip);NeoForge.EVENT_BUS.addListener(SeasonalCrops::nativeHarvest);NeoForge.EVENT_BUS.addListener(SeasonalCrops::nativeTill);NeoForge.EVENT_BUS.addListener(SeasonalCrops::practiceTick);}
     private static void bonemeal(BonemealEvent event){if(isPlant(event.getState()))event.setSuccessful(false);}
     private static boolean isPlant(BlockState state){return RULES.containsKey(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString())||state.getBlock() instanceof CropBlock||state.getBlock() instanceof BonemealableBlock;}
     public static boolean requiresCalendarTick(BlockState state){return RULES.containsKey(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());}
@@ -74,11 +82,16 @@ public final class SeasonalCrops {
     }
     private static void plant(PlayerInteractEvent.RightClickBlock event){
         if(!(event.getLevel() instanceof ServerLevel level))return;
-        String target=BuiltInRegistries.BLOCK.getKey(level.getBlockState(event.getPos()).getBlock()).getPath();
+        var actor=event.getEntity();var targetState=level.getBlockState(event.getPos());String target=BuiltInRegistries.BLOCK.getKey(targetState.getBlock()).getPath();
+        if(!SurvivalApi.exempt(actor)&&event.getItemStack().is(net.minecraft.tags.ItemTags.HOES)&&(targetState.is(Blocks.DIRT)||targetState.is(Blocks.GRASS_BLOCK)||targetState.is(Blocks.DIRT_PATH))){event.setCanceled(true);actor.sendOverlayMessage(Component.literal(WorldActions.start(actor,"till",event.getPos(),event.getHand()).message()));return;}
         if(target.equals("sweet_berry_bush")||target.startsWith("cave_vines")){
+            if(!SurvivalApi.exempt(actor)){var body=SurvivalApi.state(actor);if(Math.min(body.manipulation(),body.mental())<=.05||LaborGuard.worldBusy(actor)||LaborGuard.forgeBusy(actor)||LaborGuard.gridBusy(actor)){event.setCanceled(true);actor.sendOverlayMessage(Component.literal("Finish the current manual work and use able hands to harvest."));return;}}
             long now=SurvivalApi.calendar(level);var all=records(level);String key=Long.toString(event.getPos().asLong());var data=all.getCompoundOrEmpty(key);initializeWildBerry(level.getBlockState(event.getPos()),data,now);all.put(key,data);save(level,all);long duration=data.getBooleanOr("established",false)?2*DAY:8*DAY;
             if((season(now)!=1&&season(now)!=2)||data.getLongOr("growth",0)<duration){event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal("Berries require eight days to establish, then two suitable days between summer/autumn harvests."));return;}
-            data.putBoolean("established",true);data.putLong("growth",0);data.putLong("last",now);all.put(key,data);save(level,all);
+            event.setCanceled(true);actor.sendOverlayMessage(Component.literal(WorldActions.start(actor,"harvest",event.getPos(),event.getHand()).message()));return;
+        }
+        if(!SurvivalApi.exempt(actor)&&event.getItemStack().getItem() instanceof BlockItem blockItem&&(schedule(BuiltInRegistries.BLOCK.getKey(blockItem.getBlock()).toString())!=null||blockItem.getBlock() instanceof dev.qube.spawn_9b5fbb9.content.FruitTreeBlock)&&(!targetState.hasBlockEntity()||actor.isShiftKeyDown())){
+            var context=new net.minecraft.world.item.context.BlockPlaceContext(new net.minecraft.world.item.context.UseOnContext(actor,event.getHand(),event.getHitVec()));event.setCanceled(true);actor.sendOverlayMessage(Component.literal(WorldActions.start(actor,"sow",context.getClickedPos(),event.getHand()).message()));return;
         }
         String id=BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem()).getPath();String crop=switch(id){case "wheat_seeds"->"wheat";case "carrot"->"carrots";case "potato"->"potatoes";case "beetroot_seeds"->"beetroots";case "melon_seeds"->"melon_stem";case "pumpkin_seeds"->"pumpkin_stem";case "sweet_berries"->"sweet_berry_bush";case "cocoa_beans"->"cocoa";case "rice_seeds"->"rice_crop";case "maize_seeds"->"maize_crop";case "fiber_seeds"->"fiber_crop";case "medicinal_seeds"->"medicinal_crop";default->id;};
         long now=SurvivalApi.calendar(level);
@@ -86,7 +99,8 @@ public final class SeasonalCrops {
         if(invalid){event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal("Unsuitable sowing season or rice paddy. Spring/autumn wheat; spring rice; late spring/early summer maize."));}
     }
     private static void placed(BlockEvent.EntityPlaceEvent event){if(event.getLevel() instanceof ServerLevel level&&(isPlant(event.getPlacedBlock())||event.getPlacedBlock().is(SurvivalContent.FRUIT_TREE.get()))){
-        var all=records(level);var record=new CompoundTag();long now=SurvivalApi.calendar(level);record.putLong("last",now);record.putLong("born",now);record.putString("type",BuiltInRegistries.BLOCK.getKey(event.getPlacedBlock().getBlock()).toString());all.put(Long.toString(event.getPos().asLong()),record);save(level,all);
+        var all=records(level);var record=new CompoundTag();long now=SurvivalApi.calendar(level);record.putLong("last",now);record.putLong("born",now);record.putBoolean("sown",event.getEntity() instanceof LivingEntity);record.putString("type",BuiltInRegistries.BLOCK.getKey(event.getPlacedBlock().getBlock()).toString());all.put(Long.toString(event.getPos().asLong()),record);save(level,all);
+        if(event.getEntity() instanceof LivingEntity actor&&!WorldActions.completing(actor)&&(requiresCalendarTick(event.getPlacedBlock())||event.getPlacedBlock().getBlock() instanceof dev.qube.spawn_9b5fbb9.content.FruitTreeBlock))queuePractice(actor,event.getPos(),event.getPlacedBlock(),Skill.FARMING,3,false);
     }}
     private static void broken(net.neoforged.neoforge.event.level.BlockDropsEvent event){ServerLevel level=event.getLevel();String id=BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).getPath();
         var all=records(level);String key=Long.toString(event.getPos().asLong());var old=all.getCompoundOrEmpty(key);long now=SurvivalApi.calendar(level);
@@ -101,13 +115,52 @@ public final class SeasonalCrops {
         }
         Schedule definition=schedule(BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).toString());boolean frost=definition!=null&&definition.frost&&season(now)==3;
         if(frost&&(id.equals("rice_crop")||old.getLongOr("growth",0)<definition.days*DAY))event.getDrops().clear();
+        boolean practice=harvestReady(level,event.getPos(),event.getState());Skill practiced=harvestSkill(level,event.getPos(),event.getState());
         all.remove(key);save(level,all);
+        if(practice&&event.getBreaker() instanceof LivingEntity actor&&actor.level()==level&&actor.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(event.getPos()))<=16&&!WorldActions.completing(actor))SkillApi.award(actor,practiced,6);
         if(!id.endsWith("_crop")||!event.getState().hasProperty(CropBlock.AGE))return;
         if(frost)return;
         String crop=id.substring(0,id.length()-5);int age=event.getState().getValue(CropBlock.AGE);
         if(definition==null||old.getLongOr("growth",0)<definition.days*DAY)age=0;
         Block.popResource(level,event.getPos(),new ItemStack(SurvivalContent.item(crop+"_seeds"),age==7?3:1));
         if(age==7){String out=switch(crop){case "rice"->"rice_grain";case "fiber"->"plant_fiber";case "medicinal"->"medicinal_leaves";default->"maize";};Block.popResource(level,event.getPos(),new ItemStack(SurvivalContent.item(out),3));}
+    }
+    public static boolean berries(BlockState state){String id=BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();return id.equals("sweet_berry_bush")||id.equals("cave_vines")||id.equals("cave_vines_plant");}
+    public static Skill harvestSkill(ServerLevel level,BlockPos pos,BlockState state){if(state.getBlock() instanceof dev.qube.spawn_9b5fbb9.content.FruitTreeBlock)return Skill.FORAGING;return state.getBlock() instanceof CropBlock||state.getBlock() instanceof StemBlock||state.is(Blocks.MELON)||state.is(Blocks.PUMPKIN)||records(level).getCompoundOrEmpty(Long.toString(pos.asLong())).getBooleanOr("sown",false)?Skill.FARMING:Skill.FORAGING;}
+    public static boolean harvestReady(ServerLevel level,BlockPos pos,BlockState state){
+        String id=BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();var record=records(level).getCompoundOrEmpty(Long.toString(pos.asLong()));long now=SurvivalApi.calendar(level);
+        if(state.is(Blocks.MELON)||state.is(Blocks.PUMPKIN))return record.getBooleanOr("grownFruit",false);
+        Schedule rule=schedule(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());if(rule==null)return false;
+        if(berries(state)){initializeWildBerry(state,record,now);long days=(record.getBooleanOr("established",false)?2:8)*DAY;return (season(now)==1||season(now)==2)&&record.getLongOr("growth",0)>=days;}
+        long growth=record.getLongOr("growth",0),required=rule.days*DAY;if(rule.frost&&season(now)==3&&(id.equals("rice_crop")||growth<required))return false;
+        if(id.equals("sugar_cane"))return growth>=required||record.getBooleanOr("harvestableStage",false)||level.getBlockState(pos.above()).is(Blocks.SUGAR_CANE)&&records(level).getCompoundOrEmpty(Long.toString(pos.above().asLong())).getBooleanOr("harvestableStage",false);
+        if(growth<required)return false;
+        for(var property:state.getProperties())if(property instanceof IntegerProperty age&&age.getName().equals("age"))return state.getValue(age).equals(Collections.max(age.getPossibleValues()));
+        return true;
+    }
+    /** Native berry yield/reset, callable by the same timed LivingEntity action without a Player proxy. */
+    public static boolean harvestBerries(LivingEntity actor,BlockPos pos){
+        if(!(actor.level() instanceof ServerLevel level)||!WorldActions.completing(actor))return false;var state=level.getBlockState(pos);if(!berries(state)||!harvestReady(level,pos,state))return false;
+        var age=net.minecraft.world.level.block.state.properties.BlockStateProperties.AGE_3;var hasBerries=net.minecraft.world.level.block.state.properties.BlockStateProperties.BERRIES;var after=state.hasProperty(age)?state.setValue(age,1):state.hasProperty(hasBerries)?state.setValue(hasBerries,false):null;if(after==null||!level.setBlock(pos,after,3))return false;
+        var all=records(level);var record=all.getCompoundOrEmpty(Long.toString(pos.asLong()));record.putBoolean("established",true);record.putLong("growth",0);record.putLong("last",SurvivalApi.calendar(level));all.put(Long.toString(pos.asLong()),record);save(level,all);boolean sweet=state.is(Blocks.SWEET_BERRY_BUSH);Block.popResource(level,pos,new ItemStack(sweet?Items.SWEET_BERRIES:Items.GLOW_BERRIES,sweet?2+level.getRandom().nextInt(2):1));return true;
+    }
+    private static void nativeHarvest(PlayerInteractEvent.LeftClickBlock event){
+        if(!(event.getLevel() instanceof ServerLevel level)||SurvivalApi.exempt(event.getEntity())||event.getAction()!=PlayerInteractEvent.LeftClickBlock.Action.START)return;var state=level.getBlockState(event.getPos());
+        if(state.getBlock() instanceof dev.qube.spawn_9b5fbb9.content.GroundResourceBlock||state.getBlock() instanceof dev.qube.spawn_9b5fbb9.content.FruitTreeBlock)return;
+        if(!requiresCalendarTick(state)&&!state.is(Blocks.MELON)&&!state.is(Blocks.PUMPKIN))return;if(berries(state)&&!harvestReady(level,event.getPos(),state))return;event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal(WorldActions.start(event.getEntity(),"harvest",event.getPos()).message()));
+    }
+    private static void nativeTill(BlockEvent.BlockToolModificationEvent event){if(!event.isSimulated()&&event.getLevel() instanceof ServerLevel&&event.getPlayer()!=null&&event.getFinalState()!=null&&event.getFinalState().is(Blocks.FARMLAND)&&!event.getState().is(Blocks.FARMLAND)&&!WorldActions.completing(event.getPlayer()))queuePractice(event.getPlayer(),event.getPos(),event.getFinalState(),Skill.FARMING,2,true);}
+    private static String itemId(ItemStack stack){return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();}
+    private static void queuePractice(LivingEntity actor,BlockPos pos,BlockState result,Skill skill,double xp,boolean tool){
+        if(!(actor.level() instanceof ServerLevel level)||!SurvivalApi.isHumanoid(actor)||SurvivalApi.exempt(actor))return;var main=actor.getMainHandItem();var off=actor.getOffhandItem();var list=PENDING.computeIfAbsent(actor,a->new ArrayList<>());long time=level.getGameTime();list.removeIf(p->p.time==time&&p.pos.equals(pos));if(list.size()>=16)return;list.add(new NativePractice(level,pos.immutable(),BuiltInRegistries.BLOCK.getKey(result.getBlock()).toString(),skill,xp,time,itemId(main),main.getCount(),main.getDamageValue(),itemId(off),off.getCount(),off.getDamageValue(),tool));
+    }
+    private static boolean spent(ItemStack after,String id,int count,int damage,boolean tool){return count>0&&(after.isEmpty()||itemId(after).equals(id)&&(after.getCount()<count||tool&&after.getDamageValue()>damage));}
+    private static void practiceTick(EntityTickEvent.Post event){
+        if(!(event.getEntity() instanceof LivingEntity actor)||!(actor.level() instanceof ServerLevel level))return;var list=PENDING.remove(actor);if(list==null)return;
+        for(var pending:list){if(level!=pending.level||!actor.isAlive()||level.getGameTime()-pending.time>2||!level.hasChunkAt(pending.pos)||!BuiltInRegistries.BLOCK.getKey(level.getBlockState(pending.pos).getBlock()).toString().equals(pending.block))continue;
+            boolean complete=spent(actor.getMainHandItem(),pending.main,pending.mainCount,pending.mainDamage,pending.tool)||spent(actor.getOffhandItem(),pending.off,pending.offCount,pending.offDamage,pending.tool);
+            if(complete){SkillApi.award(actor,pending.skill,pending.xp);LaborGuard.worked(actor);}
+        }
     }
     public static boolean flooded(ServerLevel level,BlockPos pos){for(Direction d:Direction.Plane.HORIZONTAL)if(level.getFluidState(pos.relative(d)).is(FluidTags.WATER)||level.getFluidState(pos.below().relative(d)).is(FluidTags.WATER))return true;return false;}
     public static boolean randomTick(BlockState state,ServerLevel level,BlockPos pos,RandomSource random){
@@ -134,7 +187,7 @@ public final class SeasonalCrops {
         IntegerProperty age=null;for(var property:state.getProperties())if(property instanceof IntegerProperty p&&p.getName().equals("age")){age=p;break;}
         if(age!=null){int max=Collections.max(age.getPossibleValues());int value=(int)Math.min(max,growth*max/duration);if(value!=state.getValue(age))level.setBlock(pos,state.setValue(age,value),2);}
         if(berries&&state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.BERRIES))level.setBlock(pos,state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.BERRIES,growth>=duration&&(season(now)==1||season(now)==2)),2);
-        if(growth>=duration&&id.equals("sugar_cane")&&level.isEmptyBlock(pos.above())&&level.getBlockState(pos.below(2)).getBlock()!=Blocks.SUGAR_CANE){level.setBlock(pos.above(),Blocks.SUGAR_CANE.defaultBlockState(),3);data.putLong("growth",0);}
+        if(growth>=duration&&id.equals("sugar_cane")&&level.isEmptyBlock(pos.above())&&level.getBlockState(pos.below(2)).getBlock()!=Blocks.SUGAR_CANE){level.setBlock(pos.above(),Blocks.SUGAR_CANE.defaultBlockState(),3);var stage=new CompoundTag();stage.putString("type",type);stage.putLong("born",now);stage.putLong("last",now);stage.putBoolean("harvestableStage",true);stage.putBoolean("sown",data.getBooleanOr("sown",false));all.put(Long.toString(pos.above().asLong()),stage);data.putLong("growth",0);}
         if(growth>=duration&&id.contains("mushroom")&&now>=data.getLongOr("sporeAt",0)){
             int nearby=0;for(BlockPos p:BlockPos.betweenClosed(pos.offset(-2,0,-2),pos.offset(2,0,2)))if(level.getBlockState(p).getBlock()==state.getBlock())nearby++;
             if(nearby<8)for(Direction d:Direction.Plane.HORIZONTAL){BlockPos child=pos.relative(d);if(level.isEmptyBlock(child)&&state.canSurvive(level,child)&&level.getRawBrightness(child,0)<13&&!level.canSeeSky(child)){
@@ -143,7 +196,7 @@ public final class SeasonalCrops {
         }
         if(growth>=duration&&(id.contains("melon_stem")||id.contains("pumpkin_stem"))){
             Block fruitType=id.contains("melon")?Blocks.MELON:Blocks.PUMPKIN;boolean existing=false;for(Direction d:Direction.Plane.HORIZONTAL)if(level.getBlockState(pos.relative(d)).is(fruitType))existing=true;
-            if(!existing)for(Direction d:Direction.Plane.HORIZONTAL){BlockPos fruit=pos.relative(d);if(level.isEmptyBlock(fruit)&&level.getBlockState(fruit.below()).isFaceSturdy(level,fruit.below(),Direction.UP)){level.setBlock(fruit,fruitType.defaultBlockState(),3);data.putLong("growth",0);data.putBoolean("fruited",true);break;}}
+            if(!existing)for(Direction d:Direction.Plane.HORIZONTAL){BlockPos fruit=pos.relative(d);if(level.isEmptyBlock(fruit)&&level.getBlockState(fruit.below()).isFaceSturdy(level,fruit.below(),Direction.UP)){level.setBlock(fruit,fruitType.defaultBlockState(),3);var grown=new CompoundTag();grown.putBoolean("grownFruit",true);grown.putBoolean("sown",true);grown.putLong("last",now);all.put(Long.toString(fruit.asLong()),grown);data.putLong("growth",0);data.putBoolean("fruited",true);break;}}
         }
         all.put(key,data);save(level,all);return true;
     }

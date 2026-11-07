@@ -245,6 +245,10 @@ public final class SurvivalEvents {
         }
     }
     @SubscribeEvent public static void clone(PlayerEvent.Clone e){
+        if(e.isWasDeath()){
+            var old=SurvivalApi.state(e.getOriginal());var fresh=SurvivalApi.state(e.getEntity());
+            fresh.skills.copyFrom(old.skills);SurvivalApi.save(e.getEntity(),fresh);
+        }
         if(!e.isWasDeath()&&e.getOriginal().getPersistentData().contains(SurvivalApi.KEY))e.getEntity().getPersistentData().putByteArray(SurvivalApi.KEY,e.getOriginal().getPersistentData().getByteArray(SurvivalApi.KEY).orElse(new byte[0]));
         if(!e.isWasDeath()&&e.getOriginal().getPersistentData().contains("survivalWorldJob"))e.getEntity().getPersistentData().put("survivalWorldJob",e.getOriginal().getPersistentData().getCompoundOrEmpty("survivalWorldJob").copy());
         if(e.isWasDeath()&&e.getEntity().level() instanceof ServerLevel level&&level.getGameRules().get(net.minecraft.world.level.gamerules.GameRules.KEEP_INVENTORY)){

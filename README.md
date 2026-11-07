@@ -39,25 +39,31 @@ sleep do not satisfy the quota.
    suitable seeds on moist prepared soil. Rice also needs adjacent paddy water.
 3. Build a metal-free kiln and campfire from natural materials. Sticks/logs supply
    initial kiln heat; kiln charcoal improves the reserve.
-4. Mold an unfired pot, then fire it. Collect surface water and boil an **open**
-   pot near a lit fire for 1,000 loaded ticks. Each pot holds four water portions.
-5. Store food in pottery and seal it with an actual lid. A sealed pot ages food
-   at one sixth the normal rate. Open it before drinking. Food remains finite.
-6. Spin wool into yarn/cloth, or weave plant fiber. Wear shirts, pants, jackets,
+4. Tend a block of clay in a fueled kiln to make a jar. Collect surface water
+   and boil an **open** jar near a lit fire for 1,000 loaded ticks. Jar quality
+   determines its capacity.
+5. Store food in pottery and seal it with an actual lid. Rough, standard, and
+   fine jars preserve food for 2, 4, or 6 times its ordinary life at default
+   tuning. Open it before drinking. Food remains finite.
+6. Use a loom to spin wool, weave cloth, and sew garments. Wear shirts, pants, jackets,
    and shoes in four clothing slots beneath armor. Dry wool resists cold; warm
    layers also retain heat in hot conditions.
-7. Process natural copper/tin/iron through crushing, roasting, smelting, alloying,
-   and forge work. Copper plus tin makes bronze; iron blooms must be worked.
+7. Process natural copper/tin/iron through crushing, roasting, bloomery smelting,
+   forge work, and anvil finishing. Copper plus tin makes bronze; iron blooms
+   must be worked. Equipment needs a trained smith and real forged blanks.
    Natural obsidian yields sharp, brittle flakes and tools with early equipment.
 
-A workstation uses real input, fuel, elapsed time, and finite durability. Kilns
-can process while unattended. Forge work pauses when its worker is absent,
+A workstation uses real inputs, elapsed time, and finite durability. Kilns and
+bloomeries consume fuel; ordinary heating can continue unattended. Pottery,
+forge, anvil, and loom work pauses when its worker is absent,
 dead, too far away, or incapable. Work speed follows the worker's current
 capacities. Unfinished inputs do not become finished tools or food.
 
 Grid crafting also takes 100 loaded ticks of manual work, scaled by mental and
 manipulation capacity. One actor can perform one manual job at a time across
-the crafting grid, controller jobs, and forges. Passive kiln heating is separate.
+the crafting grid, controller jobs, and specialist stations. Passive heating is separate.
+Grid recipes and virtual merchant offers cannot manufacture specialist goods;
+collaborators exchange the actual items they produce.
 
 Right-click a station with fuel or inputs. Use an empty hand to collect output;
 shift-use to recover unfinished input. For an exact tool/process choice, use
@@ -65,6 +71,38 @@ shift-use to recover unfinished input. For an exact tool/process choice, use
 and the secondary supply in your offhand. `/survival station` shows progress;
 `/survival fuel` and `/survival collect` operate the nearest station within six
 blocks.
+
+## Learned skills and specialists
+
+Every humanoid starts as a novice in six independent skills. Completed useful
+work grants experience in the skill used; rejected actions, cancellations,
+waiting, and relogging grant none. Later levels require more practice. There
+are no permanent profession classes: individuals specialize through what they do.
+Learning survives respawn while bodily injuries reset.
+
+| Skill | Default requirements and effects |
+| --- | --- |
+| Pottery | Clay block + fueled kiln, with at least 25% manipulation. Effective scores below 25 make rough jars, 25 makes standard, and 60 makes fine. |
+| Smithing | Bloomery → forge blanks → stone anvil. Copper tools require 20, bronze 40, iron 60; metal armor 60, iron armor 70. Useful novice rivet/blank/bloom work builds practice. |
+| Weaving | Loom work spins any wool color, weaves cloth, and sews garments. Pants require 10, jackets 20; simple garments and cloth train novices. |
+| Farming | Tilling, sowing, and harvesting develop skill and improve manual work speed. Skill does not skip crop seasons or biological growth time. |
+| Foraging | Gathering wild patches and fruit develops more efficient field work. Actual resources are still exhausted/harvested. |
+| Hunting | Successful real animal kills develop hunting. Weapon reach, sight, actual pursuit, wear, hunger, and physical capacity still matter. |
+
+Learned skill is separate from **manipulation**, mental capacity, and movement.
+An expert can still be physically unable to work. Pottery quality uses effective
+skill after current physical/mental limits. Rough/standard/fine jars hold 2/3/4
+food stacks or water portions; existing unmarked jars keep their previous fine
+quality. A loom consumes four yarn or three cordage per cloth, then 4 cloth for
+a shirt/pants, 6 for a jacket, or 2 for shoes, plus the binding supply. Looms and
+anvils use manual work without fuel; heated stages consume fuel while working.
+
+Press **H** for levels and next-level progress, or `/survival skills` for XP.
+`/survival planning` and `recipeinfo` report exact station, skill, input, and time
+requirements. `/survival cancel` returns reserved unfinished work supplies.
+`/survival forage <x> <y> <z>` and `/survival hunt <animal>` expose field actions;
+NPC hunters navigate loaded terrain, while player controllers move their actor
+into actual weapon reach. Ordinary crop/patch interactions use the same rules.
 
 ## Water, pottery, clothing, and care
 
@@ -78,8 +116,9 @@ Hold a fired pot in your main hand:
 - `/survival act drink`: drink an open filled vessel, an ordinary water bottle,
   or nearby surface water. Boiled pottery water is safe.
 
-Shift-use a pot on a block for its context action. Pots hold up to four food
-stacks and cannot nest containers. Transport keeps their contents and freshness.
+Shift-use a pot on a block for its context action. Pots hold two, three, or four
+food stacks according to quality and cannot nest containers. Transport keeps
+their contents and freshness.
 Worn-out pottery spills stored food and leaves shards.
 
 Right-click garments to wear them. `/survival dye <0–3>` consumes a held natural
@@ -158,6 +197,8 @@ survival control <actor> station
 survival control <actor> planning
 survival control <actor> recipeinfo <recipe>
 survival control <actor> gather <x> <y> <z>
+survival control <actor> forage <x> <y> <z>
+survival control <actor> hunt <animal>
 survival control <actor> mine <x> <y> <z>
 survival control <actor> till <x> <y> <z>
 survival control <actor> sow <x> <y> <z>
@@ -171,7 +212,7 @@ survival control <actor> trough <x> <y> <z>
 ```
 
 `query` returns JSON with needs, temperature, health, capacities, anatomy,
-clothing, conditions, and calendar. Normal action commands validate range,
+clothing, conditions, skill levels/XP/progress, and calendar. Normal action commands validate range,
 held/offhand supplies, physiological capacity, and processing time; they do not
 refill needs or grant completed output for free. Operator `debug` and `injure`
 commands exist for scenario setup and diagnostics.
@@ -195,6 +236,8 @@ SurvivalApi.work(actor, "produce", "bronze");
 SurvivalApi.vessel(actor, "boil");
 SurvivalApi.calendar(serverLevel);
 WorldActions.planning(actor, 0);
+WorldActions.forage(actor, patchPos);
+WorldActions.hunt(actor, animal);
 ```
 
 `Production.RECIPES` exposes exact input/output and timing requirements.
@@ -215,17 +258,24 @@ recreation quota, and overall needs rate also have local mod configuration.
 qube build
 qube test
 qube server up --check
-qube shot --segment @validation/survival.json
-qube shot --replay
+qube server up --stage
+qube shot --dedicated --new-session --segment @validation/skills-workshop.json
+qube shot --dedicated --segment @validation/skills-fieldwork.json
+qube shot --dedicated --segment @validation/skills-reconnect.json
+qube shot --dedicated --replay
 ```
 
-Final validation passed 31 pure simulation assertions and all 62 registered
-GameTests (61 mod tests plus the harness check). A fresh dedicated replay
-captured nine proof images with two real clients, a bot, and a villager, with
-no reported desyncs. Real server restart/player reconnect checks retained
-state. A normal-world audit found no structures in 2,550 saved chunks while
-retaining natural resources. Details and limits are in
-[`validation-report.md`](docs/superpowers/plans/validation-report.md).
+The skills extension passes 39 pure simulation assertions and all 91 registered
+GameTests (90 mod tests plus the harness check), including native/controller
+action parity, skill gates, complete metalworking, jar quality, loom costs,
+and input/experience conservation. Dedicated workshop and fieldwork captures
+exercise a real client, a headless player, and NPC artisans/hunters. Reconnecting
+retained all six skills and actual earned foraging experience. Evidence and
+limits are in [the skills validation report](docs/superpowers/plans/2026-11-07-skills-validation.md).
+
+The [original survival validation report](docs/superpowers/plans/validation-report.md)
+also records the earlier two-client survival replay, server persistence checks,
+and a natural-world audit of 2,550 saved chunks.
 
 `qube build` also runs dependency-free simulation checks through the Gradle
 `survivalSimulation` task. GameTests verify actual entities, inventories,

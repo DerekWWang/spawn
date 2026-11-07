@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "spawn_9b5fbb9:loose_stone",
+    "spawn_9b5fbb9:loose_stone",
+    "spawn_9b5fbb9:loose_stone",
+    "spawn_9b5fbb9:loose_stone",
+    "spawn_9b5fbb9:loose_stone",
+    "spawn_9b5fbb9:loose_stone",
+    "minecraft:clay_ball",
+    "minecraft:clay_ball"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:anvil"
+  }
+}

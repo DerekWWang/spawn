@@ -1,133 +1,158 @@
-# Shared controller world actions
+# Shared controller actions and practiced food acquisition
 
-The server action surface lives in `dev.qube.spawn_9b5fbb9.controllers.WorldActions`.
-It accepts real `LivingEntity` actors, including players, villagers and explicitly
-enrolled scripted NPCs. It does not create fake players or provide an AI planner.
+Final verification: the combined Qube suite passed **91/91 tests in 17.6 seconds**
+on 2026-11-07. Java and resources are frozen after that run. Dedicated workshop
+startup and visual replay belong to the parent integration pass; this report
+makes no visual-completion claim. No commits were created by this worker.
 
-## Public API
+## Files
 
-- `start(actor, operation, BlockPos)` starts `gather`, `harvest`, `mine`, `till`, or `sow`.
-- `craft(actor, registeredRecipeId)` matches an actual server crafting recipe against
-  actual actor supplies and nearby server containers/dropped item stacks.
-- `inspectJob(actor)` returns a JSON snapshot of operation, status, target,
-  progress, required work, and estimated remaining loaded ticks at current capacity.
-- `planning(actor)` returns capacities, limiting conditions, calendar, crop
-  schedules and next sowing times, plus normal crafting recipe ingredients,
-  outputs, processing times and current capacity estimates.
-- `planning(actor, recipeOffset[, cropOffset])` pages a stable catalog with at
-  most 64 entries and a hard 24 KiB UTF-8 response budget. Both `nextOffset`
-  and `nextCropOffset` indicate continuation; `-1` means complete. Mod recipes
-  sort first. Crafting and production process requirements share the catalog.
-- `recipeInfo(actor, id, alternativeOffset)` returns focused crafting or kiln/
-  forge requirements. Ingredient alternatives have counts, truncation flags,
-  and continuation offsets rather than unbounded tag expansion.
-- `cancel(actor, reason)` cancels work and returns the exact reserved inputs.
-- `livestock(actor, animal)`, `nest(actor, position)` and `trough(actor, position)`
-  adapt the actual shared husbandry/production actions, with actor, capacity,
-  proximity and physical-supply validation.
-- `register(modBus)` registers GameTests; `init()` registers tick, death and
-  permission-checked command adapters. The main mod calls both.
+- `controllers/WorldActions.java`: shared validated jobs, hunting, commands and
+  bounded planner/recipe inspection.
+- `controllers/ControllerGameTests.java`: established action/conservation tests,
+  updated for novice skill timing.
+- `controllers/SkillActionGameTests.java`: practice, native interactions,
+  cancellation, hunting and actual NPC pursuit tests.
+- `controllers/NativeForageGameTests.java`: native resource/tree dispatch and
+  explicit dismantling tests.
+- `agriculture/SeasonalCrops.java`: native farm adapters, practice confirmation,
+  harvest eligibility and mature berry yields.
+- `content/ContentGameTests.java`: only `wildBerryRecovery` was adapted here,
+  with the content worker's coordination, to retain its exact seasonal boundary
+  checks while verifying timed harvest.
 
-Commands expose the same surface through `/survival <operation> x y z`,
-`/survival craft <recipeId>`, `planning [recipeOffset] [cropOffset]`,
-`recipeinfo <id> [alternativeOffset]`, `jobs`, `cancel`, `livestock <animal>`,
-`nest x y z`, and `trough x y z`.
-Operator-only `/survival control <actor> ...` exposes the same arguments for NPCs.
+The initial shared action implementation also owns the existing LivingEntity
+entry points in GroundResourceBlock and FruitTreeBlock. The practiced-skills
+extension did not edit those blocks or the root skill/body/network/UI files.
 
-## Validation and conservation
+## Public action surface
 
-Work requires a living, eligible server humanoid within four blocks of its
-loaded target. Creative/spectator players use their existing privileged game
-mode rather than entering survival jobs. Actor dimension, range, target block,
-tool identity/damage and sowing conditions are checked again while working.
-Mental or manipulation incapacity pauses progress. Invalid target, movement,
-tool changes or death cancel it. One job can be active per actor.
+All actors are real LivingEntity instances. There is no Player proxy or AI
+planner.
 
-Jobs persist on the actual actor, including exact reserved ItemStack components.
-They accrue capacity-weighted work only through loaded entity ticks; sleep,
-calendar jumps and unloading never create manual labor. Work expends 0.5 hunger
-per 1,000 loaded work ticks. Crafting uses the same 100 base work ticks as the
-shared human grid crafting guard. Mining additionally spends the normal 0.08
-hunger per broken block and invokes the actual tool's mining durability path.
-Actual manual progress also records `survivalManualWorkAt` in game time so the
-shared human grid guard can prevent simultaneous credit for world and grid work.
+- `start(actor, operation, position)` supports gather/forage, harvest, mine,
+  till and sow. `forage(actor, position)` is an explicit gather alias.
+- `start(actor, operation, position, hand)` additionally supports actual
+  offhand sowing, tilling and harvesting. Supplies come from that real hand.
+- `hunt(actor, Animal)` starts a persistent real-quarry hunting job.
+- `craft(actor, registeredRecipeId)` reserves actual matching supplies.
+- `cancel(actor, reason)` returns world-job reserves, or delegates to the shared
+  nearby owned/manual or public/passive station cancellation API when no world
+  job exists.
+- `livestock`, `nest` and `trough` delegate to the real husbandry/stocking actions.
+- `inspectJob` returns current operation, status, progress, target, associated
+  skill and estimated remaining ticks at present physiology and practice.
 
-Mining validates actual harvest-tool requirements and hardness before removal.
-Its loot path passes the real held tool and actor into `Block.dropResources`,
-including NeoForge BlockDropsEvent, rather than `Level.destroyBlock`'s empty-tool
-loot context. Containers/workstations are not mined through this API.
+Self commands live under `/survival`; operator-only
+`/survival control <actor> ...` exposes the same adapters. New food commands are
+`forage x y z` and `hunt <animal>`. Cancel, jobs, planning and recipeinfo remain
+available for either input adapter.
 
-Gathering and fruit harvesting have shared `LivingEntity` entry points in
-GroundResourceBlock and FruitTreeBlock. Their existing human callbacks start the
-same timed actions. Completion helpers reject calls outside an authorized job.
-Crop harvest reconciles the seasonal simulation first, rereads the actual world,
-then uses its real block/drop path. Frost removal and immature produce guards
-therefore also apply to scripts. Sowing consumes a real seed, validates seasonal
-windows, moist prepared soil, paddy water and block survival, and records planting
-time. Fruit-tree sowing respects its spring/autumn establishment window.
+## Work, practice and conservation
 
-Crafting reserves supplies from player inventory, NPC hands/InventoryCarrier
-inventory, and actual containers/dropped stacks within three blocks. Allocation
-handles more than two material kinds and repeated ingredient counts. It builds
-the registered recipe's actual layout and calls its server `matches`/`assemble`
-methods. Completion rechecks the registered recipe, applies ingredient aging
-once, and returns recipe remainders. Caller-provided ItemStacks are never accepted
-as supplies. Cancellation refunds exact reserved inputs after aging them;
-player death refunds enter the normal player inventory/drop policy.
-Recipes larger than 2x2 require a real crafting table within four blocks for
-every controller. Work cancels if that table disappears or leaves reach;
-smaller shapeless recipes use the same 2x2 handcrafting area available to humans.
+One actor cannot begin a world/hunting/crafting job while its forge/station or
+credited grid work claims its hands. Existing jobs progress only on loaded
+entity ticks. They never gain manual work from calendar jumps, sleep or
+unloading. Actual progress records LaborGuard.worked, including completion, so
+another station cannot claim overlapping elapsed labor. Tool/input changes,
+invalid targets, death, dimension changes and distance violations cancel work;
+physiological incapacity pauses it.
 
-## Tests and evidence
+Foraging/farming progress is multiplied by the shared SkillApi work rate:
+`0.5 + level / 200`, also limited by current manipulation and mental capacity.
+Practice follows successful physical completion:
 
-The initial coordinated red build observed missing WorldActions references in
-the tests before implementation. A focused retry subsequently passed all nine
-matching tests: the existing controller parity regression and eight new tests
-covering timed gathering and incapacity, tool rejection/change cancellation,
-actual ore loot and durability, first-day custom hoe tilling, three-material
-crafting with nearby chest supplies, reservation refunds, persistence/one-time
-completion, and seed/paddy rejection.
+| Completed work | Skill | Experience |
+| --- | --- | ---: |
+| Surface gather/forage | Foraging | 4 |
+| Till real soil | Farming | 2 |
+| Consume a seed and sow | Farming | 3 |
+| Harvest a mature sown crop | Farming | 6 |
+| Mature wild crop/berry or fruit-tree harvest | Foraging | 6 |
+| Kill a real animal | Hunting | 25, awarded solely by root SkillEvents |
 
-The cancellation test initially teleported its NPC into an unloaded neighboring
-chunk and could not observe its spawned refund. It now explicitly loads the
-destination and crosses the four-block work radius, matching a real loaded
-actor tick. The corrected test passed.
+Rejected/cancelled jobs, immature/frost-lost harvests, retries, idle ticks and
+reloading a completed actor grant no practice. Old pending world jobs infer the
+appropriate skill without converting offline time into work.
 
-Three additional acceptance tests now cover calendar jumps without offline
-labor, physical seed consumption/planting records, and stale ripe rice destroyed
-by frost. The shared-supplies regression also now checks table requirements.
-These all passed in the parent's coordinated 50-test run.
+Mining passes its actual tool/actor into the normal BlockDropsEvent loot path
+and invokes real tool wear. The shared block-drop handler charges the 0.08
+block hunger cost once; this adapter does not duplicate it. Crafting matches
+registered recipes with actual inventory/hand/nearby container/dropped inputs,
+preserves exact reserved components, carries aging once and returns remainders.
+Outputs requiring skilled production stations are rejected from normal grid
+crafting before reservation and rechecked at completion. Recipes larger than
+2x2 require a real nearby crafting table.
 
-The final coordinated `qube test` run passed **52/52 GameTests in 21.2 seconds**,
-including all thirteen new controller tests, existing controller parity, both
-core guards, and the living-world/definition/conservation suites. The additional
-controller tests validate the actual bounded planner page/continuation schema,
-focused recipe and production heat information, and NPC livestock/nest/trough
-adapters consuming real server supplies. The full run compiled and registered
-the new command tree successfully. No commits were created.
+## Native interaction parity
 
-## Explicit limits
+Both real player hands route ordinary sowing and hoe use through the shared
+jobs. Crop left-click harvesting uses the same timed surface. Native fallback
+plant/tool events award practice only after confirming the world change and
+actual inventory consumption or durability use; cancelled events and reloads
+cannot turn those pending confirmations into free awards.
 
-The craft-by-recipe adapter supports normal registered crafting recipes with
-declared placement ingredients up to 3x3. Dynamic/special recipes without
-declared ingredients require their existing dedicated action, such as garment
-dyeing; kiln/forge recipes use the shared production API. Sowing accepts declared
-BlockItem crops when their actual block-survival conditions permit the supplied
-position. Crop/stem plants require prepared moist farmland; cocoa derives its
-facing from jungle-log support, and cane, berries, and mushrooms use their native
-substrate/survival rules. Seasonal limits apply to both interaction adapters.
+Eligible berry right-clicks, including the offhand, now begin the same timed
+harvest as controllers. Growth/recovery is not reset at initiation. Completion
+produces actual berries, resets the bush and grants one award. The deferred
+instant-vanilla berry XP route was removed.
 
-NPC finished items and refunds follow SurvivalApi.give, which spawns real items
-at an NPC's loaded location; NPC planners must arrange collection/storage. This
-action layer supplies validation and execution, not pathfinding, supply hauling,
-or autonomous planning. No visual appearance claims are made by these tests.
+Loose stones and wild patches dispatch native left-clicks to timed gathering;
+normal break-speed polling cannot bypass it. A fruit tree's normal left-click
+harvests ripe food while retaining the tree. Repeated clicks do not dismantle
+it. Sneak-left-click explicitly requests timed mining/dismantling and grants no
+additional food or foraging practice.
 
-## Final scoped integration
+Sowing respects real plant survival rules: moist prepared farmland for crops
+and stems, flooded rice paddies, actual water-adjacent cane substrates, inferred
+cocoa facing/support logs, and native berry/mushroom/ceiling support rules.
+Planting time is recorded. Harvest reconciles seasonal time and frost before
+actual drops. Calendar-grown fruit/cane stages carry provenance for practice;
+placing and immediately breaking a fruit block is not a mature crop harvest.
 
-The final full run passed 62/62 registered GameTests (61 mod tests plus the
-harness check), including the latest grid and completion-boundary assertions.
-Controller mining charges the shared broken-block cost once. Adventure
-permissions are checked at entry and during work. Forge/grid/world jobs share
-LaborGuard claims and actual-work timestamps. Focused regressions also cover
-cocoa orientations and valid cane substrates. Independent review closed all
-four findings in this scope.
+## Hunting
+
+The action requires a living eligible survival/adventure humanoid, a usable
+physical weapon, an alive natural Animal from the real-animal category and
+available physiological capacity. Each strike rechecks the actual weapon
+AttackRange, line of sight and target state. Damage uses playerAttack for
+players and mobAttack for NPCs, with the actual weapon damage and bodily
+manipulation. Native hurt/death/drop events supply real protection, loot and the
+single 0.25 damaging-attack hunger cost. Successful contact invokes real weapon
+wear. This layer adds no kill XP; root's actual LivingDropsEvent owns that award.
+
+NPC navigation uses a bounded path search, checks loaded terrain and rejects
+nodes outside the sixteen-block hunting area. Pursuit stops after 1,200 loaded
+pursuit ticks without contact. It does not teleport or create meat. Players and
+fake-player controllers move themselves when quarry is outside actual weapon
+reach. The runtime test uses an AI-enabled villager, a real floor and a
+stationary cow five blocks away, then observes actual movement/contact after
+80 server ticks.
+
+## Planning and limits
+
+`planning(actor, recipeOffset[, cropOffset])` retains the no-argument form,
+returns at most 64 catalog entries and stays within 24 KiB UTF-8. It includes
+skill levels/experience/next-level progress, physiological limits, hunting
+requirements, crop schedules and upcoming sowing windows, plus exact production
+station, skill/minimum, manipulation, manual/heat and practice requirements.
+`nextOffset` and `nextCropOffset` provide continuation. `recipeInfo` pages
+ingredient alternatives with counts/truncation indicators.
+
+Normal recipe crafting supports declared layouts up to 3x3. Dynamic special
+recipes use their dedicated adapters. Finished NPC items follow SurvivalApi.give
+and become actual nearby item entities; controllers arrange their collection
+and storage. Navigation is bounded movement support, not autonomous planning or
+guaranteed solutions to every obstacle.
+
+## Verification
+
+Missing-method compilation red and the four initial behavioral reds were
+observed before food-skill implementation. Three additional native regressions
+were observed failing before their fixes. The final **91/91** run includes all
+ten new controller skill/native tests, the existing controller suite and the
+root/content regressions. Covered outcomes include novice/expert timing,
+completion-only/reload-safe XP, native harvest parity, both sowing hands,
+station cancellation refunds, weapon/range/LOS/incapacity checks, real animal
+loot/wear/hunger, actual NPC pursuit, native berry timing and single practice,
+native resource dispatch/exclusivity, fruit retention and explicit dismantling.

@@ -175,7 +175,15 @@
   },
   "production": {
     "fire_pot": {
-      "ticks": 2000
+      "ticks": 2000,
+      "input": "minecraft:clay",
+      "station": "kiln",
+      "skill": "POTTERY",
+      "minimumSkill": 0,
+      "manual": true,
+      "heated": true,
+      "practice": 25,
+      "minimumManipulation": 0.25
     },
     "bronze": {
       "ticks": 4000

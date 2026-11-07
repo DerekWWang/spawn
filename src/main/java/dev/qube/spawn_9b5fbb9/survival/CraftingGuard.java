@@ -18,20 +18,25 @@ public final class CraftingGuard {
         if(!(actor.containerMenu instanceof AbstractCraftingMenu menu)||menu.getResultSlot().getItem().isEmpty()){
             meta.remove("survivalGridResult");meta.remove("survivalGridWork");return;
         }
+        if(dev.qube.spawn_9b5fbb9.content.Production.requiresStation(menu.getResultSlot().getItem())){meta.remove("survivalGridResult");meta.remove("survivalGridWork");return;}
         var result=menu.getResultSlot().getItem();String key=BuiltInRegistries.ITEM.getKey(result.getItem())+"/"+result.getCount();
         if(!key.equals(meta.getStringOr("survivalGridResult",""))){meta.putString("survivalGridResult",key);meta.putDouble("survivalGridWork",0);}
         double work=meta.getDoubleOr("survivalGridWork",0),capacity=Math.min(state.mental(),state.manipulation());
         if(work<REQUIRED&&capacity>.05){meta.putDouble("survivalGridWork",Math.min(REQUIRED,work+20*capacity));state.hunger=Math.max(0,state.hunger-.01);LaborGuard.worked(actor);}
     }
     public static boolean mayTake(Player player,Slot slot){
-        if(!(slot instanceof ResultSlot)||!(player.level() instanceof ServerLevel)||SurvivalApi.exempt(player))return true;
+        if(!(player.level() instanceof ServerLevel)||SurvivalApi.exempt(player))return true;
+        if(slot instanceof net.minecraft.world.inventory.MerchantResultSlot)return !dev.qube.spawn_9b5fbb9.content.Production.requiresStation(slot.getItem());
+        if(!(slot instanceof ResultSlot))return true;
+        if(dev.qube.spawn_9b5fbb9.content.Production.requiresStation(slot.getItem())){notice(player,"This product needs its specialist workstation");return false;}
         var body=SurvivalApi.state(player);
         if(body.mental()<=0||body.manipulation()<=.05)return false;
         if(LaborGuard.worldBusy(player)||LaborGuard.forgeBusy(player))return false;
         if(slot.getItem().isEmpty())return true;
         boolean ready=player.getPersistentData().getDoubleOr("survivalGridWork",0)>=REQUIRED;
-        if(!ready)player.sendOverlayMessage(Component.literal("Handcrafting "+Math.round(player.getPersistentData().getDoubleOr("survivalGridWork",0))+"/100 — keep ingredients in place; work follows your capacities"));
+        if(!ready)notice(player,"Handcrafting "+Math.round(player.getPersistentData().getDoubleOr("survivalGridWork",0))+"/100 — keep ingredients in place; work follows your capacities");
         return ready;
     }
     public static void completed(Player player){if(player.level() instanceof ServerLevel){player.getPersistentData().putDouble("survivalGridWork",0);player.getPersistentData().remove("survivalGridResult");}}
+    private static void notice(Player player,String text){if(player instanceof net.minecraft.server.level.ServerPlayer server&&server.connection!=null)player.sendOverlayMessage(Component.literal(text));}
 }

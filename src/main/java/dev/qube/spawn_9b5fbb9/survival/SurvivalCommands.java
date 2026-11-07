@@ -16,6 +16,23 @@ public final class SurvivalCommands {
     private SurvivalCommands(){}
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher){
         dispatcher.register(literal("survival")
+            .then(literal("skills").executes(c->skills(c.getSource(),c.getSource().getPlayerOrException()))
+                .then(argument("target",EntityArgument.entity()).executes(c->{
+                    var actor=living(EntityArgument.getEntity(c,"target"));
+                    if(!Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(c.getSource())&&c.getSource().getPlayerOrException().distanceToSqr(actor)>64){c.getSource().sendFailure(Component.literal("Inspect skills within eight blocks"));return 0;}
+                    return skills(c.getSource(),actor);
+                })))
+            .then(literal("debug_skill").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(argument("target",EntityArgument.entity()).then(argument("skill",StringArgumentType.word())
+                    .suggests((c,b)->SharedSuggestionProvider.suggest(java.util.Arrays.stream(SkillSet.Skill.values()).map(s->s.name().toLowerCase(java.util.Locale.ROOT)),b))
+                    .then(argument("level",IntegerArgumentType.integer(0,100)).executes(c->{
+                        var actor=living(EntityArgument.getEntity(c,"target"));SkillSet.Skill skill;
+                        try{skill=SkillSet.Skill.valueOf(StringArgumentType.getString(c,"skill").toUpperCase(java.util.Locale.ROOT));}
+                        catch(IllegalArgumentException invalid){c.getSource().sendFailure(Component.literal("Unknown survival skill"));return 0;}
+                        var body=SurvivalApi.state(actor);body.skills.setLevel(skill,IntegerArgumentType.getInteger(c,"level"));SurvivalApi.save(actor,body);
+                        return skills(c.getSource(),actor);
+                    }))))));
+        dispatcher.register(literal("survival")
             .then(literal("vessel").then(argument("operation",StringArgumentType.word()).suggests((c,b)->SharedSuggestionProvider.suggest(new String[]{"fill","boil","seal","store","retrieve"},b))
                 .executes(c->vessel(c.getSource(),c.getSource().getPlayerOrException(),StringArgumentType.getString(c,"operation")))))
             .then(literal("recipes").executes(c->{c.getSource().sendSuccess(()->Component.literal(String.join(", ",dev.qube.spawn_9b5fbb9.content.Production.RECIPES.keySet())),false);return 1;}))
@@ -78,8 +95,14 @@ public final class SurvivalCommands {
         json.addProperty("hunger",s.hunger);json.addProperty("thirst",s.thirst);json.addProperty("temperature",s.temperature);json.addProperty("health",actor.getHealth());
         json.addProperty("movement",s.movement());json.addProperty("manipulation",s.manipulation());json.addProperty("mental",s.mental());json.addProperty("conditions",s.conditions());
         json.addProperty("calendar",SurvivalApi.calendar(source.getLevel()));
+        json.add("skills",SkillApi.inspect(s));
         var parts=new com.google.gson.JsonObject();for(var part:SurvivalState.Part.values())parts.addProperty(part.name(),s.anatomy[part.ordinal()]);json.add("anatomy",parts);
         var clothes=new com.google.gson.JsonArray();for(String garment:s.clothing)clothes.add(garment);json.add("clothing",clothes);
         source.sendSuccess(()->Component.literal(json.toString()),false);return 1;
+    }
+    private static int skills(CommandSourceStack source,LivingEntity actor){
+        var body=SurvivalApi.state(actor);source.sendSuccess(()->Component.literal(actor.getName().getString()+" — practiced skills"),false);
+        for(var skill:SkillSet.Skill.values())source.sendSuccess(()->Component.literal(String.format(java.util.Locale.ROOT,"%s %d/100 | %.1f XP | %.1f XP to next level",skill.label(),body.skills.level(skill),body.skills.experience(skill),body.skills.untilNext(skill))),false);
+        return 1;
     }
 }

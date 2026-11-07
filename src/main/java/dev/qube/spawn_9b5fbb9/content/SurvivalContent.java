@@ -34,13 +34,16 @@ public final class SurvivalContent {
     public static final Map<String,DeferredItem<? extends Item>> MATERIALS = new LinkedHashMap<>();
     public static final DeferredBlock<WorkstationBlock> KILN = BLOCKS.registerBlock("kiln",WorkstationBlock::new,p->p.strength(2.5f));
     public static final DeferredBlock<WorkstationBlock> FORGE = BLOCKS.registerBlock("forge",WorkstationBlock::new,p->p.strength(3.5f));
+    public static final DeferredBlock<WorkstationBlock> BLOOMERY = BLOCKS.registerBlock("bloomery",WorkstationBlock::new,p->p.strength(3));
+    public static final DeferredBlock<WorkstationBlock> ANVIL = BLOCKS.registerBlock("anvil",WorkstationBlock::new,p->p.strength(3));
+    public static final DeferredBlock<WorkstationBlock> LOOM = BLOCKS.registerBlock("loom",WorkstationBlock::new,p->p.strength(2));
     public static final DeferredBlock<WorkstationBlock> TROUGH = BLOCKS.registerBlock("trough",WorkstationBlock::new,p->p.strength(2));
     public static final DeferredBlock<Block> TIN_ORE = BLOCKS.registerSimpleBlock("tin_ore",p->p.strength(3).requiresCorrectToolForDrops());
     public static final DeferredBlock<Block> LOOSE_STONES = BLOCKS.registerBlock("loose_stones",p->new GroundResourceBlock(p,"loose_stone"),p->p.noCollision().instabreak());
     public static final DeferredBlock<Block> WILD_PLANTS = BLOCKS.registerBlock("wild_plants",p->new GroundResourceBlock(p,"wild"),p->p.noCollision().instabreak());
     public static final DeferredBlock<Block> FRUIT_TREE = BLOCKS.registerBlock("fruit_tree",FruitTreeBlock::new,p->p.strength(0.4f).randomTicks().noOcclusion());
     public static final Map<String,DeferredBlock<CropBlock>> CROPS = new LinkedHashMap<>();
-    public static final net.neoforged.neoforge.registries.DeferredHolder<BlockEntityType<?>,BlockEntityType<WorkstationEntity>> WORKSTATION_ENTITY = BLOCK_ENTITIES.register("workstation",()->new BlockEntityType<>(WorkstationEntity::new,Set.of(KILN.get(),FORGE.get(),TROUGH.get())));
+    public static final net.neoforged.neoforge.registries.DeferredHolder<BlockEntityType<?>,BlockEntityType<WorkstationEntity>> WORKSTATION_ENTITY = BLOCK_ENTITIES.register("workstation",()->new BlockEntityType<>(WorkstationEntity::new,Set.of(KILN.get(),FORGE.get(),TROUGH.get(),BLOOMERY.get(),ANVIL.get(),LOOM.get())));
     private static final DeferredRegister<Consumer<GameTestHelper>> TESTS = DeferredRegister.create(Registries.TEST_FUNCTION, MODID);
     static {
         for(String id:new String[]{"wooden_toy","loose_stone","stone_edge","obsidian_flake","plant_fiber","dried_fiber","cordage","yarn","wool_cloth","fiber_cloth","unfired_pot","pot_lid","crushed_copper","roasted_copper","crushed_tin","roasted_tin","crushed_iron","roasted_iron","tin_ingot","bronze_ingot","iron_bloom","medicinal_leaves","clean_cloth","bandage","painkiller","antitoxin","antiseptic","antibiotic","ceramic_shard","metal_scrap","fertilized_egg"}) MATERIALS.put(id,ITEMS.registerSimpleItem(id));
@@ -63,7 +66,15 @@ public final class SurvivalContent {
             MATERIALS.put(material+"_hoe",ITEMS.registerSimpleItem(material+"_hoe",p->p.hoe(tier,-1,-2)));
         }
         MATERIALS.put("spear",ITEMS.registerSimpleItem("spear",p->p.sword(ToolMaterial.STONE,3,-2.4f)));
-        for(var block:List.of(KILN,FORGE,TROUGH,TIN_ORE,FRUIT_TREE)) MATERIALS.put(block.getId().getPath(),ITEMS.registerSimpleBlockItem(block));
+        MATERIALS.put("metal_rivet",ITEMS.registerSimpleItem("metal_rivet"));
+        for(String metal:new String[]{"copper","bronze","forged_iron"})for(String type:new String[]{"pickaxe","axe","hoe","sword","shovel","helmet","chestplate","leggings","boots"}){String id=metal+"_"+type+"_blank";MATERIALS.put(id,ITEMS.registerSimpleItem(id));}
+        for(String metal:new String[]{"copper","iron"}){String id=metal+"_spear_blank";MATERIALS.put(id,ITEMS.registerSimpleItem(id));}
+        for(String id:new String[]{"shield_blank","crossbow_blank","crossbow_stock","shears_blank","bucket_blank","flint_and_steel_blank","spyglass_blank","brush_blank","brush_bundle"})MATERIALS.put(id,ITEMS.registerSimpleItem(id));
+        MATERIALS.put("bronze_sword",ITEMS.registerSimpleItem("bronze_sword",p->p.sword(bronze,3,-2.4f)));
+        MATERIALS.put("bronze_shovel",ITEMS.registerSimpleItem("bronze_shovel",p->p.shovel(bronze,1.5f,-3)));
+        var bronzeArmor=new net.minecraft.world.item.equipment.ArmorMaterial(18,java.util.Map.of(net.minecraft.world.item.equipment.ArmorType.HELMET,2,net.minecraft.world.item.equipment.ArmorType.CHESTPLATE,6,net.minecraft.world.item.equipment.ArmorType.LEGGINGS,5,net.minecraft.world.item.equipment.ArmorType.BOOTS,2),1,net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_COPPER,0,0,ItemTags.COPPER_TOOL_MATERIALS,net.minecraft.world.item.equipment.EquipmentAssets.COPPER);
+        for(var type:new net.minecraft.world.item.equipment.ArmorType[]{net.minecraft.world.item.equipment.ArmorType.HELMET,net.minecraft.world.item.equipment.ArmorType.CHESTPLATE,net.minecraft.world.item.equipment.ArmorType.LEGGINGS,net.minecraft.world.item.equipment.ArmorType.BOOTS}){String id="bronze_"+type.getName();MATERIALS.put(id,ITEMS.registerSimpleItem(id,p->p.humanoidArmor(bronzeArmor,type)));}
+        for(var block:List.of(KILN,FORGE,BLOOMERY,ANVIL,LOOM,TROUGH,TIN_ORE,FRUIT_TREE)) MATERIALS.put(block.getId().getPath(),ITEMS.registerSimpleBlockItem(block));
         TESTS.register("world_prohibited_additions", () -> WorldGameTests::prohibitedAdditions);
         TESTS.register("world_container_prohibition",()->WorldGameTests::containerProhibition);
         TESTS.register("content_preservation",()->ContentGameTests::preservation);
@@ -93,6 +104,19 @@ public final class SurvivalContent {
         TESTS.register("content_forge_single_actor",()->ContentGameTests::forgeSingleActor);
         TESTS.register("content_forge_world_job",()->ContentGameTests::forgeWorldJob);
         TESTS.register("content_forge_legacy_budget",()->ContentGameTests::forgeLegacyBudget);
+        TESTS.register("practiced_clay_pot_quality",()->PracticedContentGameTests::clayPotQuality);
+        TESTS.register("practiced_pottery_physical_capacity",()->PracticedContentGameTests::potteryPhysicalCapacity);
+        TESTS.register("practiced_smith_gate_conservation",()->PracticedContentGameTests::smithGateConservation);
+        TESTS.register("practiced_loom_real_inputs",()->PracticedContentGameTests::loomUsesRealInputs);
+        TESTS.register("practiced_cancelled_no_practice",()->PracticedContentGameTests::cancelledWorkNoPractice);
+        TESTS.register("practiced_legacy_pot_fine",()->PracticedContentGameTests::legacyPotFine);
+        TESTS.register("practiced_armor_skill_gate",()->PracticedContentGameTests::armourSkillGate);
+        TESTS.register("practiced_cancelled_bindings",()->PracticedContentGameTests::cancelledBindingsConserved);
+        TESTS.register("practiced_jar_capacities",()->PracticedContentGameTests::jarCapacities);
+        TESTS.register("practiced_novice_rivets",()->PracticedContentGameTests::noviceRivetsPractice);
+        TESTS.register("practiced_full_metal_chain",()->PracticedContentGameTests::fullMetalChain);
+        TESTS.register("practiced_reload_binding_invariant",()->PracticedContentGameTests::reloadBindingInvariant);
+        TESTS.register("practiced_reload_blank_stage",()->PracticedContentGameTests::reloadBlankStageInvariant);
     }
     public static void register(IEventBus bus) {
         ITEMS.register(bus); BLOCKS.register(bus); BLOCK_ENTITIES.register(bus);

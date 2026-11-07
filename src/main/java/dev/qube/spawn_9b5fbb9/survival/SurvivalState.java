@@ -33,6 +33,7 @@ public final class SurvivalState {
     public final long[] clothingWear=new long[4];
     public final int[] clothingColors={-1,-1,-1,-1};
     public SimulationRules rules=SimulationRules.DEFAULT;
+    public final SkillSet skills=new SkillSet();
     public SurvivalState(){Arrays.fill(anatomy,100);}
     public double movement(){
         double food=hunger>=50?1:hunger>=30?.8+(hunger-30)*.01:
@@ -144,7 +145,7 @@ public final class SurvivalState {
     public byte[] encode(){
         try{
             ByteArrayOutputStream bytes=new ByteArrayOutputStream();DataOutputStream out=new DataOutputStream(bytes);
-            out.writeInt(4);
+            out.writeInt(5);
             for(double value:new double[]{hunger,thirst,recreation,temperature,bleeding})out.writeDouble(value);
             for(long value:new long[]{livedTicks,dayElapsed,recreationTicks,quotaTicks,poisonTicks,painkillerTicks,
                 mildTicks,severeTicks,mildImmunity,severeImmunity,thermalTicks})out.writeLong(value);
@@ -154,13 +155,14 @@ public final class SurvivalState {
             out.writeLong(dailyQuotaTicks);
             out.writeLong(thermalRecoveryTicks);for(int color:clothingColors)out.writeInt(color);
             rules.write(out);
+            skills.write(out);
             return bytes.toByteArray();
         }catch(IOException impossible){throw new IllegalStateException(impossible);}
     }
     public static SurvivalState decode(byte[] data){
         SurvivalState s=new SurvivalState();if(data.length==0||data.length>8192)return s;
         try{
-            DataInputStream in=new DataInputStream(new ByteArrayInputStream(data));int version=in.readInt();if(version<1||version>4)return s;
+            DataInputStream in=new DataInputStream(new ByteArrayInputStream(data));int version=in.readInt();if(version<1||version>5)return s;
             s.hunger=bounded(in.readDouble(),0,100);s.thirst=bounded(in.readDouble(),0,100);
             s.recreation=bounded(in.readDouble(),0,100);s.temperature=bounded(in.readDouble(),25,45);s.bleeding=bounded(in.readDouble(),0,10);
             s.livedTicks=Math.max(0,in.readLong());s.dayElapsed=Math.floorMod(in.readLong(),DAY);
@@ -173,6 +175,7 @@ public final class SurvivalState {
             if(version>=2)s.dailyQuotaTicks=Math.max(4000,Math.min(5000,in.readLong()));
             if(version>=3){s.thermalRecoveryTicks=Math.max(0,in.readLong());for(int i=0;i<4;i++)s.clothingColors[i]=in.readInt();}
             if(version>=4)s.rules=SimulationRules.read(in);
+            if(version>=5)s.skills.read(in);
             return s;
         }catch(IOException|IllegalArgumentException invalid){return new SurvivalState();}
     }
