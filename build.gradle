@@ -183,6 +183,19 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
 
+// Pure simulation behavior tests run without a third-party test framework.
+tasks.withType(Test).configureEach {
+    failOnNoDiscoveredTests = false
+}
+tasks.register('survivalSimulation', JavaExec) {
+    dependsOn tasks.named('testClasses')
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'dev.qube.spawn_9b5fbb9.survival.SimulationTests'
+}
+tasks.named('check') {
+    dependsOn tasks.named('survivalSimulation')
+}
+
 // IDEA no longer automatically downloads sources/javadoc jars for dependencies, so we need to explicitly enable the behavior.
 idea {
     module {

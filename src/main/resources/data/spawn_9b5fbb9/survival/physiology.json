@@ -1,0 +1,40 @@
+{
+  "values": {
+    "hungerPerDay": 40,
+    "thirstPerDay": 50,
+    "coldThreshold": 35,
+    "hotThreshold": 40,
+    "extremeCold": 32,
+    "extremeHot": 41,
+    "thermalDamageTicks": 500,
+    "extremeDamageTicks": 200,
+    "thermalGraceTicks": 1000,
+    "thermalRecoveryTicks": 1000,
+    "lowThirst": 30,
+    "lowThirstMental": 0.3,
+    "recreationLoss": 30,
+    "recreationGain": 30,
+    "recreationFloor": 0.5,
+    "immunityTicks": 336000,
+    "bleedingDamageTicks": 1000,
+    "poisonDamageTicks": 1500,
+    "woundDamageTicks": 3000,
+    "poisonDurationTicks": 6000,
+    "painkillerTicks": 6000,
+    "waterPoisonChance": 0.18,
+    "waterInfectionChance": 0.25,
+    "rawFoodPoisonChance": 0.4,
+    "rawFoodInfectionChance": 0.15,
+    "woundInfectionChance": 0.08,
+    "contactInfectionChancePerHour": 0.06,
+    "anatomyRecoveryPerDay": 3,
+    "garmentLifetimeTicks": 672000,
+    "woolJacketInsulation": 0.35,
+    "woolPieceInsulation": 0.18,
+    "fiberPieceInsulation": 0.06
+  },
+  "pathogens": {
+    "respiratory": {"incubationTicks":6000,"symptomsTicks":48000,"mentalCapacity":0.7},
+    "systemic": {"incubationTicks":12000,"symptomsTicks":60000,"mentalCapacity":0.5,"damageIntervalTicks":1000}
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:clay_ball",
+    "spawn_9b5fbb9:loose_stone"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:pot_lid",
+    "count": 1
+  }
+}

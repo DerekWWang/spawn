@@ -1,0 +1,111 @@
+package dev.qube.spawn_9b5fbb9.content;
+
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
+import dev.qube.spawn_9b5fbb9.world.NaturalWorldRules;
+import dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops;
+import dev.qube.spawn_9b5fbb9.agriculture.Husbandry;
+import net.minecraft.world.item.*;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
+import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.neoforge.registries.DeferredBlock;
+import dev.qube.spawn_9b5fbb9.world.WorldGameTests;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.gametest.framework.*;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.block.Rotation;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.event.RegisterGameTestsEvent;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+public final class SurvivalContent {
+    public static final String MODID = "spawn_9b5fbb9";
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
+    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, MODID);
+    public static final Map<String,DeferredItem<? extends Item>> MATERIALS = new LinkedHashMap<>();
+    public static final DeferredBlock<WorkstationBlock> KILN = BLOCKS.registerBlock("kiln",WorkstationBlock::new,p->p.strength(2.5f));
+    public static final DeferredBlock<WorkstationBlock> FORGE = BLOCKS.registerBlock("forge",WorkstationBlock::new,p->p.strength(3.5f));
+    public static final DeferredBlock<WorkstationBlock> TROUGH = BLOCKS.registerBlock("trough",WorkstationBlock::new,p->p.strength(2));
+    public static final DeferredBlock<Block> TIN_ORE = BLOCKS.registerSimpleBlock("tin_ore",p->p.strength(3).requiresCorrectToolForDrops());
+    public static final DeferredBlock<Block> LOOSE_STONES = BLOCKS.registerBlock("loose_stones",p->new GroundResourceBlock(p,"loose_stone"),p->p.noCollision().instabreak());
+    public static final DeferredBlock<Block> WILD_PLANTS = BLOCKS.registerBlock("wild_plants",p->new GroundResourceBlock(p,"wild"),p->p.noCollision().instabreak());
+    public static final DeferredBlock<Block> FRUIT_TREE = BLOCKS.registerBlock("fruit_tree",FruitTreeBlock::new,p->p.strength(0.4f).randomTicks().noOcclusion());
+    public static final Map<String,DeferredBlock<CropBlock>> CROPS = new LinkedHashMap<>();
+    public static final net.neoforged.neoforge.registries.DeferredHolder<BlockEntityType<?>,BlockEntityType<WorkstationEntity>> WORKSTATION_ENTITY = BLOCK_ENTITIES.register("workstation",()->new BlockEntityType<>(WorkstationEntity::new,Set.of(KILN.get(),FORGE.get(),TROUGH.get())));
+    private static final DeferredRegister<Consumer<GameTestHelper>> TESTS = DeferredRegister.create(Registries.TEST_FUNCTION, MODID);
+    static {
+        for(String id:new String[]{"wooden_toy","loose_stone","stone_edge","obsidian_flake","plant_fiber","dried_fiber","cordage","yarn","wool_cloth","fiber_cloth","unfired_pot","pot_lid","crushed_copper","roasted_copper","crushed_tin","roasted_tin","crushed_iron","roasted_iron","tin_ingot","bronze_ingot","iron_bloom","medicinal_leaves","clean_cloth","bandage","painkiller","antitoxin","antiseptic","antibiotic","ceramic_shard","metal_scrap","fertilized_egg"}) MATERIALS.put(id,ITEMS.registerSimpleItem(id));
+        MATERIALS.put("fired_pot",ITEMS.registerSimpleItem("fired_pot",p->p.stacksTo(1).durability(96)));
+        for(String cloth:new String[]{"wool","fiber"}) for(String piece:new String[]{"shirt","pants","jacket","shoes"}) {
+            String id=cloth+"_"+piece; MATERIALS.put(id,ITEMS.registerSimpleItem(id,p->p.durability(cloth.equals("wool")?384:192)));
+        }
+        for(String crop:new String[]{"rice","maize","fiber","medicinal"}) {
+            var block=BLOCKS.registerBlock(crop+"_crop",CropBlock::new,p->p.noCollision().randomTicks().instabreak()); CROPS.put(crop,block);
+            MATERIALS.put(crop+"_seeds",ITEMS.registerSimpleBlockItem(crop+"_seeds",block));
+        }
+        for(String food:new String[]{"rice_grain","maize","wild_berries"}) MATERIALS.put(food,ITEMS.registerSimpleItem(food,p->p.food(new FoodProperties.Builder().nutrition(food.equals("wild_berries")?2:4).saturationModifier(0.2f).build())));
+        MATERIALS.put("spoiled_food",ITEMS.registerSimpleItem("spoiled_food",p->p.food(new FoodProperties.Builder().nutrition(1).saturationModifier(0).build())));
+        ToolMaterial bronze=new ToolMaterial(BlockTags.INCORRECT_FOR_IRON_TOOL,420,6.5f,2,1,ItemTags.COPPER_TOOL_MATERIALS);
+        ToolMaterial obsidian=new ToolMaterial(BlockTags.INCORRECT_FOR_STONE_TOOL,54,7,3,1,ItemTags.STONE_TOOL_MATERIALS);
+        for(String material:new String[]{"knapped_stone","obsidian","copper","bronze","forged_iron"}) {
+            ToolMaterial tier=switch(material){case "obsidian"->obsidian;case "copper"->ToolMaterial.COPPER;case "bronze"->bronze;case "forged_iron"->ToolMaterial.IRON;default->ToolMaterial.STONE;};
+            MATERIALS.put(material+"_pickaxe",ITEMS.registerSimpleItem(material+"_pickaxe",p->p.pickaxe(tier,1,-2.8f)));
+            MATERIALS.put(material+"_axe",ITEMS.registerSimpleItem(material+"_axe",p->p.axe(tier,5,-3)));
+            MATERIALS.put(material+"_hoe",ITEMS.registerSimpleItem(material+"_hoe",p->p.hoe(tier,-1,-2)));
+        }
+        MATERIALS.put("spear",ITEMS.registerSimpleItem("spear",p->p.sword(ToolMaterial.STONE,3,-2.4f)));
+        for(var block:List.of(KILN,FORGE,TROUGH,TIN_ORE,FRUIT_TREE)) MATERIALS.put(block.getId().getPath(),ITEMS.registerSimpleBlockItem(block));
+        TESTS.register("world_prohibited_additions", () -> WorldGameTests::prohibitedAdditions);
+        TESTS.register("world_container_prohibition",()->WorldGameTests::containerProhibition);
+        TESTS.register("content_preservation",()->ContentGameTests::preservation);
+        TESTS.register("content_completed_firing",()->ContentGameTests::completedFiring);
+        TESTS.register("content_seasonal_bonemeal",()->ContentGameTests::seasonalBonemeal);
+        TESTS.register("content_juvenile_feeding",()->ContentGameTests::juvenileFeeding);
+        TESTS.register("content_controller_vessels",()->ContentGameTests::controllerVessels);
+        TESTS.register("content_npc_boiling",()->ContentGameTests::npcBoiling);
+        TESTS.register("content_slow_harvest",()->ContentGameTests::slowHarvest);
+        TESTS.register("content_repeat_fruit",()->ContentGameTests::repeatFruit);
+        TESTS.register("content_daily_eggs",()->ContentGameTests::dailyEggs);
+        TESTS.register("content_gestation_delivery",()->ContentGameTests::gestationDelivery);
+        TESTS.register("content_product_recovery",()->ContentGameTests::productRecovery);
+        TESTS.register("content_supplied_maturation",()->ContentGameTests::suppliedMaturation);
+        TESTS.register("content_station_fuel_catchup",()->ContentGameTests::stationFuelCatchup);
+        TESTS.register("content_stored_weather_pause",()->ContentGameTests::storedWeatherPause);
+        TESTS.register("content_npc_food_freshness",()->ContentGameTests::npcFoodFreshness);
+        TESTS.register("content_station_wear_carry",()->ContentGameTests::stationWearCarry);
+        TESTS.register("content_dry_wool_recovery",()->ContentGameTests::dryWoolRecovery);
+        TESTS.register("content_wild_berry_recovery",()->ContentGameTests::wildBerryRecovery);
+        TESTS.register("content_mature_rice_frost",()->ContentGameTests::matureRiceFrost);
+        TESTS.register("content_crop_definitions",()->ContentGameTests::cropDefinitions);
+        TESTS.register("content_husbandry_definitions",()->ContentGameTests::husbandryDefinitions);
+        TESTS.register("content_decay_definitions",()->ContentGameTests::decayDefinitions);
+        TESTS.register("content_production_definitions",()->ContentGameTests::productionDefinitions);
+        TESTS.register("content_finite_trough_catchup",()->ContentGameTests::finiteTroughCatchup);
+        TESTS.register("content_forge_single_actor",()->ContentGameTests::forgeSingleActor);
+        TESTS.register("content_forge_world_job",()->ContentGameTests::forgeWorldJob);
+        TESTS.register("content_forge_legacy_budget",()->ContentGameTests::forgeLegacyBudget);
+    }
+    public static void register(IEventBus bus) {
+        ITEMS.register(bus); BLOCKS.register(bus); BLOCK_ENTITIES.register(bus);
+        TESTS.register(bus);
+        bus.addListener(SurvivalContent::tests);
+        bus.addListener(SurvivalContent::creative);
+    }
+    public static void init() { NaturalWorldRules.init(); ItemAging.init(); Pottery.init(); SeasonalCrops.init(); Husbandry.init(); Production.init(); }
+    public static Item item(String id) { return MATERIALS.get(id).get(); }
+    private static void creative(net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent event){event.removeIf(NaturalWorldRules::prohibited,CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);if(event.getTabKey()==CreativeModeTabs.INGREDIENTS)MATERIALS.values().forEach(event::accept);}
+    private static void tests(RegisterGameTestsEvent event) {
+        Holder<TestEnvironmentDefinition<?>> env = event.registerEnvironment(Identifier.fromNamespaceAndPath(MODID,"living_world"), new TestEnvironmentDefinition.AllOf(List.of()));
+        var data = new TestData<Holder<TestEnvironmentDefinition<?>>>(env, Identifier.fromNamespaceAndPath("minecraft","empty"), 100, 0, true, Rotation.NONE);
+        TESTS.getEntries().forEach(test -> event.registerTest(test.getId(), new FunctionGameTestInstance(test.getKey(), data)));
+    }
+}

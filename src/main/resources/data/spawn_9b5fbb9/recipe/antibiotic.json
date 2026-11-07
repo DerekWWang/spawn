@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "spawn_9b5fbb9:medicinal_leaves",
+    "spawn_9b5fbb9:medicinal_leaves",
+    "spawn_9b5fbb9:medicinal_leaves",
+    "spawn_9b5fbb9:clean_cloth",
+    "minecraft:charcoal"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:antibiotic",
+    "count": 1
+  }
+}

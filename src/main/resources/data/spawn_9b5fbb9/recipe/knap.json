@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "spawn_9b5fbb9:loose_stone",
+    "spawn_9b5fbb9:loose_stone"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:stone_edge",
+    "count": 2
+  }
+}

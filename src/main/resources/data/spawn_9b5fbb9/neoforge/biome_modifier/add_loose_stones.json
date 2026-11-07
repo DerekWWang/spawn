@@ -1,0 +1,8 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": [
+    "spawn_9b5fbb9:loose_stones"
+  ],
+  "step": "vegetal_decoration"
+}

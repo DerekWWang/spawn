@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:charcoal",
+    "spawn_9b5fbb9:medicinal_leaves",
+    "spawn_9b5fbb9:clean_cloth"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:antitoxin",
+    "count": 1
+  }
+}

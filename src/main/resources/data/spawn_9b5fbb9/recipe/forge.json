@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:bricks",
+    "minecraft:bricks",
+    "spawn_9b5fbb9:loose_stone",
+    "spawn_9b5fbb9:loose_stone"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:forge",
+    "count": 1
+  }
+}

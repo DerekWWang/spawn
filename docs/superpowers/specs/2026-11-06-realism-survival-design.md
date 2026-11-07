@@ -1,6 +1,19 @@
 # Realism survival overhaul
 
-Status: proposed design for user review; gameplay implementation has not started.
+Status: approved for execution, including the controller clarification below.
+
+## Approved controller clarification
+
+Humanoids include human players, bots/fake players, and entities operated by
+scripts. Controller type never exempts an entity from needs, injuries, work
+costs, or biological time. Provide a public server-side inspection/action API
+and permission-checked commands for controllers. Actions validate proximity,
+supplies, physiological capacity, and processing time against the same rules
+used by human interaction. Expose limiting capacities and upcoming seasonal
+constraints so controllers can reason, plan, divide labor, and collaborate.
+Do not claim to provide human-level artificial intelligence: the simulation
+supports ingenuity through its available actions and consequences; controller
+intelligence is supplied by the player, bot, or script.
 
 ## Intent and repository baseline
 

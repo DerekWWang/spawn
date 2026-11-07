@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "spawn_9b5fbb9:yarn",
+    "spawn_9b5fbb9:yarn",
+    "spawn_9b5fbb9:yarn"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:wool_cloth",
+    "count": 1
+  }
+}

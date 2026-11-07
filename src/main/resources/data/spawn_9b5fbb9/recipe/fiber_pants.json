@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "CSC",
+    "C C"
+  ],
+  "key": {
+    "C": "spawn_9b5fbb9:fiber_cloth",
+    "S": "spawn_9b5fbb9:cordage"
+  },
+  "result": {
+    "id": "spawn_9b5fbb9:fiber_pants"
+  }
+}
