@@ -1,0 +1,13 @@
+{
+  "itemGroup.spawn_9b5fbb9": "Spawn Tab",
+  "block.spawn_9b5fbb9.example_block": "Example Block",
+  "item.spawn_9b5fbb9.example_item": "Example Item",
+
+  "spawn_9b5fbb9.configuration.title": "spawn_9b5fbb9 Configs",
+  "spawn_9b5fbb9.configuration.section.spawn_9b5fbb9.common.toml": "spawn_9b5fbb9 Configs",
+  "spawn_9b5fbb9.configuration.section.spawn_9b5fbb9.common.toml.title": "spawn_9b5fbb9 Configs",
+  "spawn_9b5fbb9.configuration.items": "Item List",
+  "spawn_9b5fbb9.configuration.logDirtBlock": "Log Dirt Block",
+  "spawn_9b5fbb9.configuration.magicNumberIntroduction": "Magic Number Text",
+  "spawn_9b5fbb9.configuration.magicNumber": "Magic Number"
+}

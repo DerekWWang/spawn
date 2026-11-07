@@ -1,0 +1,12 @@
+{
+  "mod_id": "spawn_9b5fbb9",
+  "project_id": "da264f1f-1718-4a1f-8bac-5ea2dbb3ef8b",
+  "repository_id": "1448873646",
+  "schema_version": 2,
+  "template": {
+    "id": "neoforge",
+    "revision": null,
+    "sha256": null,
+    "version": "26.3"
+  }
+}
