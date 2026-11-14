@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 
+import dev.qube.spawn_9b5fbb9.knowledge.Requirements;
 import dev.qube.spawn_9b5fbb9.network.Net;
 import dev.qube.spawn_9b5fbb9.network.Payloads;
 import dev.qube.spawn_9b5fbb9.registry.ModContent;
@@ -69,7 +70,7 @@ public class StationMenu extends AbstractContainerMenu {
         addSlot(new Slot(container, StationBlockEntity.FUEL_SLOT, FUEL_X, FUEL_Y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return StationBlockEntity.fuelTier(stack) > 0;
+                return StationBlockEntity.acceptsFuel(def(), stack);
             }
         });
         for (int i = 0; i < StationBlockEntity.OUTPUTS; i++) {
@@ -156,11 +157,10 @@ public class StationMenu extends AbstractContainerMenu {
             }
         } else {
             boolean moved = false;
-            TechTree.StationDef def = def();
-            if (def != null && def.fuelTier() > 0 && StationBlockEntity.fuelTier(stack) > 0) {
+            if (!Requirements.isWaterContainer(stack) && StationBlockEntity.acceptsFuel(def(), stack)) {
                 moved = moveItemStackTo(stack, StationBlockEntity.FUEL_SLOT, StationBlockEntity.FUEL_SLOT + 1, false);
             }
-            if (!moved && stack.getMaxStackSize() == 1) {
+            if (!moved && isToolForSelected(stack)) {
                 moved = moveItemStackTo(stack, StationBlockEntity.TOOL_START, StationBlockEntity.TOOL_START + StationBlockEntity.TOOLS, false);
             }
             if (!moved && !moveItemStackTo(stack, StationBlockEntity.INPUT_START, StationBlockEntity.INPUT_START + StationBlockEntity.INPUTS, false)) {
@@ -177,6 +177,20 @@ public class StationMenu extends AbstractContainerMenu {
         }
         slot.onTake(player, stack);
         return copy;
+    }
+
+    /** True if the selected function uses this item as a means of production (a tool, not an input). */
+    private boolean isToolForSelected(ItemStack stack) {
+        TechTree.FunctionDef f = TechTree.get().function(data.get(StationBlockEntity.DATA_SELECTED));
+        if (f == null) {
+            return false;
+        }
+        for (TechTree.Ref m : f.means()) {
+            if ((m.kind() == TechTree.RefKind.ITEM || m.kind() == TechTree.RefKind.TAG) && Requirements.matcher(m).test(stack)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

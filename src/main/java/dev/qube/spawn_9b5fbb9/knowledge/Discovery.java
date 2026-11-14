@@ -30,8 +30,10 @@ public final class Discovery {
     private static final Map<UUID, Pending> PENDING = new HashMap<>();
     /** society|function -> game time when another attempt is allowed */
     private static final Map<String, Long> COOLDOWNS = new HashMap<>();
+    /** society|function -> wrong answers so far; picks which set of wrong options is shown */
+    private static final Map<String, Integer> ATTEMPTS = new HashMap<>();
 
-    private record Pending(String function, int nonce, int correct, long expires) { }
+    private record Pending(String function, int nonce, int correct, long expires, List<String> options) { }
 
     private Discovery() {
     }
@@ -39,6 +41,7 @@ public final class Discovery {
     public static void clear() {
         PENDING.clear();
         COOLDOWNS.clear();
+        ATTEMPTS.clear();
     }
 
     public static void forget(UUID player) {
@@ -46,6 +49,11 @@ public final class Discovery {
     }
 
     /** For game tests: {nonce, correct option} of the player's open question, or null. */
+    public static List<String> pendingOptions(UUID player) {
+        Pending p = PENDING.get(player);
+        return p == null ? List.of() : p.options();
+    }
+
     public static int[] pendingQuestion(UUID player) {
         Pending p = PENDING.get(player);
         return p == null ? null : new int[]{p.nonce(), p.correct()};
@@ -78,7 +86,7 @@ public final class Discovery {
         if (!check.ok()) {
             player.sendSystemMessage(Component.literal("To claim " + f.name() + " you still need: " + String.join("; ",
                     check.missing().subList(0, Math.min(4, check.missing().size())))).withStyle(ChatFormatting.YELLOW));
-            Journal.send(player);
+            Journal.request(player);
             return;
         }
         if (!Config.bool(Config.REQUIRE_EXPLANATION) || f.mechanism().isBlank()) {
@@ -87,13 +95,18 @@ public final class Discovery {
         }
         boolean cheaper = f.theoretical() && Society.knows(player, "T-27"); // Recorded scholarship
         int optionCount = cheaper ? 3 : 4;
-        Random random = new Random(player.getRandom().nextLong());
+        // The same society sees the same options until it answers wrongly: asking again (or "Not yet")
+        // must not reshuffle the wrong answers, or the right one would be the only option that never changes.
+        String key = Society.keyOf(player) + "|" + f.id();
+        long seed = ((long) key.hashCode() << 32) ^ ATTEMPTS.getOrDefault(key, 0) * 0x9E3779B97F4A7C15L ^ optionCount;
+        Random random = new Random(seed);
         List<String> options = new ArrayList<>(distractors(f, optionCount - 1, random));
         options.add(f.mechanism());
         Collections.shuffle(options, random);
         int correct = options.indexOf(f.mechanism());
         int nonce = random.nextInt(Integer.MAX_VALUE);
-        PENDING.put(player.getUUID(), new Pending(f.id(), nonce, correct, player.level().getGameTime() + QUIZ_LIFETIME_TICKS));
+        PENDING.put(player.getUUID(), new Pending(f.id(), nonce, correct, player.level().getGameTime() + QUIZ_LIFETIME_TICKS,
+                List.copyOf(options)));
         Net.send(player, new Payloads.Quiz(f.id(), nonce, List.copyOf(options)));
     }
 
@@ -105,22 +118,30 @@ public final class Discovery {
             player.sendOverlayMessage(Component.literal("That question has expired; try again."));
             return;
         }
+        int cd = cooldownSeconds(player, f.id());
+        if (cd > 0) {
+            // e.g. a team-mate answered wrongly while this question was open
+            player.sendOverlayMessage(Component.literal("Your society must think it over for " + cd + " more seconds."));
+            return;
+        }
         if (choice != p.correct()) {
             int seconds = Config.integer(Config.WRONG_ANSWER_COOLDOWN);
             if (Society.knows(player, "T-36")) {
                 seconds /= 2; // Scientific method speeds every theoretical function
             }
-            COOLDOWNS.put(Society.keyOf(player) + "|" + f.id(), player.level().getGameTime() + seconds * 20L);
+            String key = Society.keyOf(player) + "|" + f.id();
+            COOLDOWNS.put(key, player.level().getGameTime() + seconds * 20L);
+            ATTEMPTS.merge(key, 1, Integer::sum);
             player.sendSystemMessage(Component.literal("That mechanism does not explain " + f.name()
                     + ". A wrong mechanism fails even when the recipe is right.").withStyle(ChatFormatting.RED));
-            Journal.send(player);
+            Journal.request(player);
             return;
         }
         Requirements.Check check = Requirements.player(player, f);
         if (!check.ok()) {
             player.sendSystemMessage(Component.literal("Right explanation, but you no longer have everything: "
                     + String.join("; ", check.missing())).withStyle(ChatFormatting.YELLOW));
-            Journal.send(player);
+            Journal.request(player);
             return;
         }
         grant(player, f);

@@ -106,6 +106,9 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
     private int producerTimer;
     private int demandTicks;
     private long lastBurnTick = -1;
+    private boolean rigPowered;
+    private boolean dry;
+    private long nextDryCheck;
 
     private StructureValidator.Formation formation;
     private int validateIn;
@@ -117,10 +120,11 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
         @Override
         public int get(int index) {
             return switch (index) {
-                case DATA_PROGRESS -> progress;
-                case DATA_MAX_PROGRESS -> maxProgress;
-                case DATA_BURN -> burnTime;
-                case DATA_BURN_TOTAL -> burnTotal;
+                // synced as shorts, so send fractions out of 1000 rather than raw ticks
+                case DATA_PROGRESS -> maxProgress <= 0 ? 0 : (int) Math.min(1000L, progress * 1000L / maxProgress);
+                case DATA_MAX_PROGRESS -> maxProgress <= 0 ? 0 : 1000;
+                case DATA_BURN -> burnTotal <= 0 ? 0 : (int) Math.min(1000L, burnTime * 1000L / burnTotal);
+                case DATA_BURN_TOTAL -> burnTotal <= 0 ? 0 : 1000;
                 case DATA_FORMED -> isFormed() ? 1 : 0;
                 case DATA_BATCH -> isFormed() ? formation.batch() : 0;
                 case DATA_SELECTED -> selectedDef() == null ? -1 : selectedDef().index();
@@ -337,6 +341,9 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
         if (stack.is(FUEL_COKE)) {
             return 3200;
         }
+        if (stack.is(net.minecraft.world.item.Items.COAL_BLOCK)) {
+            return 14400; // nine coal
+        }
         if (stack.is(FUEL_CHARCOAL) || stack.is(FUEL_COAL)) {
             return 1600;
         }
@@ -344,6 +351,18 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
             return 300;
         }
         return 100;
+    }
+
+    /** Whether this provider could deliver power right now, without lighting any fuel. */
+    public boolean canProvidePower() {
+        TechTree.StationDef def = def();
+        if (def == null || def.provider() == null || !isFormed()) {
+            return false;
+        }
+        if (def.fuelTier() <= 0) {
+            return true;
+        }
+        return (burnTime > 0 && burnTier >= def.fuelTier()) || fuelTier(items.get(FUEL_SLOT)) >= def.fuelTier();
     }
 
     /**
@@ -371,17 +390,11 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
             note = "Whoever built this must know " + nameOf(p.function()) + " for it to yield anything";
             return;
         }
-        if ("mechanical".equals(def.power()) && level.getGameTime() % 20 == 0 && !Requirements.mechanicalPower(level, bounds())) {
-            note = "Idle: needs a running engine, water wheel or windmill within " + Config.integer(Config.PRESENCE_RADIUS)
-                    + " blocks, or the grid";
-            producerTimer = 0;
-            return;
-        }
-        if (++producerTimer < p.interval()) {
-            return;
-        }
-        producerTimer = 0;
         if (p.item() != null) {
+            if (++producerTimer < p.interval()) {
+                return;
+            }
+            producerTimer = 0;
             Item item = ModContent.item(p.item());
             if (item == null) {
                 return;
@@ -392,20 +405,47 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
                     have += items.get(i).getCount();
                 }
             }
-            if (have >= p.max()) {
+            if (have >= p.max() || !addOutput(new ItemStack(item))) {
                 note = "Full: collect from the output slots";
-                return;
-            }
-            if (addOutput(new ItemStack(item))) {
+            } else {
                 note = "";
             }
-        } else {
-            drill(level, p);
+            return;
         }
+        // drilling rig: draws power only while it has somewhere to put oil and a reservoir to pump
+        if (level.getGameTime() % 20 == Math.floorMod(worldPosition.hashCode(), 20)) {
+            ItemStack probe = ModContent.stack("crude_oil");
+            probe.setCount(Math.max(1, p.perBlock()));
+            boolean full = !outputsFit(List.of(probe));
+            if (full) {
+                note = "Full: collect from the output slots";
+                rigPowered = false;
+            } else if (dry && (level.getGameTime() < nextDryCheck || findReservoir(level, p) == null)) {
+                if (level.getGameTime() >= nextDryCheck) {
+                    nextDryCheck = level.getGameTime() + 1200; // look again now and then, without drawing power
+                }
+                rigPowered = false;
+            } else {
+                dry = false;
+                rigPowered = !"mechanical".equals(def.power()) || Requirements.mechanicalPower(level, bounds(), true);
+                if (!rigPowered) {
+                    note = "Idle: needs a running engine, water wheel or windmill within " + Config.integer(Config.PRESENCE_RADIUS)
+                            + " blocks, or the grid";
+                }
+            }
+        }
+        if (!rigPowered) {
+            return;
+        }
+        if (++producerTimer < p.interval()) {
+            return;
+        }
+        producerTimer = 0;
+        drill(level, p);
     }
 
-    /** Drilling rig: turns one block of oil- or gas-bearing rock below into stone and yields its contents. */
-    private void drill(ServerLevel level, TechTree.Producer p) {
+    /** The nearest oil- or gas-bearing block below the well, or null. Only scans loaded chunks. */
+    private @Nullable BlockPos findReservoir(ServerLevel level, TechTree.Producer p) {
         BlockPos.MutableBlockPos m = new BlockPos.MutableBlockPos();
         Block oil = blockOf("oil_reservoir");
         Block gas = blockOf("gas_reservoir");
@@ -413,28 +453,38 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
             for (int dx = -p.radius(); dx <= p.radius(); dx++) {
                 for (int dz = -p.radius(); dz <= p.radius(); dz++) {
                     m.set(worldPosition.getX() + dx, y, worldPosition.getZ() + dz);
-                    if (!level.isLoaded(m)) {
-                        continue;
+                    if (level.isLoaded(m)) {
+                        BlockState s = level.getBlockState(m);
+                        if (s.is(oil) || s.is(gas)) {
+                            return m.immutable();
+                        }
                     }
-                    BlockState s = level.getBlockState(m);
-                    String product = s.is(oil) ? "crude_oil" : s.is(gas) ? "natural_gas" : null;
-                    if (product == null) {
-                        continue;
-                    }
-                    ItemStack out = ModContent.stack(product);
-                    out.setCount(p.perBlock());
-                    if (!outputsFit(List.of(out))) {
-                        note = "Full: collect from the output slots";
-                        return;
-                    }
-                    level.setBlock(m, y < 0 ? Blocks.DEEPSLATE.defaultBlockState() : Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
-                    addOutput(out);
-                    note = "Pumping from y " + y;
-                    return;
                 }
             }
         }
-        note = "Dry: no oil- or gas-bearing rock within " + p.radius() + " blocks of the well below";
+        return null;
+    }
+
+    /** Drilling rig: turns one block of oil- or gas-bearing rock below into stone and yields its contents. */
+    private void drill(ServerLevel level, TechTree.Producer p) {
+        BlockPos at = findReservoir(level, p);
+        if (at == null) {
+            dry = true;
+            nextDryCheck = level.getGameTime() + 1200;
+            note = "Dry: no oil- or gas-bearing rock within " + p.radius() + " blocks of the well below";
+            return;
+        }
+        String product = level.getBlockState(at).is(blockOf("oil_reservoir")) ? "crude_oil" : "natural_gas";
+        ItemStack out = ModContent.stack(product);
+        out.setCount(p.perBlock());
+        if (!outputsFit(List.of(out))) {
+            note = "Full: collect from the output slots";
+            return;
+        }
+        level.setBlock(at, at.getY() < 0 ? Blocks.DEEPSLATE.defaultBlockState() : Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
+        addOutput(out);
+        dry = false;
+        note = "Pumping from y " + at.getY();
     }
 
     private static Block blockOf(String id) {
@@ -472,7 +522,8 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
             setChanged();
         }
         if (checkTick) {
-            Requirements.Check c = Requirements.station(this, f, batch, Requirements.Phase.RUNNING);
+            // engines are only drawn on (and burn fuel) while the run is still advancing
+            Requirements.Check c = Requirements.station(this, f, batch, Requirements.Phase.RUNNING, progress < maxProgress);
             lastMissing = c.missing();
             paused = !c.ok();
         }
@@ -782,10 +833,16 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
         setChanged();
     }
 
+    /** Fuel this station can actually burn (a forge will not take logs). */
+    public static boolean acceptsFuel(TechTree.@Nullable StationDef def, ItemStack stack) {
+        int tier = fuelTier(stack);
+        return def != null && def.fuelTier() > 0 && tier >= def.fuelTier();
+    }
+
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
         if (slot == FUEL_SLOT) {
-            return fuelTier(stack) > 0;
+            return acceptsFuel(def(), stack);
         }
         return slot < OUTPUT_START;
     }
@@ -802,7 +859,7 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
     @Override
     public boolean canPlaceItemThroughFace(int slot, ItemStack stack, @Nullable Direction side) {
         if (slot == FUEL_SLOT) {
-            return fuelTier(stack) > 0;
+            return acceptsFuel(def(), stack);
         }
         return slot >= INPUT_START && slot < INPUT_START + INPUTS;
     }

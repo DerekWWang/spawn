@@ -40,7 +40,8 @@ import net.minecraft.world.phys.AABB;
  */
 public final class Requirements {
     public static final List<String> MECHANICAL_PROVIDERS = List.of("water_wheel", "windmill", "steam_engine", "atmospheric_engine");
-    private static final Map<String, TagKey<Item>> RESOURCE_TAGS = new HashMap<>();
+    /** Filled from both the client (tooltips) and the integrated server thread. */
+    private static final Map<String, TagKey<Item>> RESOURCE_TAGS = new java.util.concurrent.ConcurrentHashMap<>();
 
     private Requirements() {
     }
@@ -113,12 +114,17 @@ public final class Requirements {
         return !StationIndex.formedNear(level, "electric_grid", area, Config.integer(Config.GRID_RADIUS)).isEmpty();
     }
 
-    /** A running water wheel, windmill or engine within reach, or grid coverage. Keeps the engine burning. */
-    public static boolean mechanicalPower(Level level, AABB area) {
+    /**
+     * A running water wheel, windmill or engine within reach, or grid coverage.
+     *
+     * @param draw true only while work is actually being done: engines then burn fuel. A check made
+     *             merely to see whether work could start must not burn anything.
+     */
+    public static boolean mechanicalPower(Level level, AABB area, boolean draw) {
         double r = Config.integer(Config.PRESENCE_RADIUS);
         for (String id : MECHANICAL_PROVIDERS) {
             for (StationBlockEntity s : StationIndex.formedNear(level, id, area, r)) {
-                if (s.drawPower(40)) {
+                if (draw ? s.drawPower(40) : s.canProvidePower()) {
                     return true;
                 }
             }
@@ -321,7 +327,13 @@ public final class Requirements {
 
     // ------------------------------------------------------------------ stations
 
+    /** Checks without drawing power (see {@link #station(StationBlockEntity, FunctionDef, int, Phase, boolean)}). */
     public static Check station(StationBlockEntity be, FunctionDef f, int wanted, Phase phase) {
+        return station(be, f, wanted, phase, false);
+    }
+
+    /** @param drawPower true only when the run is advancing this tick; engines then burn fuel for it */
+    public static Check station(StationBlockEntity be, FunctionDef f, int wanted, Phase phase, boolean drawPower) {
         List<String> missing = new ArrayList<>();
         Level level = be.getLevel();
         TechTree.StationDef def = be.def();
@@ -340,7 +352,7 @@ public final class Requirements {
         int radius = Config.integer(Config.PRESENCE_RADIUS);
         if ("grid".equals(def.power()) && !gridCovered(level, host)) {
             missing.add("Needs Electric grid coverage");
-        } else if ("mechanical".equals(def.power()) && !mechanicalPower(level, host)) {
+        } else if ("mechanical".equals(def.power()) && !mechanicalPower(level, host, drawPower)) {
             missing.add("Needs power: a running water wheel, windmill or steam engine within " + radius + " blocks, or the grid");
         }
         boolean needsCleanroom = f.means().stream().anyMatch(m -> m.kind() == TechTree.RefKind.STATION && "cleanroom".equals(m.id()));
@@ -380,7 +392,7 @@ public final class Requirements {
                                 && (cleanroom.interior() == null || !contains(cleanroom.interior(), s.bounds()))) {
                             continue;
                         }
-                        if (other != null && other.provider() != null && !s.drawPower(40)) {
+                        if (other != null && other.provider() != null && !(drawPower ? s.drawPower(40) : s.canProvidePower())) {
                             continue;
                         }
                         ok = true;

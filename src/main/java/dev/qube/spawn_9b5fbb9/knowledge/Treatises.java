@@ -55,7 +55,7 @@ public final class Treatises {
             player.drop(book, false, net.minecraft.util.Prediction.SERVER_ONLY);
         }
         player.sendOverlayMessage(Component.literal("You wrote a treatise on " + f.name() + "."));
-        Journal.send(player);
+        Journal.request(player);
     }
 
     private static void take(List<ItemStack> inv, java.util.function.Predicate<ItemStack> match) {

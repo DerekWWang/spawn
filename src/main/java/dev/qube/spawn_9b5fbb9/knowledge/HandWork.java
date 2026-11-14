@@ -69,7 +69,7 @@ public final class HandWork {
         if (!check.ok()) {
             player.sendSystemMessage(Component.literal("Cannot do " + f.name() + ": " + String.join("; ",
                     check.missing().subList(0, Math.min(4, check.missing().size())))).withStyle(ChatFormatting.YELLOW));
-            Journal.send(player);
+            Journal.request(player);
             return;
         }
         int ticks = Math.max(1, (int) Math.round(f.ticks() * Config.dbl(Config.TIME_MULTIPLIER)));
@@ -106,7 +106,7 @@ public final class HandWork {
             player.sendSystemMessage(Component.literal(f.name() + " stopped: " + String.join("; ", check.missing()))
                     .withStyle(ChatFormatting.YELLOW));
             sendProgress(player);
-            Journal.send(player);
+            Journal.request(player);
             return;
         }
         Requirements.consumeFromPlayer(player, f);
@@ -118,7 +118,7 @@ public final class HandWork {
         } else {
             JOBS.remove(player.getUUID());
             player.sendOverlayMessage(Component.literal("Finished: " + f.name()));
-            Journal.send(player);
+            Journal.request(player);
         }
         sendProgress(player);
     }

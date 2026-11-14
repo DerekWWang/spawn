@@ -66,6 +66,9 @@ public final class TechTreeGameTests {
         add(reg, "grid_substation_covers_radius", TechTreeGameTests::gridCovers);
         add(reg, "machine_tool_needs_running_engine", TechTreeGameTests::machineToolNeedsEngine);
         add(reg, "big_kiln_runs_three_batches", TechTreeGameTests::bigKiln);
+        add(reg, "quiz_options_do_not_reshuffle", TechTreeGameTests::quizStable);
+        add(reg, "idle_machine_burns_no_engine_fuel", TechTreeGameTests::idleMachineBurnsNothing);
+        add(reg, "forge_refuses_wood_fuel", TechTreeGameTests::forgeRefusesWood);
     }
 
     private static void add(DeferredRegister<Consumer<GameTestHelper>> reg, String name, Consumer<GameTestHelper> fn) {
@@ -576,8 +579,11 @@ public final class TechTreeGameTests {
         engine.setItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.COAL, 1));
         c = Requirements.station(mill, plate, 1, Requirements.Phase.RUNNING);
         h.assertFalse(c.missing().stream().anyMatch(m -> m.contains("power") || m.contains("Steam engine")),
-                "a fired engine within reach powers the mill: " + c.missing());
-        h.assertTrue(engine.getItem(StationBlockEntity.FUEL_SLOT).isEmpty(), "the engine lit its coal when power was drawn");
+                "an engine with coal within reach can power the mill: " + c.missing());
+        h.assertValueEqual(engine.getItem(StationBlockEntity.FUEL_SLOT).getCount(), 1, "checking alone burns nothing");
+        c = Requirements.station(mill, plate, 1, Requirements.Phase.RUNNING, true);
+        h.assertTrue(c.ok() || !c.missing().stream().anyMatch(m -> m.contains("power")), "drawing works: " + c.missing());
+        h.assertTrue(engine.getItem(StationBlockEntity.FUEL_SLOT).isEmpty(), "the engine lights its coal once power is drawn");
         h.succeed();
     }
 
@@ -601,6 +607,56 @@ public final class TechTreeGameTests {
                     + " " + be.statusLines());
             h.assertValueEqual(be.getItem(StationBlockEntity.INPUT_START).getCount(), 2, "limestone left");
         });
+    }
+
+    private static void quizStable(GameTestHelper h) {
+        floor(h, 6);
+        ServerPlayer p = player(h);
+        p.getInventory().add(ModContent.stack("plant_fiber").copyWithCount(3));
+        Discovery.start(p, "P-001");
+        List<String> first = Discovery.pendingOptions(p.getUUID());
+        Discovery.start(p, "P-001");
+        List<String> second = Discovery.pendingOptions(p.getUUID());
+        h.assertTrue(!first.isEmpty() && first.equals(second), "asking again shows the same options in the same order");
+        int[] q = Discovery.pendingQuestion(p.getUUID());
+        Discovery.answer(p, "P-001", q[0], (q[1] + 1) % first.size());
+        Discovery.start(p, "P-001");
+        h.assertTrue(Discovery.pendingQuestion(p.getUUID()) == null, "cooldown after a wrong answer");
+        h.assertFalse(Society.knows(p, "P-001"), "not learned");
+        h.succeed();
+    }
+
+    private static void idleMachineBurnsNothing(GameTestHelper h) {
+        floor(h, 30);
+        h.setBlock(4, 1, 2, controller("rolling_mill"));
+        box(h, 4, 1, 2, 3, 3, 7, Blocks.IRON_BLOCK, false, false);
+        h.setBlock(12, 1, 2, controller("steam_engine"));
+        box(h, 12, 1, 2, 3, 4, 5, Blocks.IRON_BLOCK, false, false);
+        h.setBlock(14, 1, 2, Blocks.WATER);
+        KnowledgeData.get(h.getLevel().getServer()).grant(SOCIETY, "P-138");
+        StationBlockEntity mill = station(h, 4, 1, 2);
+        mill.setOperator(SOCIETY);
+        selectDirect(mill, "P-138"); // selected, but no steel to roll
+        StationBlockEntity engine = station(h, 12, 1, 2);
+        engine.setItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.COAL, 3));
+        h.runAtTickTime(200, () -> {
+            h.assertTrue(mill.isFormed() && engine.isFormed(), "both formed");
+            h.assertValueEqual(engine.getItem(StationBlockEntity.FUEL_SLOT).getCount(), 3, "an idle mill does not make the engine burn coal");
+            h.assertFalse(mill.isRunning(), "nothing to roll");
+            h.succeed();
+        });
+    }
+
+    private static void forgeRefusesWood(GameTestHelper h) {
+        floor(h, 14);
+        h.setBlock(6, 1, 2, controller("forge"));
+        StationBlockEntity be = station(h, 6, 1, 2);
+        h.assertFalse(be.canPlaceItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.OAK_LOG)), "logs are not hot enough for metal");
+        h.assertTrue(be.canPlaceItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.CHARCOAL)), "charcoal is");
+        h.assertFalse(be.canPlaceItem(StationBlockEntity.OUTPUT_START, new ItemStack(Items.CHARCOAL)), "outputs take nothing");
+        h.setBlock(3, 1, 2, controller("hearth"));
+        h.assertTrue(station(h, 3, 1, 2).canPlaceItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.OAK_LOG)), "a hearth burns wood");
+        h.succeed();
     }
 
     /** Sets the selected function without a player (tests only). */
