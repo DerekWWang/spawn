@@ -14,9 +14,27 @@ public final class Config {
     }
 
     public static final ModConfigSpec.BooleanValue REQUIRE_EXPLANATION = BUILDER
-            .comment("Players must pick the correct mechanism (from the spreadsheet's answer key) to discover a function.",
-                    "If false, holding the inputs, means of production and theory is enough.")
-            .define("requireExplanation", true);
+            .comment("Quiz mode: players must pick the correct mechanism (the spreadsheet's answer key) to discover a function.",
+                    "Off by default: discovery is then a period of study by someone who holds the evidence, with no quiz.")
+            .define("quizMode", false);
+
+    public static final ModConfigSpec.BooleanValue THEORY_REQUIRED = BUILDER
+            .comment("Strict mode: a practical function cannot be discovered until its theories are known.",
+                    "Off by default: practice may run ahead of theory. A society can work a craft empirically, wasting",
+                    "batches until it gains experience in that craft or learns the theory behind it.")
+            .define("theoryRequiredForPractice", false);
+
+    public static final ModConfigSpec.DoubleValue EMPIRICAL_WASTE = BUILDER
+            .comment("Chance that a batch is wasted for each theory the operator's society lacks (before experience).")
+            .defineInRange("empiricalWastePerMissingTheory", 0.5, 0.0, 0.95);
+
+    public static final ModConfigSpec.DoubleValue EXPERIENCE_RETENTION = BUILDER
+            .comment("Each earlier run of the same function multiplies the waste chance by this factor.")
+            .defineInRange("wasteFactorPerRunOfExperience", 0.85, 0.5, 1.0);
+
+    public static final ModConfigSpec.IntValue STUDY_SECONDS = BUILDER
+            .comment("Base seconds of study to discover a function; deeper functions take longer.")
+            .defineInRange("studySeconds", 8, 0, 600);
 
     public static final ModConfigSpec.IntValue WRONG_ANSWER_COOLDOWN = BUILDER
             .comment("Seconds before a society may try to explain the same function again after a wrong answer.",

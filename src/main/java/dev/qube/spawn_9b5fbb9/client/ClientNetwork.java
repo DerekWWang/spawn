@@ -39,6 +39,10 @@ public final class ClientNetwork {
             ClientState.craft = p;
             ClientState.version++;
         });
+        event.register(Payloads.LedgerReport.TYPE, (p, ctx) -> {
+            ClientState.ledger = p.lines();
+            ClientState.version++;
+        });
         event.register(Payloads.StationStatus.TYPE, (p, ctx) -> {
             ClientState.stationContainer = p.containerId();
             ClientState.stationStatus = p.lines();

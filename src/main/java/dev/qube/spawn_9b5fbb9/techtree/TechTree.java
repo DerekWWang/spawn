@@ -339,6 +339,89 @@ public final class TechTree {
         return out;
     }
 
+    /** The function that builds the infrastructure a resource can only be worked from, or null. */
+    public static String accessFunction(String access) {
+        return switch (access == null ? "" : access) {
+            case "shaft_mine" -> "P-053";
+            case "deep_mine" -> "P-127";
+            case "drilling_rig" -> "P-141";
+            default -> null;
+        };
+    }
+
+    /** Resolves a function id, item id or name (case-insensitive) to the function to aim for. */
+    public FunctionDef resolveTarget(String target) {
+        if (target == null) {
+            return null;
+        }
+        FunctionDef f = functionsById.get(target.toUpperCase(java.util.Locale.ROOT));
+        if (f != null) {
+            return f;
+        }
+        String key = target.toLowerCase(java.util.Locale.ROOT).replace(' ', '_');
+        List<FunctionDef> makers = producersOf.get(key);
+        if (makers != null && !makers.isEmpty()) {
+            return makers.stream().min(java.util.Comparator.comparingInt(FunctionDef::depth)).orElse(null);
+        }
+        for (FunctionDef x : functions) {
+            if (x.name().equalsIgnoreCase(target) || x.name().toLowerCase(java.util.Locale.ROOT).replace(' ', '_').equals(key)) {
+                return x;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Every undiscovered function on the shallowest route to the target, in an order in which they can
+     * be pursued (each one after everything it depends on). Where an item has several makers, a known
+     * one is used if there is one, otherwise the shallowest.
+     */
+    public List<FunctionDef> route(String targetId, java.util.Set<String> known) {
+        java.util.LinkedHashSet<String> needed = new java.util.LinkedHashSet<>();
+        collect(functionsById.get(targetId), known, needed, new java.util.HashSet<>());
+        List<FunctionDef> out = new ArrayList<>();
+        for (String id : needed) {
+            out.add(functionsById.get(id));
+        }
+        return out;
+    }
+
+    private void collect(FunctionDef f, java.util.Set<String> known, java.util.Set<String> needed, java.util.Set<String> seen) {
+        if (f == null || known.contains(f.id()) || !seen.add(f.id())) {
+            return;
+        }
+        for (String t : f.theory()) {
+            collect(functionsById.get(t), known, needed, seen);
+        }
+        List<Ref> refs = new ArrayList<>(f.inputs());
+        refs.addAll(f.means());
+        for (Ref r : refs) {
+            switch (r.kind()) {
+                case ITEM, STATION -> {
+                    List<FunctionDef> makers = producersOf.get(r.id());
+                    if (makers == null || makers.isEmpty() || makers.stream().anyMatch(m -> known.contains(m.id()))) {
+                        continue;
+                    }
+                    collect(makers.stream().min(java.util.Comparator.comparingInt(FunctionDef::depth)).orElse(null), known, needed, seen);
+                }
+                case TAG -> {
+                    ResourceDef res = resourcesById.get(r.id());
+                    if (res != null) {
+                        if (res.recognisedBy() != null) {
+                            collect(functionsById.get(res.recognisedBy()), known, needed, seen);
+                        }
+                        String access = accessFunction(res.access());
+                        if (access != null) {
+                            collect(functionsById.get(access), known, needed, seen);
+                        }
+                    }
+                }
+                case ENV, PHEN -> { }
+            }
+        }
+        needed.add(f.id());
+    }
+
     /** Display name for a ref, falling back to the raw name from the spreadsheet. */
     public String displayName(Ref r) {
         return r.name();

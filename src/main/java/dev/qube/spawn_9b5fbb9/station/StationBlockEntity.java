@@ -6,10 +6,12 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 import dev.qube.spawn_9b5fbb9.Config;
+import dev.qube.spawn_9b5fbb9.knowledge.Empirical;
 import dev.qube.spawn_9b5fbb9.knowledge.Environment;
 import dev.qube.spawn_9b5fbb9.knowledge.KnowledgeData;
 import dev.qube.spawn_9b5fbb9.knowledge.Requirements;
 import dev.qube.spawn_9b5fbb9.knowledge.Society;
+import dev.qube.spawn_9b5fbb9.logistics.Ledger;
 import dev.qube.spawn_9b5fbb9.registry.ModContent;
 import dev.qube.spawn_9b5fbb9.spawn_9b5fbb9;
 import dev.qube.spawn_9b5fbb9.techtree.TechTree;
@@ -551,12 +553,20 @@ public class StationBlockEntity extends BlockEntity implements WorldlyContainer,
             return;
         }
         Requirements.consumeFromStation(this, f, c.batches());
+        KnowledgeData kd = KnowledgeData.get(level.getServer());
+        int wasted = Empirical.botched(level.getRandom(), Empirical.wasteChance(kd, operator, f), c.batches());
+        int good = c.batches() - wasted;
+        kd.addExperience(operator, f.id(), c.batches());
+        Ledger.recordConsumed(level.getServer(), operator, f, c.batches());
+        Ledger.recordProduced(level.getServer(), operator, f, good);
+        note = wasted > 0 ? "Lost " + wasted + " of " + c.batches() + (c.batches() == 1 ? " batch" : " batches")
+                + " to trial and error (the theory is not understood yet)" : "";
         for (TechTree.Ref out : f.outputs()) {
             Item item = ModContent.item(out.id());
-            if (item == null) {
+            if (item == null || good <= 0) {
                 continue;
             }
-            int total = out.count() * c.batches();
+            int total = out.count() * good;
             while (total > 0) {
                 ItemStack stack = new ItemStack(item, Math.min(total, item.getDefaultMaxStackSize()));
                 total -= stack.getCount();

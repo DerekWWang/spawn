@@ -160,32 +160,117 @@ public final class Requirements {
 
     // ------------------------------------------------------------------ player (journal and hand work)
 
+    /**
+     * What a player has to hand, looked up once and reused across many function checks (the journal
+     * checks hundreds of functions at a time; the world scans behind these answers are not cheap).
+     */
+    public static final class PlayerContext {
+        final ServerPlayer player;
+        final Level level;
+        final BlockPos pos;
+        final AABB here;
+        final List<ItemStack> inv;
+        final KnowledgeData knowledge;
+        final String society;
+        private final Map<String, Integer> counts = new HashMap<>();
+        private final Map<String, Boolean> phenomena = new HashMap<>();
+        private final Map<String, Integer> animals = new HashMap<>();
+        private final Map<String, Boolean> stations = new HashMap<>();
+        private Boolean nearWater;
+        private Boolean grid;
+        private Integer waterContainers;
+
+        public PlayerContext(ServerPlayer player) {
+            this.player = player;
+            this.level = player.level();
+            this.pos = player.blockPosition();
+            this.here = player.getBoundingBox();
+            this.inv = player.getInventory().getNonEquipmentItems();
+            this.knowledge = KnowledgeData.get(level.getServer());
+            this.society = Society.keyOf(player);
+        }
+
+        int count(Ref ref) {
+            return counts.computeIfAbsent(ref.kind() + ":" + ref.id(), k -> Requirements.count(inv, matcher(ref)));
+        }
+
+        boolean phenomenon(String id) {
+            return phenomena.computeIfAbsent(id, k -> Environment.phenomenon(k, level, pos, player));
+        }
+
+        int animals(String env) {
+            return animals.computeIfAbsent(env, k -> Environment.wildAnimals(level, pos, k, 16).size());
+        }
+
+        boolean stationNear(String id) {
+            return stations.computeIfAbsent(id, k -> !StationIndex.formedNear(level, k, here, Config.integer(Config.PRESENCE_RADIUS)).isEmpty());
+        }
+
+        boolean nearWater() {
+            if (nearWater == null) {
+                nearWater = Requirements.nearWater(level, pos);
+            }
+            return nearWater;
+        }
+
+        boolean grid() {
+            if (grid == null) {
+                grid = gridCovered(level, here);
+            }
+            return grid;
+        }
+
+        int waterContainers() {
+            if (waterContainers == null) {
+                waterContainers = Requirements.count(inv, Requirements::isWaterContainer);
+            }
+            return waterContainers;
+        }
+    }
+
     public static Check player(ServerPlayer player, FunctionDef f) {
+        return player(new PlayerContext(player), f);
+    }
+
+    public static Check player(PlayerContext ctx, FunctionDef f) {
         List<String> missing = new ArrayList<>();
-        KnowledgeData kd = KnowledgeData.get(player.level().getServer());
-        String society = Society.keyOf(player);
-        for (String t : f.theory()) {
-            if (!kd.knows(society, t)) {
-                missing.add("Theory: " + theoryName(t));
+        // One theory always rests on another. Practice may run ahead of theory unless strict mode is on.
+        if (f.theoretical() || Config.bool(Config.THEORY_REQUIRED)) {
+            for (String t : f.theory()) {
+                if (!ctx.knowledge.knows(ctx.society, t)) {
+                    missing.add("Theory: " + theoryName(t));
+                }
             }
         }
-        Level level = player.level();
-        BlockPos pos = player.blockPosition();
-        AABB here = player.getBoundingBox();
-        List<ItemStack> inv = player.getInventory().getNonEquipmentItems();
         int radius = Config.integer(Config.PRESENCE_RADIUS);
         if (!f.theoretical()) {
             for (Ref in : f.inputs()) {
                 switch (in.kind()) {
                     case ITEM, TAG, STATION -> {
-                        int have = count(inv, matcher(in));
+                        int have = ctx.count(in);
                         if (have < in.count()) {
                             missing.add(in.name() + " x" + in.count() + " (have " + have + ")");
                         }
                     }
-                    case ENV -> envInputForPlayer(player, in, inv, missing);
+                    case ENV -> {
+                        switch (in.id()) {
+                            case "air" -> { }
+                            case "water" -> {
+                                if (!ctx.nearWater() && ctx.waterContainers() < in.count()) {
+                                    missing.add("Water x" + in.count() + ": stand by a water source or carry water buckets/bottles (have "
+                                            + ctx.waterContainers() + ")");
+                                }
+                            }
+                            default -> {
+                                int have = ctx.animals(in.id());
+                                if (have < in.count()) {
+                                    missing.add(in.name() + " x" + in.count() + " within 16 blocks (found " + have + ")");
+                                }
+                            }
+                        }
+                    }
                     case PHEN -> {
-                        if (!Environment.phenomenon(in.id(), level, pos, player)) {
+                        if (!ctx.phenomenon(in.id())) {
                             missing.add(in.name() + ": " + Environment.phenomenonText(in.id()));
                         }
                     }
@@ -195,21 +280,21 @@ public final class Requirements {
         for (Ref m : f.means()) {
             switch (m.kind()) {
                 case ITEM, TAG -> {
-                    if (count(inv, matcher(m)) < 1) {
+                    if (ctx.count(m) < 1) {
                         missing.add((f.theoretical() ? "Evidence: " : "Tool: ") + m.name());
                     }
                 }
                 case STATION -> {
                     if ("electric_grid".equals(m.id())) {
-                        if (!gridCovered(level, here)) {
+                        if (!ctx.grid()) {
                             missing.add("Electric grid coverage (a substation within " + Config.integer(Config.GRID_RADIUS) + " blocks)");
                         }
-                    } else if (StationIndex.formedNear(level, m.id(), here, radius).isEmpty()) {
+                    } else if (!ctx.stationNear(m.id())) {
                         missing.add(m.name() + " (a complete one within " + radius + " blocks)");
                     }
                 }
                 case PHEN -> {
-                    if (!Environment.phenomenon(m.id(), level, pos, player)) {
+                    if (!ctx.phenomenon(m.id())) {
                         missing.add(m.name() + ": " + Environment.phenomenonText(m.id()));
                     }
                 }
@@ -217,12 +302,12 @@ public final class Requirements {
                     switch (m.id()) {
                         case "air" -> { }
                         case "water" -> {
-                            if (!nearWater(level, pos) && count(inv, Requirements::isWaterContainer) < 1) {
+                            if (!ctx.nearWater() && ctx.waterContainers() < 1) {
                                 missing.add("Water: " + Environment.envText("water"));
                             }
                         }
                         default -> {
-                            if (Environment.wildAnimals(level, pos, m.id(), 16).isEmpty()) {
+                            if (ctx.animals(m.id()) < 1) {
                                 missing.add(m.name() + ": " + Environment.envText(m.id()));
                             }
                         }
@@ -231,28 +316,6 @@ public final class Requirements {
             }
         }
         return new Check(missing.isEmpty(), List.copyOf(missing), missing.isEmpty() ? 1 : 0);
-    }
-
-    private static void envInputForPlayer(ServerPlayer player, Ref in, List<ItemStack> inv, List<String> missing) {
-        Level level = player.level();
-        switch (in.id()) {
-            case "air" -> { }
-            case "water" -> {
-                if (!nearWater(level, player.blockPosition())) {
-                    int have = count(inv, Requirements::isWaterContainer);
-                    if (have < in.count()) {
-                        missing.add("Water x" + in.count() + ": stand by a water source or carry water buckets/bottles (have "
-                                + have + ")");
-                    }
-                }
-            }
-            default -> {
-                int have = Environment.wildAnimals(level, player.blockPosition(), in.id(), 16).size();
-                if (have < in.count()) {
-                    missing.add(in.name() + " x" + in.count() + " within 16 blocks (found " + have + ")");
-                }
-            }
-        }
     }
 
     public static boolean nearWater(Level level, BlockPos pos) {

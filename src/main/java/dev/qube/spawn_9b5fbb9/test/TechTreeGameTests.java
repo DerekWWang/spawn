@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import com.mojang.serialization.JsonOps;
 
 import dev.qube.spawn_9b5fbb9.knowledge.Discovery;
+import dev.qube.spawn_9b5fbb9.knowledge.Empirical;
 import dev.qube.spawn_9b5fbb9.knowledge.HandWork;
 import dev.qube.spawn_9b5fbb9.knowledge.KnowledgeData;
 import dev.qube.spawn_9b5fbb9.knowledge.Requirements;
@@ -67,6 +68,9 @@ public final class TechTreeGameTests {
         add(reg, "machine_tool_needs_running_engine", TechTreeGameTests::machineToolNeedsEngine);
         add(reg, "big_kiln_runs_three_batches", TechTreeGameTests::bigKiln);
         add(reg, "quiz_options_do_not_reshuffle", TechTreeGameTests::quizStable);
+        add(reg, "study_discovers_without_quiz", TechTreeGameTests::studyDiscovers);
+        add(reg, "practice_runs_ahead_of_theory", TechTreeGameTests::practiceAheadOfTheory);
+        add(reg, "route_planner_orders_prerequisites", TechTreeGameTests::routePlanner);
         add(reg, "idle_machine_burns_no_engine_fuel", TechTreeGameTests::idleMachineBurnsNothing);
         add(reg, "forge_refuses_wood_fuel", TechTreeGameTests::forgeRefusesWood);
     }
@@ -96,6 +100,15 @@ public final class TechTreeGameTests {
                     h.setBlock(cx + x, cy + y, cz + z, b);
                 }
             }
+        }
+    }
+
+    /** The test society learns a function together with its theories, so its runs waste nothing. */
+    private static void know(GameTestHelper h, String functionId) {
+        KnowledgeData kd = KnowledgeData.get(h.getLevel().getServer());
+        kd.grant(SOCIETY, functionId);
+        for (String t : TechTree.get().functionsById.get(functionId).theory()) {
+            kd.grant(SOCIETY, t);
         }
     }
 
@@ -195,7 +208,7 @@ public final class TechTreeGameTests {
                 }
             }
         }
-        KnowledgeData.get(h.getLevel().getServer()).grant(SOCIETY, "P-010");
+        know(h, "P-010");
         StationBlockEntity be = station(h, 3, 1, 3);
         be.setOperator(SOCIETY);
         be.setItem(StationBlockEntity.INPUT_START, new ItemStack(Items.OAK_LOG, 4));
@@ -211,7 +224,7 @@ public final class TechTreeGameTests {
         floor(h, 14);
         h.setBlock(6, 1, 2, controller("forge"));
         box(h, 6, 1, 2, 5, 2, 5, Blocks.STONE_BRICKS, true, true);
-        KnowledgeData.get(h.getLevel().getServer()).grant(SOCIETY, "P-048");
+        know(h, "P-048");
         StationBlockEntity be = station(h, 6, 1, 2);
         be.setOperator(SOCIETY);
         be.setItem(StationBlockEntity.INPUT_START, ModContent.stack("iron_bloom").copyWithCount(3));
@@ -319,30 +332,86 @@ public final class TechTreeGameTests {
         return n;
     }
 
+    private static TechTree.FunctionDef fn(String id) {
+        return TechTree.get().functionsById.get(id);
+    }
+
+    /** Quiz mode (optional): the right mechanism grants, a wrong one starts a cooldown. */
     private static void discoveryNeedsRightMechanism(GameTestHelper h) {
         floor(h, 6);
         ServerPlayer p = player(h);
         String society = Society.keyOf(p);
-        p.getInventory().add(ModContent.stack("plant_fiber").copyWithCount(3));
-        Discovery.start(p, "P-001");
+        Discovery.openQuestion(p, fn("P-001"));
         int[] q = Discovery.pendingQuestion(p.getUUID());
-        h.assertTrue(q != null, "holding the plant fibre opens the question for Cordage twisting");
+        h.assertTrue(q != null, "a question is open for Cordage twisting");
+        p.getInventory().add(ModContent.stack("plant_fiber").copyWithCount(3));
         Discovery.answer(p, "P-001", q[0], q[1]);
         h.assertTrue(KnowledgeData.get(h.getLevel().getServer()).knows(society, "P-001"), "right answer grants it");
 
+        Discovery.openQuestion(p, fn("T-01"));
+        int[] q2 = Discovery.pendingQuestion(p.getUUID());
+        Discovery.answer(p, "T-01", q2[0], (q2[1] + 1) % 4);
+        h.assertFalse(Society.knows(p, "T-01"), "a wrong mechanism fails");
+        h.assertTrue(Discovery.cooldownSeconds(p, "T-01") > 0, "and starts a cooldown");
+        Discovery.openQuestion(p, fn("T-01"));
+        h.assertTrue(Discovery.pendingQuestion(p.getUUID()) == null, "no new question during the cooldown");
+        h.succeed();
+    }
+
+    /** Default mode: holding the evidence and studying it discovers a function; no quiz. */
+    private static void studyDiscovers(GameTestHelper h) {
+        floor(h, 6);
+        ServerPlayer p = player(h);
+        Discovery.start(p, "T-01");
+        h.assertFalse(HandWork.busy(p), "no flint and stone, no study");
         p.getInventory().add(new ItemStack(Items.FLINT));
         p.getInventory().add(new ItemStack(Items.COBBLESTONE));
         Discovery.start(p, "T-01");
-        int[] q2 = Discovery.pendingQuestion(p.getUUID());
-        h.assertTrue(q2 != null, "flint and stone open Conchoidal fracture");
-        Discovery.answer(p, "T-01", q2[0], (q2[1] + 1) % 4);
-        h.assertFalse(Society.knows(p, "T-01"), "a wrong mechanism fails even with everything at hand");
-        h.assertTrue(Discovery.cooldownSeconds(p, "T-01") > 0, "and starts a cooldown");
-        Discovery.start(p, "T-01");
-        h.assertTrue(Discovery.pendingQuestion(p.getUUID()) == null, "no new question during the cooldown");
+        h.assertTrue(HandWork.busy(p), "studying Conchoidal fracture");
+        h.assertFalse(Society.knows(p, "T-01"), "not known until the study is done");
+        h.assertTrue(Discovery.pendingQuestion(p.getUUID()) == null, "no quiz by default");
+        h.onEachTick(() -> HandWork.tick(p));
+        h.succeedWhen(() -> h.assertTrue(Society.knows(p, "T-01"), "study ends in discovery"));
+    }
 
-        Discovery.start(p, "P-002"); // knapping needs the theory first
-        h.assertTrue(Discovery.pendingQuestion(p.getUUID()) == null, "cannot attempt Knapping without Conchoidal fracture");
+    /** Practice may run ahead of theory, at the price of waste that experience brings down. */
+    private static void practiceAheadOfTheory(GameTestHelper h) {
+        floor(h, 6);
+        ServerPlayer p = player(h);
+        KnowledgeData kd = KnowledgeData.get(h.getLevel().getServer());
+        String society = Society.keyOf(p);
+        TechTree.FunctionDef knapping = fn("P-002"); // needs the theory of Conchoidal fracture
+        p.getInventory().add(new ItemStack(Items.FLINT, 2));
+        p.getInventory().add(new ItemStack(Items.COBBLESTONE));
+        h.assertTrue(Requirements.player(p, knapping).ok(), "knapping can be worked out without its theory");
+        double fresh = Empirical.wasteChance(kd, society, knapping);
+        h.assertTrue(fresh > 0.4 && fresh < 0.6, "about half the first attempts fail: " + fresh);
+        kd.addExperience(society, "P-002", 10);
+        double practised = Empirical.wasteChance(kd, society, knapping);
+        h.assertTrue(practised < fresh / 3, "ten runs of experience cut the waste: " + practised);
+        kd.grant(society, "T-01");
+        h.assertValueEqual(Empirical.wasteChance(kd, society, knapping), 0.0, "waste once the theory is known");
+        // a theory still rests on the theories before it
+        h.assertFalse(Requirements.player(p, fn("T-03")).ok(), "Pyrolysis needs Control of fire and a hearth");
+        h.succeed();
+    }
+
+    private static void routePlanner(GameTestHelper h) {
+        TechTree tree = TechTree.get();
+        List<TechTree.FunctionDef> route = tree.route("P-082", java.util.Set.of()); // black powder
+        h.assertTrue(route.size() >= 30 && route.size() <= 60, "black powder route length: " + route.size());
+        h.assertValueEqual(route.get(route.size() - 1).id(), "P-082", "the goal comes last");
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (TechTree.FunctionDef f : route) {
+            for (String t : f.theory()) {
+                h.assertTrue(seen.contains(t), f.id() + " comes after its theory " + t);
+            }
+            seen.add(f.id());
+        }
+        java.util.Set<String> known = new java.util.HashSet<>(seen);
+        known.remove("P-082");
+        h.assertValueEqual(tree.route("P-082", known).size(), 1, "with everything else known, one step remains");
+        h.assertTrue(tree.resolveTarget("black powder") != null && tree.resolveTarget("black_powder") != null, "targets resolve by name");
         h.succeed();
     }
 
@@ -404,7 +473,7 @@ public final class TechTreeGameTests {
     private static void stationUsesWaterBucket(GameTestHelper h) {
         floor(h, 8);
         buildHearth(h, new BlockPos(3, 1, 3));
-        KnowledgeData.get(h.getLevel().getServer()).grant(SOCIETY, "P-022");
+        know(h, "P-022");
         StationBlockEntity be = station(h, 3, 1, 3);
         be.setOperator(SOCIETY);
         be.setItem(StationBlockEntity.INPUT_START, new ItemStack(Items.CLAY_BALL, 3));
@@ -423,7 +492,7 @@ public final class TechTreeGameTests {
         floor(h, 14);
         h.setBlock(6, 1, 2, controller("forge"));
         box(h, 6, 1, 2, 3, 2, 3, Blocks.STONE_BRICKS, true, true);
-        KnowledgeData.get(h.getLevel().getServer()).grant(SOCIETY, "P-076");
+        know(h, "P-076");
         StationBlockEntity be = station(h, 6, 1, 2);
         be.setOperator(SOCIETY);
         be.revalidateNow();
@@ -563,7 +632,7 @@ public final class TechTreeGameTests {
         mill.revalidateNow();
         h.assertTrue(mill.isFormed(), "rolling mill forms: " + mill.formation().problem());
         TechTree.FunctionDef plate = TechTree.get().functionsById.get("P-138");
-        KnowledgeData.get(h.getLevel().getServer()).grant(SOCIETY, "P-138");
+        know(h, "P-138");
         Requirements.Check c = Requirements.station(mill, plate, 1, Requirements.Phase.RUNNING);
         h.assertTrue(c.missing().stream().anyMatch(m -> m.contains("power")), "no engine: " + c.missing());
         // a steam engine next to it, with water and coal
@@ -591,7 +660,7 @@ public final class TechTreeGameTests {
         floor(h, 14);
         h.setBlock(6, 1, 2, controller("kiln"));
         box(h, 6, 1, 2, 5, 4, 5, Blocks.BRICKS, true, true);
-        KnowledgeData.get(h.getLevel().getServer()).grant(SOCIETY, "P-059");
+        know(h, "P-059");
         StationBlockEntity be = station(h, 6, 1, 2);
         be.setOperator(SOCIETY);
         be.revalidateNow();
@@ -612,15 +681,14 @@ public final class TechTreeGameTests {
     private static void quizStable(GameTestHelper h) {
         floor(h, 6);
         ServerPlayer p = player(h);
-        p.getInventory().add(ModContent.stack("plant_fiber").copyWithCount(3));
-        Discovery.start(p, "P-001");
+        Discovery.openQuestion(p, fn("P-001"));
         List<String> first = Discovery.pendingOptions(p.getUUID());
-        Discovery.start(p, "P-001");
+        Discovery.openQuestion(p, fn("P-001"));
         List<String> second = Discovery.pendingOptions(p.getUUID());
         h.assertTrue(!first.isEmpty() && first.equals(second), "asking again shows the same options in the same order");
         int[] q = Discovery.pendingQuestion(p.getUUID());
         Discovery.answer(p, "P-001", q[0], (q[1] + 1) % first.size());
-        Discovery.start(p, "P-001");
+        Discovery.openQuestion(p, fn("P-001"));
         h.assertTrue(Discovery.pendingQuestion(p.getUUID()) == null, "cooldown after a wrong answer");
         h.assertFalse(Society.knows(p, "P-001"), "not learned");
         h.succeed();
@@ -633,7 +701,7 @@ public final class TechTreeGameTests {
         h.setBlock(12, 1, 2, controller("steam_engine"));
         box(h, 12, 1, 2, 3, 4, 5, Blocks.IRON_BLOCK, false, false);
         h.setBlock(14, 1, 2, Blocks.WATER);
-        KnowledgeData.get(h.getLevel().getServer()).grant(SOCIETY, "P-138");
+        know(h, "P-138");
         StationBlockEntity mill = station(h, 4, 1, 2);
         mill.setOperator(SOCIETY);
         selectDirect(mill, "P-138"); // selected, but no steel to roll

@@ -506,7 +506,6 @@
   "spawn_9b5fbb9.configuration.discovery": "Discovery",
   "spawn_9b5fbb9.configuration.production": "Production",
   "spawn_9b5fbb9.configuration.resources": "Natural Resources",
-  "spawn_9b5fbb9.configuration.requireExplanation": "Require explaining the mechanism",
   "spawn_9b5fbb9.configuration.wrongAnswerCooldownSeconds": "Wrong-answer cooldown (seconds)",
   "spawn_9b5fbb9.configuration.seasonalCycleDays": "Days to observe the seasonal cycle",
   "spawn_9b5fbb9.configuration.shareKnowledgeWithTeam": "Teams share knowledge",
@@ -518,5 +517,10 @@
   "spawn_9b5fbb9.configuration.gateOreAccess": "Deep ores need mines and rigs",
   "spawn_9b5fbb9.configuration.gateVanillaOres": "Apply ore rules to vanilla ores",
   "spawn_9b5fbb9.configuration.plantFiberChance": "Plant fibre chance from grass",
-  "spawn_9b5fbb9.configuration.rubberLatexChance": "Rubber latex chance from jungle logs"
+  "spawn_9b5fbb9.configuration.rubberLatexChance": "Rubber latex chance from jungle logs",
+  "spawn_9b5fbb9.configuration.quizMode": "Quiz mode (explain the mechanism)",
+  "spawn_9b5fbb9.configuration.theoryRequiredForPractice": "Theory required before practice",
+  "spawn_9b5fbb9.configuration.empiricalWastePerMissingTheory": "Waste per missing theory",
+  "spawn_9b5fbb9.configuration.wasteFactorPerRunOfExperience": "Waste factor per run of experience",
+  "spawn_9b5fbb9.configuration.studySeconds": "Base study time (seconds)"
 }

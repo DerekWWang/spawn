@@ -104,7 +104,30 @@ public final class Payloads {
         }
     }
 
+    public record RequestLedger() implements CustomPacketPayload {
+        public static final RequestLedger INSTANCE = new RequestLedger();
+        public static final Type<RequestLedger> TYPE = createType("request_ledger");
+        public static final StreamCodec<RegistryFriendlyByteBuf, RequestLedger> CODEC = StreamCodec.unit(INSTANCE);
+
+        @Override
+        public Type<RequestLedger> type() {
+            return TYPE;
+        }
+    }
+
     // ------------------------------------------------------------------ server -> client
+
+    /** The society's books as the manager sees them (observed values, never the ground truth). */
+    public record LedgerReport(List<String> lines) implements CustomPacketPayload {
+        public static final Type<LedgerReport> TYPE = createType("ledger_report");
+        public static final StreamCodec<RegistryFriendlyByteBuf, LedgerReport> CODEC =
+                StreamCodec.composite(STRINGS, LedgerReport::lines, LedgerReport::new);
+
+        @Override
+        public Type<LedgerReport> type() {
+            return TYPE;
+        }
+    }
 
     public record KnowledgeSync(String society, List<String> known) implements CustomPacketPayload {
         public static final Type<KnowledgeSync> TYPE = createType("knowledge_sync");
@@ -118,7 +141,7 @@ public final class Payloads {
     }
 
     /** Status of one function for the journal, computed by the server against the player's surroundings. */
-    public record Status(String function, int state, int cooldownSeconds, List<String> missing) {
+    public record Status(String function, int state, int cooldownSeconds, List<String> missing, List<String> notes) {
         public static final int THEORY_MISSING = 0;
         public static final int READY_TO_DISCOVER = 1;
         public static final int DISCOVER_BLOCKED = 2;
@@ -134,6 +157,10 @@ public final class Payloads {
             for (String m : s.missing) {
                 buf.writeUtf(m);
             }
+            buf.writeVarInt(s.notes.size());
+            for (String m : s.notes) {
+                buf.writeUtf(m);
+            }
         }
 
         static Status read(FriendlyByteBuf buf) {
@@ -145,7 +172,12 @@ public final class Payloads {
             for (int i = 0; i < n; i++) {
                 missing.add(buf.readUtf());
             }
-            return new Status(f, state, cd, List.copyOf(missing));
+            int k = Math.min(buf.readVarInt(), 16);
+            List<String> notes = new ArrayList<>(k);
+            for (int i = 0; i < k; i++) {
+                notes.add(buf.readUtf());
+            }
+            return new Status(f, state, cd, List.copyOf(missing), List.copyOf(notes));
         }
     }
 
@@ -186,11 +218,13 @@ public final class Payloads {
     }
 
     /** function == "" means no job is running. */
-    public record CraftProgress(String function, int remainingTicks, int totalTicks, int timesLeft) implements CustomPacketPayload {
+    public record CraftProgress(String function, int remainingTicks, int totalTicks, int timesLeft, boolean study)
+            implements CustomPacketPayload {
         public static final Type<CraftProgress> TYPE = createType("craft_progress");
         public static final StreamCodec<RegistryFriendlyByteBuf, CraftProgress> CODEC = StreamCodec.composite(
                 ByteBufCodecs.STRING_UTF8, CraftProgress::function, ByteBufCodecs.VAR_INT, CraftProgress::remainingTicks,
-                ByteBufCodecs.VAR_INT, CraftProgress::totalTicks, ByteBufCodecs.VAR_INT, CraftProgress::timesLeft, CraftProgress::new);
+                ByteBufCodecs.VAR_INT, CraftProgress::totalTicks, ByteBufCodecs.VAR_INT, CraftProgress::timesLeft,
+                ByteBufCodecs.BOOL, CraftProgress::study, CraftProgress::new);
 
         @Override
         public Type<CraftProgress> type() {

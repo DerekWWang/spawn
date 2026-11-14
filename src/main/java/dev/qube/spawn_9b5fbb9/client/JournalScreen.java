@@ -36,7 +36,11 @@ public class JournalScreen extends Screen {
     private static final int THEORY = 0xFF7EC8E3;
     private static final int ROW_H = 11;
 
-    private enum Filter { READY, FRONTIER, KNOWN, ALL }
+    private enum Filter { READY, FRONTIER, KNOWN, ALL, GOAL }
+
+    /** The function the manager is working towards; the Goal filter lists the route to it. */
+    private static String goal;
+    private boolean showLedger;
 
     private Filter filter = Filter.FRONTIER;
     private String search = "";
@@ -63,6 +67,8 @@ public class JournalScreen extends Screen {
     private Button cancelBtn;
     private Button treatiseBtn;
     private Button surveyBtn;
+    private Button goalBtn;
+    private Button ledgerBtn;
     private final List<Button> filterBtns = new ArrayList<>();
 
     public JournalScreen() {
@@ -86,14 +92,15 @@ public class JournalScreen extends Screen {
 
         filterBtns.clear();
         int fx = left + 6;
-        String[] labels = {"Ready", "Next", "Known", "All"};
+        String[] labels = {"Ready", "Next", "Known", "All", "Goal"};
         Filter[] values = Filter.values();
-        int fw = (listW - 6) / 4;
-        for (int i = 0; i < 4; i++) {
+        int fw = (listW - 6) / 5;
+        for (int i = 0; i < 5; i++) {
             Filter f = values[i];
             Button b = Button.builder(Component.literal(labels[i]), btn -> {
                 filter = f;
                 scroll = 0;
+                showLedger = false;
                 rebuildRows();
             }).bounds(fx + i * fw, top + 18, fw - 2, 14).build();
             filterBtns.add(addRenderableWidget(b));
@@ -112,7 +119,7 @@ public class JournalScreen extends Screen {
         int bx = left + listW + 6;
         int by = top + h - 20;
         int bw = (w - listW - 12) / 3;
-        discoverBtn = addRenderableWidget(Button.builder(Component.literal("Explain & discover"), b -> {
+        discoverBtn = addRenderableWidget(Button.builder(Component.literal("Study & discover"), b -> {
             if (selected != null) {
                 ClientPacketDistributor.sendToServer(new Payloads.Discover(selected.id()));
             }
@@ -128,6 +135,19 @@ public class JournalScreen extends Screen {
         }).bounds(bx + bw * 2, by, bw - 2, 16).build());
         surveyBtn = addRenderableWidget(Button.builder(Component.literal("Survey ground"),
                 b -> ClientPacketDistributor.sendToServer(Payloads.Prospect.INSTANCE)).bounds(left + w - 86, top + 3, 80, 12).build());
+        ledgerBtn = addRenderableWidget(Button.builder(Component.literal("Ledger"), b -> {
+            showLedger = !showLedger;
+            detailScroll = 0;
+            if (showLedger) {
+                ClientPacketDistributor.sendToServer(Payloads.RequestLedger.INSTANCE);
+            }
+        }).bounds(left + w - 132, top + 3, 44, 12).build());
+        goalBtn = addRenderableWidget(Button.builder(Component.literal("Set as goal"), b -> {
+            if (selected != null) {
+                goal = selected.id().equals(goal) ? null : selected.id();
+                rebuildRows();
+            }
+        }).bounds(bx + bw * 2, by, bw - 2, 16).build());
 
         rebuildRows();
         updateButtons();
@@ -166,16 +186,18 @@ public class JournalScreen extends Screen {
         FunctionDef f = selected;
         boolean known = f != null && ClientState.knows(f.id());
         boolean quiz = ClientState.quiz != null;
-        boolean frontier = f != null && !known && ClientState.known.containsAll(f.theory());
-        discoverBtn.visible = frontier && !quiz;
+        boolean busy = !ClientState.craft.function().isEmpty();
+        discoverBtn.visible = f != null && !known && !quiz && !busy && !showLedger;
+        goalBtn.visible = f != null && !known && !quiz && !busy && !showLedger;
+        goalBtn.setMessage(Component.literal(f != null && f.id().equals(goal) ? "Clear goal" : "Set as goal"));
+        ledgerBtn.visible = !quiz;
         Payloads.Status st = f == null ? null : ClientState.statuses.get(f.id());
         discoverBtn.active = st == null || st.cooldownSeconds() <= 0;
         boolean hand = known && f.mode() == TechTree.Mode.HAND;
-        boolean busy = !ClientState.craft.function().isEmpty();
-        make1Btn.visible = hand && !quiz && !busy;
-        make8Btn.visible = hand && !quiz && !busy;
+        make1Btn.visible = hand && !quiz && !busy && !showLedger;
+        make8Btn.visible = hand && !quiz && !busy && !showLedger;
         cancelBtn.visible = busy && !quiz;
-        treatiseBtn.visible = known && f.theoretical() && ClientState.knows("T-11") && !quiz && !busy;
+        treatiseBtn.visible = known && f.theoretical() && ClientState.knows("T-11") && !quiz && !busy && !showLedger;
         surveyBtn.visible = ClientState.knows("T-18") && !quiz;
         for (Button b : filterBtns) {
             b.active = !quiz;
@@ -184,20 +206,31 @@ public class JournalScreen extends Screen {
 
     private void rebuildRows() {
         List<FunctionDef> out = new ArrayList<>();
+        if (filter == Filter.GOAL) {
+            if (goal != null && ClientState.knows(goal)) {
+                goal = null; // reached
+            }
+            if (goal != null) {
+                out.addAll(TechTree.get().route(goal, ClientState.known));
+            }
+            rows = out;
+            scroll = Math.max(0, Math.min(scroll, rows.size() - visibleRows()));
+            return;
+        }
         for (FunctionDef f : TechTree.get().functions) {
             if (!search.isEmpty() && !f.name().toLowerCase(Locale.ROOT).contains(search)
                     && !f.id().toLowerCase(Locale.ROOT).contains(search)) {
                 continue;
             }
             boolean known = ClientState.knows(f.id());
-            boolean frontier = !known && ClientState.known.containsAll(f.theory());
             Payloads.Status st = ClientState.statuses.get(f.id());
+            boolean frontier = !known && st != null;
             boolean ready = st != null && (st.state() == Payloads.Status.READY_TO_DISCOVER || st.state() == Payloads.Status.CAN_MAKE);
             boolean include = switch (filter) {
                 case READY -> ready;
                 case FRONTIER -> frontier;
                 case KNOWN -> known;
-                case ALL -> true;
+                case ALL, GOAL -> true;
             };
             if (include) {
                 out.add(f);
@@ -298,7 +331,9 @@ public class JournalScreen extends Screen {
         int y = listTop();
         int n = visibleRows();
         if (rows.isEmpty()) {
-            g.text(font, filter == Filter.READY ? "Nothing ready yet." : "Nothing here.", left + 8, y + 2, DIM, false);
+            String empty = filter == Filter.READY ? "Nothing ready yet." : filter == Filter.GOAL
+                    ? (goal == null ? "No goal set." : "Goal reached.") : "Nothing here.";
+            g.text(font, empty, left + 8, y + 2, DIM, false);
         }
         for (int i = 0; i < n && scroll + i < rows.size(); i++) {
             FunctionDef f = rows.get(scroll + i);
@@ -331,7 +366,7 @@ public class JournalScreen extends Screen {
         }
         Payloads.Status st = ClientState.statuses.get(f.id());
         if (st == null) {
-            return ClientState.known.containsAll(f.theory()) ? WARN : 0xFF5A5046;
+            return 0xFF5A5046;
         }
         return switch (st.state()) {
             case Payloads.Status.READY_TO_DISCOVER -> GOOD;
@@ -345,11 +380,25 @@ public class JournalScreen extends Screen {
         int width = w - listW - 16;
         int yTop = top + 22;
         int yBottom = top + h - 26;
+        if (showLedger) {
+            List<Line> ledger = new ArrayList<>();
+            ledger.add(new Line("The society's books (as recorded, not as counted)", 0xFFFFE9B8));
+            ledger.add(new Line("", TEXT));
+            if (ClientState.ledger.isEmpty()) {
+                ledger.add(new Line("No records yet.", DIM));
+            }
+            for (String line : ClientState.ledger) {
+                ledger.add(new Line(line, TEXT));
+            }
+            drawLines(g, ledger, x, width, yTop, yBottom);
+            return;
+        }
         if (selected == null) {
-            wrap(g, "Pick a function on the left. Green ones can be discovered (or made) right now; yellow ones are next in line "
-                    + "but you are missing something. Theories are blue.\n\nTo discover a function your society must hold every "
-                    + "consumed input and every means of production (tools in your inventory, stations built nearby), know every "
-                    + "required theory, and explain the mechanism correctly.", x, yTop, width, DIM, yBottom);
+            wrap(g, "Pick a function on the left. Green ones can be worked out (or made) right now; yellow ones are within reach "
+                    + "but you are missing something. Theories are blue.\n\nTo discover a function, hold what it consumes and its "
+                    + "means of production (tools in your inventory, stations built nearby) and study it. A craft can be worked "
+                    + "out before its theory is understood, but batches are wasted until experience or the theory catches up.\n\n"
+                    + "Set a goal on any function and the Goal list shows the route to it.", x, yTop, width, DIM, yBottom);
             return;
         }
         FunctionDef f = selected;
@@ -363,6 +412,8 @@ public class JournalScreen extends Screen {
             lines.add(new Line("Known to your society.", GOOD));
         } else if (st != null && st.cooldownSeconds() > 0) {
             lines.add(new Line("Wrong explanation: think it over for " + st.cooldownSeconds() + "s.", BAD));
+        } else if (f.id().equals(goal)) {
+            lines.add(new Line("This is your goal: the Goal list shows the route.", GOOD));
         }
         lines.add(new Line("", TEXT));
         if (!f.theory().isEmpty()) {
@@ -373,6 +424,11 @@ public class JournalScreen extends Screen {
                 sb.append(i > 0 ? ", " : "").append(ClientState.knows(t) ? "" : "[missing] ").append(td == null ? t : td.name());
             }
             lines.add(new Line(sb.toString(), ClientState.known.containsAll(f.theory()) ? TEXT : WARN));
+        }
+        if (st != null) {
+            for (String note : st.notes()) {
+                lines.add(new Line(note, 0xFFE0A070));
+            }
         }
         if (!f.inputs().isEmpty()) {
             lines.add(new Line("Consumes: " + refs(f.inputs(), true), TEXT));
@@ -392,7 +448,7 @@ public class JournalScreen extends Screen {
             }
         } else if (st != null && st.state() == Payloads.Status.READY_TO_DISCOVER) {
             lines.add(new Line("", TEXT));
-            lines.add(new Line("You hold everything. Explain how it works to claim it.", GOOD));
+            lines.add(new Line("You hold everything. Study it to claim it.", GOOD));
         }
         if (known) {
             lines.add(new Line("", TEXT));
@@ -401,6 +457,10 @@ public class JournalScreen extends Screen {
         if (known && f.notes() != null) {
             lines.add(new Line("Effect: " + f.notes(), 0xFFB8C8A0));
         }
+        drawLines(g, lines, x, width, yTop, yBottom);
+    }
+
+    private void drawLines(GuiGraphicsExtractor g, List<Line> lines, int x, int width, int yTop, int yBottom) {
         int total = 0;
         for (Line line : lines) {
             total += line.text.isEmpty() ? 4 : font.split(FormattedText.of(line.text), width).size() * font.lineHeight;
@@ -423,6 +483,7 @@ public class JournalScreen extends Screen {
         }
         g.disableScissor();
     }
+
 
     private record Line(String text, int colour) { }
 
@@ -587,7 +648,8 @@ public class JournalScreen extends Screen {
         float done = 1f - Math.max(0, c.remainingTicks()) / (float) c.totalTicks();
         g.fill(x, y, x + width, y + 8, 0xFF1A140F);
         g.fill(x, y, x + (int) (width * done), y + 8, 0xFF6FAE52);
-        String label = "Working: " + (f == null ? c.function() : f.name()) + (c.timesLeft() > 1 ? " (" + c.timesLeft() + " to go)" : "");
+        String label = (c.study() ? "Studying: " : "Working: ") + (f == null ? c.function() : f.name())
+                + (c.timesLeft() > 1 ? " (" + c.timesLeft() + " to go)" : "");
         g.text(font, font.plainSubstrByWidth(label, width), x, y - 10, TEXT, false);
     }
 }

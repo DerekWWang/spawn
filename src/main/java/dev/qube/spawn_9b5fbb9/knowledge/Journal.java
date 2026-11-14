@@ -48,24 +48,34 @@ public final class Journal {
         HandWork.sendProgress(player);
     }
 
+    /**
+     * One entry per function worth showing: everything the society could claim now or is one step from
+     * (its theory known), and everything it knows that is made by hand or still carries empirical waste.
+     */
     public static List<Payloads.Status> statuses(ServerPlayer player) {
-        Set<String> known = Society.known(player);
+        Requirements.PlayerContext ctx = new Requirements.PlayerContext(player);
+        KnowledgeData kd = ctx.knowledge;
+        String society = ctx.society;
+        Set<String> known = kd.knownBy(society);
         List<Payloads.Status> out = new ArrayList<>();
         for (FunctionDef f : TechTree.get().functions) {
+            String note = Empirical.describe(kd, society, f);
+            List<String> notes = note == null ? List.of() : List.of(note);
             if (known.contains(f.id())) {
                 if (f.mode() == TechTree.Mode.HAND) {
-                    Requirements.Check c = Requirements.player(player, f);
+                    Requirements.Check c = Requirements.player(ctx, f);
                     out.add(new Payloads.Status(f.id(), c.ok() ? Payloads.Status.CAN_MAKE : Payloads.Status.MAKE_BLOCKED, 0,
-                            trim(c.missing())));
+                            trim(c.missing()), notes));
+                } else if (note != null) {
+                    out.add(new Payloads.Status(f.id(), Payloads.Status.KNOWN_ELSEWHERE, 0, List.of(), notes));
                 }
                 continue;
             }
-            if (!known.containsAll(f.theory())) {
-                continue;
+            Requirements.Check c = Requirements.player(ctx, f);
+            if (c.ok() || known.containsAll(f.theory())) {
+                out.add(new Payloads.Status(f.id(), c.ok() ? Payloads.Status.READY_TO_DISCOVER : Payloads.Status.DISCOVER_BLOCKED,
+                        Discovery.cooldownSeconds(player, f.id()), trim(c.missing()), notes));
             }
-            Requirements.Check c = Requirements.player(player, f);
-            out.add(new Payloads.Status(f.id(), c.ok() ? Payloads.Status.READY_TO_DISCOVER : Payloads.Status.DISCOVER_BLOCKED,
-                    Discovery.cooldownSeconds(player, f.id()), trim(c.missing())));
         }
         return out;
     }

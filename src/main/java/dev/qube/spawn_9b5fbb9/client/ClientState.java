@@ -14,9 +14,10 @@ public final class ClientState {
     public static Set<String> known = new HashSet<>();
     public static Map<String, Payloads.Status> statuses = new HashMap<>();
     public static Payloads.Quiz quiz;
-    public static Payloads.CraftProgress craft = new Payloads.CraftProgress("", 0, 0, 0);
+    public static Payloads.CraftProgress craft = new Payloads.CraftProgress("", 0, 0, 0, false);
     public static int stationContainer = -1;
     public static List<String> stationStatus = List.of();
+    public static List<String> ledger = List.of();
     /** bumped whenever anything changes, so screens can refresh cheaply */
     public static int version;
 
@@ -28,9 +29,10 @@ public final class ClientState {
         known = new HashSet<>();
         statuses = new HashMap<>();
         quiz = null;
-        craft = new Payloads.CraftProgress("", 0, 0, 0);
+        craft = new Payloads.CraftProgress("", 0, 0, 0, false);
         stationContainer = -1;
         stationStatus = List.of();
+        ledger = List.of();
         version++;
     }
 

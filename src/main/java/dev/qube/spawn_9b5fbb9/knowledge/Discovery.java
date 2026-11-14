@@ -21,9 +21,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
- * Claiming a function. The player must hold every input and means of production, know every
- * required theory, and explain the mechanism: they are shown the true mechanism from the
- * spreadsheet among others drawn from related functions, and must pick the right one.
+ * Claiming a function. The player must hold every input and means of production (and, for a theory,
+ * know the theories it rests on). By default the claim is then a period of study. In quiz mode the
+ * player must instead pick the true mechanism from among others drawn from related functions.
  */
 public final class Discovery {
     private static final long QUIZ_LIFETIME_TICKS = 20L * 60 * 10;
@@ -68,6 +68,10 @@ public final class Discovery {
         return left <= 0 ? 0 : (int) ((left + 19) / 20);
     }
 
+    /**
+     * Begins claiming a function. The player must hold everything it needs. By default this starts a
+     * period of study; in quiz mode it asks for the mechanism instead.
+     */
     public static void start(ServerPlayer player, String functionId) {
         FunctionDef f = TechTree.get().functionsById.get(functionId);
         if (f == null) {
@@ -77,20 +81,40 @@ public final class Discovery {
             player.sendOverlayMessage(Component.literal("Your society already knows " + f.name() + "."));
             return;
         }
-        int cd = cooldownSeconds(player, f.id());
-        if (cd > 0) {
-            player.sendOverlayMessage(Component.literal("Think it over for " + cd + " more seconds before trying again."));
-            return;
-        }
         Requirements.Check check = Requirements.player(player, f);
         if (!check.ok()) {
-            player.sendSystemMessage(Component.literal("To claim " + f.name() + " you still need: " + String.join("; ",
+            player.sendSystemMessage(Component.literal("To work out " + f.name() + " you still need: " + String.join("; ",
                     check.missing().subList(0, Math.min(4, check.missing().size())))).withStyle(ChatFormatting.YELLOW));
             Journal.request(player);
             return;
         }
-        if (!Config.bool(Config.REQUIRE_EXPLANATION) || f.mechanism().isBlank()) {
-            grant(player, f);
+        if (Config.bool(Config.REQUIRE_EXPLANATION) && !f.mechanism().isBlank()) {
+            openQuestion(player, f);
+        } else {
+            HandWork.startStudy(player, f);
+        }
+    }
+
+    /** Called when a period of study ends: the evidence must still be at hand. */
+    static void completeStudy(ServerPlayer player, FunctionDef f) {
+        if (Society.knows(player, f.id())) {
+            return;
+        }
+        Requirements.Check check = Requirements.player(player, f);
+        if (!check.ok()) {
+            player.sendSystemMessage(Component.literal("Study of " + f.name() + " came to nothing; you no longer have: "
+                    + String.join("; ", check.missing())).withStyle(ChatFormatting.YELLOW));
+            Journal.request(player);
+            return;
+        }
+        grant(player, f);
+    }
+
+    /** Quiz mode: asks the player to pick the true mechanism. Requirements must already have been checked. */
+    public static void openQuestion(ServerPlayer player, FunctionDef f) {
+        int cd = cooldownSeconds(player, f.id());
+        if (cd > 0) {
+            player.sendOverlayMessage(Component.literal("Think it over for " + cd + " more seconds before trying again."));
             return;
         }
         boolean cheaper = f.theoretical() && Society.knows(player, "T-27"); // Recorded scholarship

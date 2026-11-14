@@ -9,8 +9,14 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+
+import dev.qube.spawn_9b5fbb9.knowledge.Discovery;
+import dev.qube.spawn_9b5fbb9.knowledge.Empirical;
+import dev.qube.spawn_9b5fbb9.knowledge.HandWork;
 import dev.qube.spawn_9b5fbb9.knowledge.Journal;
 import dev.qube.spawn_9b5fbb9.knowledge.KnowledgeData;
+import dev.qube.spawn_9b5fbb9.knowledge.Requirements;
 import dev.qube.spawn_9b5fbb9.knowledge.Society;
 import dev.qube.spawn_9b5fbb9.techtree.TechTree;
 import net.minecraft.commands.CommandSourceStack;
@@ -44,7 +50,28 @@ public final class TechTreeCommand {
                                 .executes(ctx -> list(ctx.getSource(), EntityArgument.getPlayer(ctx, "target")))))
                 .then(Commands.literal("info")
                         .then(Commands.argument("function", StringArgumentType.word()).suggests(TechTreeCommand::suggest)
-                                .executes(TechTreeCommand::info))));
+                                .executes(TechTreeCommand::info)))
+                // the manager's own actions, usable by a bot that cannot click the journal
+                .then(Commands.literal("plan")
+                        .then(Commands.argument("target", StringArgumentType.greedyString()).executes(TechTreeCommand::plan)))
+                .then(Commands.literal("status")
+                        .then(Commands.argument("function", StringArgumentType.word()).suggests(TechTreeCommand::suggest)
+                                .executes(TechTreeCommand::status)))
+                .then(Commands.literal("discover")
+                        .then(Commands.argument("function", StringArgumentType.word()).suggests(TechTreeCommand::suggest)
+                                .executes(ctx -> {
+                                    Discovery.start(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "function"));
+                                    return 1;
+                                })))
+                .then(Commands.literal("make")
+                        .then(Commands.argument("function", StringArgumentType.word()).suggests(TechTreeCommand::suggest)
+                                .executes(ctx -> make(ctx, 1))
+                                .then(Commands.argument("times", IntegerArgumentType.integer(1, HandWork.MAX_REPEATS))
+                                        .executes(ctx -> make(ctx, IntegerArgumentType.getInteger(ctx, "times"))))))
+                .then(Commands.literal("stop").executes(ctx -> {
+                    HandWork.cancel(ctx.getSource().getPlayerOrException());
+                    return 1;
+                })));
     }
 
     private static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggest(
@@ -101,6 +128,63 @@ public final class TechTreeCommand {
         source.sendSuccess(() -> Component.literal(Society.displayName(player) + " knows " + known.size() + " of "
                 + TechTree.get().functions.size() + " functions"), false);
         return known.size();
+    }
+
+    private static int make(CommandContext<CommandSourceStack> ctx, int times) throws CommandSyntaxException {
+        HandWork.start(ctx.getSource().getPlayerOrException(), StringArgumentType.getString(ctx, "function"), times);
+        return 1;
+    }
+
+    /** The route from what the society knows to a function or item, one step per line. */
+    private static int plan(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        TechTree tree = TechTree.get();
+        TechTree.FunctionDef target = tree.resolveTarget(StringArgumentType.getString(ctx, "target").trim());
+        if (target == null) {
+            ctx.getSource().sendFailure(Component.literal("No function or item by that name or id"));
+            return 0;
+        }
+        List<TechTree.FunctionDef> route = tree.route(target.id(), Society.known(player));
+        if (route.isEmpty()) {
+            ctx.getSource().sendSuccess(() -> Component.literal(target.name() + " is already known."), false);
+            return 0;
+        }
+        StringBuilder sb = new StringBuilder("Route to " + target.name() + " (" + route.size() + " steps):");
+        int i = 1;
+        for (TechTree.FunctionDef f : route) {
+            sb.append("\n").append(i++).append(". ").append(f.id()).append(" ").append(f.name())
+                    .append(f.theoretical() ? " [theory]" : f.host() != null ? " [at " + tree.stationsById.get(f.host()).name() + "]" : "");
+            List<String> needs = new ArrayList<>();
+            f.inputs().forEach(r -> needs.add(r.count() > 1 ? r.name() + " x" + r.count() : r.name()));
+            f.means().forEach(r -> needs.add(r.name()));
+            if (!needs.isEmpty()) {
+                sb.append(": ").append(String.join(", ", needs));
+            }
+        }
+        ctx.getSource().sendSuccess(() -> Component.literal(sb.toString()), false);
+        return route.size();
+    }
+
+    /** Whether the player could discover (or make) a function where they stand, and what is missing. */
+    private static int status(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        TechTree.FunctionDef f = TechTree.get().functionsById.get(StringArgumentType.getString(ctx, "function"));
+        if (f == null) {
+            ctx.getSource().sendFailure(Component.literal("Unknown function id"));
+            return 0;
+        }
+        boolean known = Society.knows(player, f.id());
+        Requirements.Check check = Requirements.player(player, f);
+        StringBuilder sb = new StringBuilder(f.id() + " " + f.name() + ": known=" + known + ", ready=" + check.ok());
+        for (String m : check.missing()) {
+            sb.append("\n missing: ").append(m);
+        }
+        String note = Empirical.describe(KnowledgeData.get(player.level().getServer()), Society.keyOf(player), f);
+        if (note != null) {
+            sb.append("\n ").append(note);
+        }
+        ctx.getSource().sendSuccess(() -> Component.literal(sb.toString()), false);
+        return check.ok() ? 1 : 0;
     }
 
     private static int info(CommandContext<CommandSourceStack> ctx) {

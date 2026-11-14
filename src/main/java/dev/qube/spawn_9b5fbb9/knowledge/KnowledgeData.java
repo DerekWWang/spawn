@@ -29,7 +29,9 @@ public final class KnowledgeData extends SavedData {
     public static final Codec<KnowledgeData> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.unboundedMap(Codec.STRING, SET).optionalFieldOf("known", Map.of()).forGetter(d -> d.known),
             Codec.unboundedMap(Codec.STRING, Codec.STRING).optionalFieldOf("player_society", Map.of()).forGetter(d -> d.playerSociety),
-            SET.optionalFieldOf("welcomed", Set.of()).forGetter(d -> d.welcomed)
+            SET.optionalFieldOf("welcomed", Set.of()).forGetter(d -> d.welcomed),
+            Codec.unboundedMap(Codec.STRING, Codec.unboundedMap(Codec.STRING, Codec.INT)).optionalFieldOf("experience", Map.of())
+                    .forGetter(d -> d.experience)
     ).apply(i, KnowledgeData::new));
 
     public static final SavedDataType<KnowledgeData> TYPE = new SavedDataType<>(
@@ -39,14 +41,30 @@ public final class KnowledgeData extends SavedData {
     /** player uuid -> the society key they belonged to when last seen, so knowledge can follow them between teams */
     private final Map<String, String> playerSociety = new HashMap<>();
     private final Set<String> welcomed = new HashSet<>();
+    /** society -> function id -> completed runs: craft experience, which makes up for missing theory */
+    private final Map<String, Map<String, Integer>> experience = new HashMap<>();
 
     public KnowledgeData() {
     }
 
-    private KnowledgeData(Map<String, Set<String>> known, Map<String, String> playerSociety, Set<String> welcomed) {
+    private KnowledgeData(Map<String, Set<String>> known, Map<String, String> playerSociety, Set<String> welcomed,
+                          Map<String, Map<String, Integer>> experience) {
         known.forEach((k, v) -> this.known.put(k, new LinkedHashSet<>(v)));
         this.playerSociety.putAll(playerSociety);
         this.welcomed.addAll(welcomed);
+        experience.forEach((k, v) -> this.experience.put(k, new HashMap<>(v)));
+    }
+
+    public int experience(String society, String functionId) {
+        Map<String, Integer> m = experience.get(society);
+        return m == null ? 0 : m.getOrDefault(functionId, 0);
+    }
+
+    public void addExperience(String society, String functionId, int runs) {
+        if (runs > 0 && !society.isEmpty()) {
+            experience.computeIfAbsent(society, k -> new HashMap<>()).merge(functionId, runs, (a, b) -> Math.min(100000, a + b));
+            setDirty();
+        }
     }
 
     public static KnowledgeData get(MinecraftServer server) {
@@ -103,6 +121,17 @@ public final class KnowledgeData extends SavedData {
             return false;
         }
         boolean changed = known.computeIfAbsent(into, k -> new LinkedHashSet<>()).addAll(src);
+        Map<String, Integer> exp = experience.get(from);
+        if (exp != null) {
+            Map<String, Integer> target = experience.computeIfAbsent(into, k -> new HashMap<>());
+            for (Map.Entry<String, Integer> e : exp.entrySet()) {
+                int before = target.getOrDefault(e.getKey(), 0);
+                if (e.getValue() > before) {
+                    target.put(e.getKey(), e.getValue());
+                    changed = true;
+                }
+            }
+        }
         if (changed) {
             setDirty();
         }
