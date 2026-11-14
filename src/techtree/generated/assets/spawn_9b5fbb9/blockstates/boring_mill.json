@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,formed=false": {
+      "model": "spawn_9b5fbb9:block/boring_mill"
+    },
+    "facing=north,formed=true": {
+      "model": "spawn_9b5fbb9:block/boring_mill_on"
+    },
+    "facing=east,formed=false": {
+      "model": "spawn_9b5fbb9:block/boring_mill",
+      "y": 90
+    },
+    "facing=east,formed=true": {
+      "model": "spawn_9b5fbb9:block/boring_mill_on",
+      "y": 90
+    },
+    "facing=south,formed=false": {
+      "model": "spawn_9b5fbb9:block/boring_mill",
+      "y": 180
+    },
+    "facing=south,formed=true": {
+      "model": "spawn_9b5fbb9:block/boring_mill_on",
+      "y": 180
+    },
+    "facing=west,formed=false": {
+      "model": "spawn_9b5fbb9:block/boring_mill",
+      "y": 270
+    },
+    "facing=west,formed=true": {
+      "model": "spawn_9b5fbb9:block/boring_mill_on",
+      "y": 270
+    }
+  }
+}

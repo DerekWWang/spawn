@@ -1,0 +1,20 @@
+{
+  "spawn_9b5fbb9.configuration.section.spawn_9b5fbb9.local.toml": "Tech Tree",
+  "spawn_9b5fbb9.configuration.section.spawn_9b5fbb9.local.toml.title": "Tech Tree Configuration",
+  "spawn_9b5fbb9.configuration.discovery": "Discovery",
+  "spawn_9b5fbb9.configuration.production": "Production",
+  "spawn_9b5fbb9.configuration.resources": "Natural Resources",
+  "spawn_9b5fbb9.configuration.requireExplanation": "Require explaining the mechanism",
+  "spawn_9b5fbb9.configuration.wrongAnswerCooldownSeconds": "Wrong-answer cooldown (seconds)",
+  "spawn_9b5fbb9.configuration.seasonalCycleDays": "Days to observe the seasonal cycle",
+  "spawn_9b5fbb9.configuration.shareKnowledgeWithTeam": "Teams share knowledge",
+  "spawn_9b5fbb9.configuration.processingTimeMultiplier": "Processing time multiplier",
+  "spawn_9b5fbb9.configuration.presenceRadius": "Station presence radius",
+  "spawn_9b5fbb9.configuration.gridCoverageRadius": "Electric grid coverage radius",
+  "spawn_9b5fbb9.configuration.toolsWear": "Tools wear out",
+  "spawn_9b5fbb9.configuration.gateOreRecognition": "Ores need recognition theory",
+  "spawn_9b5fbb9.configuration.gateOreAccess": "Deep ores need mines and rigs",
+  "spawn_9b5fbb9.configuration.gateVanillaOres": "Apply ore rules to vanilla ores",
+  "spawn_9b5fbb9.configuration.plantFiberChance": "Plant fibre chance from grass",
+  "spawn_9b5fbb9.configuration.rubberLatexChance": "Rubber latex chance from jungle logs"
+}

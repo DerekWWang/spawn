@@ -1,42 +1,111 @@
 package dev.qube.spawn_9b5fbb9;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-// An example config class. This is not required, but it's a good idea to have one to keep your config organized.
-// Demonstrates how to use Neo's config APIs
-public class Config {
+/**
+ * Gameplay rules for the tech tree. Read through the helpers at the bottom so that a value
+ * asked for before the config file has loaded falls back to its default instead of throwing.
+ */
+public final class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
-    public static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
-            .comment("Whether to log the dirt block on common setup")
-            .define("logDirtBlock", true);
+    static {
+        BUILDER.comment("Discovery: how a society claims a function").push("discovery");
+    }
 
-    public static final ModConfigSpec.IntValue MAGIC_NUMBER = BUILDER
-            .comment("A magic number")
-            .defineInRange("magicNumber", 42, 0, Integer.MAX_VALUE);
+    public static final ModConfigSpec.BooleanValue REQUIRE_EXPLANATION = BUILDER
+            .comment("Players must pick the correct mechanism (from the spreadsheet's answer key) to discover a function.",
+                    "If false, holding the inputs, means of production and theory is enough.")
+            .define("requireExplanation", true);
 
-    public static final ModConfigSpec.ConfigValue<String> MAGIC_NUMBER_INTRODUCTION = BUILDER
-            .comment("What you want the introduction message to be for the magic number")
-            .define("magicNumberIntroduction", "The magic number is... ");
+    public static final ModConfigSpec.IntValue WRONG_ANSWER_COOLDOWN = BUILDER
+            .comment("Seconds before a society may try to explain the same function again after a wrong answer.",
+                    "Halved once Scientific method is known.")
+            .defineInRange("wrongAnswerCooldownSeconds", 60, 0, 3600);
 
-    // a list of strings that are treated as resource locations for items
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
-            .comment("A list of items to log on common setup.")
-            .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), () -> "", Config::validateItemName);
+    public static final ModConfigSpec.IntValue SEASONAL_CYCLE_DAYS = BUILDER
+            .comment("In-game days a player must have played to have observed the 'Seasonal cycle' phenomenon.")
+            .defineInRange("seasonalCycleDays", 2, 0, 100);
+
+    public static final ModConfigSpec.BooleanValue SHARE_WITH_TEAM = BUILDER
+            .comment("Players on the same scoreboard team form one society and share all knowledge.")
+            .define("shareKnowledgeWithTeam", true);
+
+    static {
+        BUILDER.pop().comment("Production").push("production");
+    }
+
+    public static final ModConfigSpec.DoubleValue TIME_MULTIPLIER = BUILDER
+            .comment("Multiplier on how long every function takes to run.")
+            .defineInRange("processingTimeMultiplier", 1.0, 0.05, 20.0);
+
+    public static final ModConfigSpec.IntValue PRESENCE_RADIUS = BUILDER
+            .comment("How far (in blocks, edge to edge) another station may be from the one doing the work",
+                    "and still count as present. Also how close a player must be to a station to use it from the journal.")
+            .defineInRange("presenceRadius", 16, 4, 64);
+
+    public static final ModConfigSpec.IntValue GRID_RADIUS = BUILDER
+            .comment("Radius in blocks around an Electric grid substation that counts as connected to the grid.")
+            .defineInRange("gridCoverageRadius", 96, 8, 512);
+
+    public static final ModConfigSpec.BooleanValue TOOLS_WEAR = BUILDER
+            .comment("Hand tools and instruments used as means of production lose durability each run.")
+            .define("toolsWear", true);
+
+    static {
+        BUILDER.pop().comment("Natural resources").push("resources");
+    }
+
+    public static final ModConfigSpec.BooleanValue GATE_RECOGNITION = BUILDER
+            .comment("Deposits whose ore is 'recognised once known' yield only rubble until the miner's society knows the theory.")
+            .define("gateOreRecognition", true);
+
+    public static final ModConfigSpec.BooleanValue GATE_ACCESS = BUILDER
+            .comment("Deposits that need a Shaft mine, Deep mine or Drilling rig yield only rubble without one nearby.")
+            .define("gateOreAccess", true);
+
+    public static final ModConfigSpec.BooleanValue GATE_VANILLA_ORES = BUILDER
+            .comment("Also apply the two rules above to vanilla iron and coal ores (listed in the mod's block tags).")
+            .define("gateVanillaOres", true);
+
+    public static final ModConfigSpec.DoubleValue FIBER_CHANCE = BUILDER
+            .comment("Chance that breaking grass or ferns by hand yields Plant fiber.")
+            .defineInRange("plantFiberChance", 0.35, 0.0, 1.0);
+
+    public static final ModConfigSpec.DoubleValue LATEX_CHANCE = BUILDER
+            .comment("Chance that breaking a jungle log yields Rubber latex.")
+            .defineInRange("rubberLatexChance", 0.3, 0.0, 1.0);
+
+    static {
+        BUILDER.pop();
+    }
 
     static final ModConfigSpec SPEC = BUILDER.build();
 
-    private static boolean validateItemName(final Object obj) {
-        return obj instanceof String itemName && BuiltInRegistries.ITEM.containsKey(Identifier.parse(itemName));
+    private Config() {
+    }
+
+    public static boolean bool(ModConfigSpec.BooleanValue v) {
+        try {
+            return v.getAsBoolean();
+        } catch (IllegalStateException e) {
+            return v.getDefault();
+        }
+    }
+
+    public static int integer(ModConfigSpec.IntValue v) {
+        try {
+            return v.getAsInt();
+        } catch (IllegalStateException e) {
+            return v.getDefault();
+        }
+    }
+
+    public static double dbl(ModConfigSpec.DoubleValue v) {
+        try {
+            return v.getAsDouble();
+        } catch (IllegalStateException e) {
+            return v.getDefault();
+        }
     }
 }

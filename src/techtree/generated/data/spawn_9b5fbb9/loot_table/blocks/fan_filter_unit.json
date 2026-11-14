@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "spawn_9b5fbb9:fan_filter_unit"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "spawn_9b5fbb9:blocks/fan_filter_unit"
+}

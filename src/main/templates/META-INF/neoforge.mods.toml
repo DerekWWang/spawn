@@ -40,7 +40,9 @@ displayName="${mod_name}" #mandatory
 
 # The description text for the mod (multi line!) (#mandatory)
 description='''
-Example mod description.
+A functional tech tree from stone tools to servers. Every technology is a function: discover it by
+holding its inputs and means of production, knowing its theory and explaining its mechanism, then
+run it in stations you build at realistic scale. Press J for the journal.
 '''
 
 # The [[mixins]] block allows you to declare your mixin config to FML so that it gets loaded.

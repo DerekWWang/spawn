@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "S": "spawn_9b5fbb9:stainless_steel",
+    "P": "spawn_9b5fbb9:thermoplastic",
+    "G": "spawn_9b5fbb9:glass_plate"
+  },
+  "pattern": [
+    "SPS",
+    "PGP",
+    "SPS"
+  ],
+  "result": {
+    "count": 8,
+    "id": "spawn_9b5fbb9:cleanroom_panel"
+  }
+}

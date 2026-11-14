@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_savanna",
+  "features": "spawn_9b5fbb9:bauxite_deposit",
+  "step": "underground_ores"
+}

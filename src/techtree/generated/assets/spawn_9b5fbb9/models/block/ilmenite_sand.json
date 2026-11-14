@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "spawn_9b5fbb9:block/ilmenite_sand"
+  }
+}

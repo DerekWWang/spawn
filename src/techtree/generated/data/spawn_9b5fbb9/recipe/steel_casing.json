@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "P": "spawn_9b5fbb9:steel_plate",
+    "M": "spawn_9b5fbb9:mild_steel"
+  },
+  "pattern": [
+    "PMP",
+    "M M",
+    "PMP"
+  ],
+  "result": {
+    "count": 4,
+    "id": "spawn_9b5fbb9:steel_casing"
+  }
+}

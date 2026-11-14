@@ -3,3 +3,4 @@ run/
 .gradle/
 .qube/worktrees/
 reference/
+__pycache__/
