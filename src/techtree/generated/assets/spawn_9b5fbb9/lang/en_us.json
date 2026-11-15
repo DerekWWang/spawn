@@ -501,6 +501,7 @@
   "block.spawn_9b5fbb9.gas_reservoir": "Gas-Bearing Rock",
   "block.spawn_9b5fbb9.ilmenite_sand": "Ilmenite Sand (Titanium Ore)",
   "block.spawn_9b5fbb9.spodumene_deposit": "Spodumene Deposit (Lithium Ore)",
+  "block.spawn_9b5fbb9.cornerstone": "Cornerstone",
   "spawn_9b5fbb9.configuration.section.spawn_9b5fbb9.local.toml": "Tech Tree",
   "spawn_9b5fbb9.configuration.section.spawn_9b5fbb9.local.toml.title": "Tech Tree Configuration",
   "spawn_9b5fbb9.configuration.discovery": "Discovery",

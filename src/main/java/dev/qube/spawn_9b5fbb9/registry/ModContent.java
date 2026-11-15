@@ -10,6 +10,7 @@ import java.util.Set;
 
 import com.mojang.serialization.Codec;
 
+import dev.qube.spawn_9b5fbb9.engineering.CornerstoneBlock;
 import dev.qube.spawn_9b5fbb9.item.FertilizerItem;
 import dev.qube.spawn_9b5fbb9.item.MedicineItem;
 import dev.qube.spawn_9b5fbb9.item.TreatiseItem;
@@ -56,6 +57,11 @@ public final class ModContent {
     public static final Map<String, DeferredItem<? extends Item>> ITEM_BY_ID = new LinkedHashMap<>();
     public static final Map<String, DeferredBlock<Block>> SIMPLE_BLOCKS = new LinkedHashMap<>();
     public static final Map<String, DeferredBlock<StationBlock>> STATION_BLOCKS = new LinkedHashMap<>();
+
+    /** Marks a structure as a building; see the engineering engine. */
+    public static final DeferredBlock<CornerstoneBlock> CORNERSTONE = BLOCKS.registerBlock("cornerstone", CornerstoneBlock::new,
+            p -> p.strength(2.0F, 6.0F).sound(SoundType.STONE).mapColor(MapColor.STONE));
+    public static final DeferredItem<net.minecraft.world.item.BlockItem> CORNERSTONE_ITEM = ITEMS.registerSimpleBlockItem("cornerstone", CORNERSTONE);
 
     /** The function id a treatise teaches. */
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<String>> TREATISE_SUBJECT =
@@ -122,7 +128,10 @@ public final class ModContent {
             .title(Component.translatable("itemGroup.spawn_9b5fbb9.stations"))
             .withTabsBefore(RESOURCES_TAB.key())
             .icon(() -> stack("forge"))
-            .displayItems((params, output) -> sortedItems(true).forEach(i -> output.accept(stack(i.id()))))
+            .displayItems((params, output) -> {
+                output.accept(CORNERSTONE_ITEM.get());
+                sortedItems(true).forEach(i -> output.accept(stack(i.id())));
+            })
             .build());
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ITEMS_TAB = TABS.register("items", () -> CreativeModeTab.builder()

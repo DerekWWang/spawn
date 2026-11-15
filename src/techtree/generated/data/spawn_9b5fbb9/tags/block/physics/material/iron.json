@@ -1,0 +1,14 @@
+{
+  "values": [
+    "minecraft:iron_block",
+    "#minecraft:bars",
+    "#minecraft:chains",
+    "minecraft:iron_door",
+    "minecraft:iron_trapdoor",
+    "#minecraft:copper",
+    "spawn_9b5fbb9:cast_iron_block",
+    "spawn_9b5fbb9:steel_casing",
+    "spawn_9b5fbb9:lead_lining",
+    "minecraft:anvil"
+  ]
+}

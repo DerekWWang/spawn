@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    "#spawn_9b5fbb9:resource/stone",
+    "minecraft:stick"
+  ],
+  "result": {
+    "count": 1,
+    "id": "spawn_9b5fbb9:cornerstone"
+  }
+}

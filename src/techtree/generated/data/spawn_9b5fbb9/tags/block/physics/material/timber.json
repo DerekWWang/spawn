@@ -1,0 +1,21 @@
+{
+  "values": [
+    "#minecraft:logs",
+    "#minecraft:planks",
+    "#minecraft:wooden_slabs",
+    "#minecraft:wooden_stairs",
+    "#minecraft:wooden_fences",
+    "#minecraft:fence_gates",
+    "#minecraft:wooden_doors",
+    "#minecraft:wooden_trapdoors",
+    "#minecraft:bamboo_blocks",
+    "#minecraft:beds",
+    "minecraft:crafting_table",
+    "minecraft:chest",
+    "minecraft:barrel",
+    "minecraft:bookshelf",
+    "spawn_9b5fbb9:machine_frame",
+    "spawn_9b5fbb9:workbench",
+    "spawn_9b5fbb9:loom"
+  ]
+}

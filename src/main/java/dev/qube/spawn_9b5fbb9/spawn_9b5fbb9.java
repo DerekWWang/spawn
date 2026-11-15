@@ -45,6 +45,7 @@ public class spawn_9b5fbb9 {
         TechTree.get(); // fail fast on a broken tech tree
         ModContent.register(modEventBus);
         TechTreeGameTests.registerFunctions(TEST_FUNCTIONS);
+        dev.qube.spawn_9b5fbb9.test.EngineGameTests.registerFunctions(TEST_FUNCTIONS);
         TEST_FUNCTIONS.register(modEventBus);
         modEventBus.addListener(ServerNetwork::register);
         modEventBus.addListener(this::registerGameTests);

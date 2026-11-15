@@ -91,6 +91,8 @@ public final class WorldEvents {
 
     private static void resetTransientState() {
         StationIndex.clear();
+        dev.qube.spawn_9b5fbb9.physics.Collapse.clear();
+        dev.qube.spawn_9b5fbb9.engineering.Engineering.clear();
         Discovery.clear();
         HandWork.clear();
         Journal.clear();

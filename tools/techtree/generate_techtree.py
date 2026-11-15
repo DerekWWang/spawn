@@ -1082,6 +1082,7 @@ for it in M.items.values():
     lang[f"{key}.{MODID}.{it['id']}"] = it["name"]
 for b in M.blocks:
     lang[f"block.{MODID}.{b['id']}"] = b["name"]
+lang[f"block.{MODID}.cornerstone"] = "Cornerstone"
 with open(os.path.join(HERE, "lang_extra.json"), encoding="utf-8") as f:
     lang.update(json.load(f))
 write_json(os.path.join(ASSETS, "lang", "en_us.json"), lang)
@@ -1162,6 +1163,17 @@ for i, st in enumerate(M.stations.values()):
     write_json(os.path.join(ASSETS, "blockstates", sid + ".json"), {"variants": variants})
     write_json(os.path.join(ASSETS, "items", sid + ".json"), {"model": {"type": "minecraft:model", "model": ns("block/" + sid)}})
 
+# cornerstone (engineering engine): a facing block that is not part of the tech tree itself
+tex.brick_block(os.path.join(tex_block, "cornerstone_side.png"), (150, 146, 138), (104, 100, 94), 4242)
+tex.station_front(os.path.join(tex_block, "cornerstone_front.png"), (150, 146, 138), (200, 170, 90), 4243, False)
+write_json(os.path.join(ASSETS, "models", "block", "cornerstone.json"),
+           {"parent": "minecraft:block/orientable",
+            "textures": {"front": ns("block/cornerstone_front"), "side": ns("block/cornerstone_side"), "top": ns("block/cornerstone_side")}})
+write_json(os.path.join(ASSETS, "blockstates", "cornerstone.json"), {"variants": {
+    f"facing={f}": ({"model": ns("block/cornerstone"), "y": r} if r else {"model": ns("block/cornerstone")})
+    for f, r in (("north", 0), ("east", 90), ("south", 180), ("west", 270))}})
+write_json(os.path.join(ASSETS, "items", "cornerstone.json"), {"model": {"type": "minecraft:model", "model": ns("block/cornerstone")}})
+
 # ---- loot tables
 def loot(bid, entries):
     write_json(os.path.join(DATA, "loot_table", "blocks", bid + ".json"),
@@ -1192,6 +1204,10 @@ for b in M.blocks:
         loot(b["id"], [{"type": "minecraft:alternatives", "children": [
             {"type": "minecraft:item", "condition": "minecraft:tool/can_silk_touch", "name": ns(b["id"])},
             {"type": "minecraft:item", "modifier": mods, "name": o["dropItem"]}]}])
+write_json(os.path.join(DATA, "loot_table", "blocks", "cornerstone.json"),
+           {"type": "minecraft:block", "pools": [{"rolls": 1, "condition": {"type": "minecraft:survives_explosion"},
+                                                  "entries": self_drop("cornerstone")}],
+            "random_sequence": ns("blocks/cornerstone")})
 for st in M.stations.values():
     write_json(os.path.join(DATA, "loot_table", "blocks", st["id"] + ".json"),
                {"type": "minecraft:block", "pools": [{"rolls": 1, "condition": {"type": "minecraft:survives_explosion"},
@@ -1242,11 +1258,40 @@ for t in recog_theories:
     if key not in gate:
         tag("block", key, [])
 
+# ---- physics: what counts as ground, what carries no load, and each block's structural material
+tag("block", "physics/terrain", ["#minecraft:dirt", "#minecraft:base_stone_overworld", "#minecraft:base_stone_nether", "#minecraft:sand",
+                                 "minecraft:gravel", "minecraft:clay", "#minecraft:mud", "#minecraft:ice", "#minecraft:snow",
+                                 "minecraft:bedrock", "minecraft:end_stone", "minecraft:netherrack", "#c:ores",
+                                 "#minecraft:nylium", "minecraft:soul_sand", "minecraft:soul_soil", "minecraft:moss_block"]
+    + [ns(b["id"]) for b in M.blocks if b.get("ore")] + [ns("limestone")])
+tag("block", "physics/non_structural", ["#minecraft:leaves", "minecraft:cobweb", "minecraft:scaffolding", "minecraft:snow"])
+MATERIAL_TAGS = {
+    "thatch": ["#minecraft:wool", "#minecraft:wool_carpets", "minecraft:hay_block", "minecraft:bamboo_mosaic", "minecraft:dried_kelp_block",
+               "minecraft:sponge", "minecraft:wet_sponge"],
+    "timber": ["#minecraft:logs", "#minecraft:planks", "#minecraft:wooden_slabs", "#minecraft:wooden_stairs", "#minecraft:wooden_fences",
+               "#minecraft:fence_gates", "#minecraft:wooden_doors", "#minecraft:wooden_trapdoors", "#minecraft:bamboo_blocks",
+               "#minecraft:beds", "minecraft:crafting_table", "minecraft:chest", "minecraft:barrel", "minecraft:bookshelf",
+               ns("machine_frame"), ns("workbench"), ns("loom")],
+    "glass": ["#c:glass_blocks", "#c:glass_panes"],
+    "brick": ["minecraft:bricks", "minecraft:brick_slab", "minecraft:brick_stairs", "minecraft:brick_wall", "minecraft:mud_bricks",
+              "minecraft:mud_brick_slab", "minecraft:mud_brick_stairs", "minecraft:mud_brick_wall", "minecraft:packed_mud",
+              "#minecraft:terracotta", "minecraft:nether_bricks", "minecraft:red_nether_bricks"],
+    "concrete": ["#minecraft:concrete", "#minecraft:concrete_slabs", "#minecraft:concrete_stairs"],
+    "reinforced_concrete": [ns("reinforced_concrete_block")],
+    "iron": ["minecraft:iron_block", "#minecraft:bars", "#minecraft:chains", "minecraft:iron_door", "minecraft:iron_trapdoor",
+             "#minecraft:copper", ns("cast_iron_block"), ns("steel_casing"), ns("lead_lining"), "minecraft:anvil"],
+    "stainless": [ns("stainless_casing"), ns("cleanroom_panel"), ns("fan_filter_unit")],
+    "earth": ["#minecraft:concrete_powders", "minecraft:dirt_path", "minecraft:farmland"],
+    "masonry": [],
+}
+for name, values in MATERIAL_TAGS.items():
+    tag("block", "physics/material/" + name, values)
+
 pick = [ns(b["id"]) for b in M.blocks if b["tool"] == "pickaxe"] + [ns(s) for s, st in M.stations.items()
                                                                   if st["family"] in ("stone", "clay", "metal", "industrial", "precision", "cleanroom", "concrete", "lead")]
 axe = [ns(b["id"]) for b in M.blocks if b["tool"] == "axe"] + [ns(s) for s, st in M.stations.items() if st["family"] in ("timber", "farm")]
 shovel = [ns(b["id"]) for b in M.blocks if b["tool"] == "shovel"]
-tag("block", "mineable/pickaxe", pick, "minecraft")
+tag("block", "mineable/pickaxe", pick + [ns("cornerstone")], "minecraft")
 tag("block", "mineable/axe", axe, "minecraft")
 tag("block", "mineable/shovel", shovel, "minecraft")
 tag("block", "needs_stone_tool", [ns(b["id"]) for b in M.blocks if b.get("level") == "stone"], "minecraft")
@@ -1280,6 +1325,7 @@ def shapeless(rid, ingredients, result, count=1):
                 "result": {"count": count, "id": result}})
 
 
+shapeless("cornerstone", ["#" + ns("resource/stone"), "minecraft:stick"], ns("cornerstone"))
 shaped("bricks_from_fired_brick", ["##", "##"], {"#": ns("brick")}, "minecraft:bricks")
 shapeless("stone_bricks_from_cut_stone", [ns("cut_stone")], "minecraft:stone_bricks", 2)
 shaped("limestone_bricks", ["##", "##"], {"#": ns("limestone")}, ns("limestone_bricks"), 4)

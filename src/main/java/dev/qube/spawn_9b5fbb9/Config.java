@@ -95,6 +95,49 @@ public final class Config {
             .defineInRange("rubberLatexChance", 0.3, 0.0, 1.0);
 
     static {
+        BUILDER.pop().comment("Physics: structures, weather and decay").push("physics");
+    }
+
+    public static final ModConfigSpec.IntValue FLOATING_LIMIT = BUILDER
+            .comment("When a player or an explosion removes a block, groups of up to this many connected blocks left",
+                    "with no link to the ground fall (cut trees, undermined walls, severed bridges). 0 disables the rule.",
+                    "Larger groups are taken to be terrain.")
+            .defineInRange("floatingBlockLimit", 512, 0, 8192);
+
+    public static final ModConfigSpec.BooleanValue STRUCTURAL_STRESS = BUILDER
+            .comment("Registered buildings are analysed for load: overstressed parts fail, at once or in the next storm.")
+            .define("structuralStress", true);
+
+    public static final ModConfigSpec.DoubleValue STORM_SEVERITY = BUILDER
+            .comment("Multiplier on storm wind loads. 0 makes thunderstorms harmless to buildings.")
+            .defineInRange("stormSeverity", 1.0, 0.0, 5.0);
+
+    public static final ModConfigSpec.DoubleValue DECAY_RATE = BUILDER
+            .comment("Multiplier on how fast building materials deteriorate. 0 disables decay.")
+            .defineInRange("decayRate", 1.0, 0.0, 100.0);
+
+    public static final ModConfigSpec.IntValue MAX_BUILDING_VOLUME = BUILDER
+            .comment("Largest box (in blocks) a single registered building may cover.")
+            .defineInRange("maxBuildingVolume", 64000, 64, 512000);
+
+    static {
+        BUILDER.pop().comment("Logistics: stores, spoilage and the accuracy of the society's records").push("logistics");
+    }
+
+    public static final ModConfigSpec.DoubleValue SPOILAGE_RATE = BUILDER
+            .comment("Multiplier on how fast food spoils. 0 disables spoilage.")
+            .defineInRange("spoilageRate", 1.0, 0.0, 100.0);
+
+    public static final ModConfigSpec.DoubleValue RECORD_NOISE = BUILDER
+            .comment("Multiplier on the error in what the society's records say compared with what is really there.",
+                    "0 makes the books exact.")
+            .defineInRange("recordKeepingError", 1.0, 0.0, 5.0);
+
+    public static final ModConfigSpec.IntValue GESTATION_DAYS = BUILDER
+            .comment("Game days an animal or villager carries young before giving birth. 0 keeps vanilla's instant births.")
+            .defineInRange("gestationDays", 1, 0, 30);
+
+    static {
         BUILDER.pop();
     }
 
