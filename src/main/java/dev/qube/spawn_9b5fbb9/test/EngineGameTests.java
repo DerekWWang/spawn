@@ -47,16 +47,17 @@ public final class EngineGameTests {
         add(reg, "residence_needs_room_bed_and_door", EngineGameTests::residence);
         add(reg, "storage_and_pen_requirements", EngineGameTests::storageAndPen);
         add(reg, "schema_rebuilds_rotated", EngineGameTests::schemaRebuilds);
+        LogisticsGameTests.registerFunctions(reg);
     }
 
-    private static void add(DeferredRegister<Consumer<GameTestHelper>> reg, String name, Consumer<GameTestHelper> fn) {
+    static void add(DeferredRegister<Consumer<GameTestHelper>> reg, String name, Consumer<GameTestHelper> fn) {
         TechTreeGameTests.FUNCTIONS.add(reg.register(name, () -> fn));
     }
 
     // ------------------------------------------------------------------ helpers
 
     /** Natural ground (stone counts as terrain, so it anchors structures and is never part of them). */
-    private static void ground(GameTestHelper h, int size) {
+    static void ground(GameTestHelper h, int size) {
         for (int x = 0; x < size; x++) {
             for (int z = 0; z < size; z++) {
                 h.setBlock(x, 0, z, Blocks.STONE);
@@ -92,14 +93,18 @@ public final class EngineGameTests {
     }
 
     private static Building building(GameTestHelper h, BlockPos rel, Direction facing, BuildingUse use) {
+        return building(h, rel, facing, use, SOCIETY);
+    }
+
+    static Building building(GameTestHelper h, BlockPos rel, Direction facing, BuildingUse use, String society) {
         ServerLevel level = h.getLevel();
         h.setBlock(rel, ModContent.CORNERSTONE.get().defaultBlockState().setValue(dev.qube.spawn_9b5fbb9.engineering.CornerstoneBlock.FACING, facing));
-        Building b = Engineering.create(level, h.absolutePos(rel), facing, SOCIETY);
+        Building b = Engineering.create(level, h.absolutePos(rel), facing, society);
         b.use = use;
         return b;
     }
 
-    private static void done(GameTestHelper h, Building... buildings) {
+    static void done(GameTestHelper h, Building... buildings) {
         for (Building b : buildings) {
             Engineering.remove(h.getLevel(), b.cornerstone);
         }
@@ -340,7 +345,7 @@ public final class EngineGameTests {
     // ------------------------------------------------------------------ engineering
 
     /** A 5x5 hut, walls three high with a flat roof, door in the -z wall. */
-    private static void hut(GameTestHelper h, int x0, int z0, Block wallBlock) {
+    static void hut(GameTestHelper h, int x0, int z0, Block wallBlock) {
         for (int x = x0; x <= x0 + 4; x++) {
             for (int z = z0; z <= z0 + 4; z++) {
                 boolean wall = x == x0 || x == x0 + 4 || z == z0 || z == z0 + 4;

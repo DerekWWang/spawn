@@ -134,7 +134,7 @@ public final class Config {
             .defineInRange("recordKeepingError", 1.0, 0.0, 5.0);
 
     public static final ModConfigSpec.IntValue GESTATION_DAYS = BUILDER
-            .comment("Game days an animal or villager carries young before giving birth. 0 keeps vanilla's instant births.")
+            .comment("Game days an animal carries young before giving birth. 0 keeps vanilla's instant births.")
             .defineInRange("gestationDays", 1, 0, 30);
 
     static {

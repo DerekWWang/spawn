@@ -111,7 +111,7 @@ public final class WorldEvents {
             Society.sync(player);
             if (KnowledgeData.get(player.level().getServer()).markWelcomed(player.getUUID().toString())) {
                 player.sendSystemMessage(Component.literal("Every technology is earned. Press J to open your journal: "
-                        + "gather what a function needs, then explain how it works to discover it.").withStyle(ChatFormatting.GOLD));
+                        + "pick a goal, gather what the next step needs, and study it to discover it.").withStyle(ChatFormatting.GOLD));
             }
         }
     }

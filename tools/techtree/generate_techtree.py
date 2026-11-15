@@ -1305,6 +1305,19 @@ tag("item", "fuel/charcoal", ["minecraft:charcoal", ns("charcoal")])
 tag("item", "fuel/coal", ["minecraft:coal", "minecraft:coal_block"])
 tag("item", "fuel/coke", [ns("coke")])
 tag("item", "water_containers", ["minecraft:water_bucket", "minecraft:potion"])
+
+# ---- logistics: what goes off, and how fast (half-lives of 2, 6 and 30 game days; see Spoilage.java).
+# Salted, smoked and canned food keeps, as do seeds, sugar and honey. Stews are left out: they would take their bowls with them.
+tag("item", "spoilage/fast", [ns("carcass"), "minecraft:beef", "minecraft:porkchop", "minecraft:chicken", "minecraft:mutton",
+                              "minecraft:rabbit", "minecraft:cod", "minecraft:salmon", "minecraft:tropical_fish", "minecraft:pufferfish"])
+tag("item", "spoilage/medium", [ns("bread"), ns("beer"), ns("smallpox_vaccine"), ns("vaccines"), ns("insulin"), ns("recombinant_medicines"),
+                                "minecraft:bread", "minecraft:cooked_beef", "minecraft:cooked_porkchop", "minecraft:cooked_chicken",
+                                "minecraft:cooked_mutton", "minecraft:cooked_rabbit", "minecraft:cooked_cod", "minecraft:cooked_salmon",
+                                "minecraft:baked_potato", "minecraft:pumpkin_pie", "minecraft:sweet_berries", "minecraft:glow_berries",
+                                "minecraft:melon_slice"])
+tag("item", "spoilage/slow", [ns("grain"), ns("flour"), ns("hide"), ns("animal_fat"), ns("penicillin"),
+                              "minecraft:wheat", "minecraft:potato", "minecraft:carrot", "minecraft:beetroot", "minecraft:apple",
+                              "minecraft:egg", "minecraft:cookie"])
 tag("entity_type", "wild_game", ["minecraft:pig", "minecraft:cow", "minecraft:sheep", "minecraft:goat", "minecraft:rabbit",
                                  "minecraft:chicken", "minecraft:mooshroom", "minecraft:llama", "minecraft:camel",
                                  "minecraft:armadillo", "minecraft:hoglin"])
@@ -1422,7 +1435,7 @@ def test_structure(path, size):
     out += b"\x03" + nbt_string("DataVersion") + (5023).to_bytes(4, "big")
     out += b"\x00"
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with gzip.open(path, "wb") as f:
+    with open(path, "wb") as raw, gzip.GzipFile(fileobj=raw, mode="wb", mtime=0, filename="") as f:  # no timestamp: same bytes every run
         f.write(bytes(out))
 
 

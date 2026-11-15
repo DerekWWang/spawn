@@ -20,5 +20,15 @@
   "spawn_9b5fbb9.configuration.theoryRequiredForPractice": "Theory required before practice",
   "spawn_9b5fbb9.configuration.empiricalWastePerMissingTheory": "Waste per missing theory",
   "spawn_9b5fbb9.configuration.wasteFactorPerRunOfExperience": "Waste factor per run of experience",
-  "spawn_9b5fbb9.configuration.studySeconds": "Base study time (seconds)"
+  "spawn_9b5fbb9.configuration.studySeconds": "Base study time (seconds)",
+  "spawn_9b5fbb9.configuration.physics": "Physics",
+  "spawn_9b5fbb9.configuration.logistics": "Logistics",
+  "spawn_9b5fbb9.configuration.floatingBlockLimit": "Largest group of blocks that falls",
+  "spawn_9b5fbb9.configuration.structuralStress": "Buildings carry load",
+  "spawn_9b5fbb9.configuration.stormSeverity": "Storm severity",
+  "spawn_9b5fbb9.configuration.decayRate": "Material decay rate",
+  "spawn_9b5fbb9.configuration.maxBuildingVolume": "Largest building (blocks)",
+  "spawn_9b5fbb9.configuration.spoilageRate": "Food spoilage rate",
+  "spawn_9b5fbb9.configuration.recordKeepingError": "Record-keeping error",
+  "spawn_9b5fbb9.configuration.gestationDays": "Gestation (game days)"
 }

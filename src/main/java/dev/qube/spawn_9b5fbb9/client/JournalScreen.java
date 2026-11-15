@@ -94,16 +94,23 @@ public class JournalScreen extends Screen {
         int fx = left + 6;
         String[] labels = {"Ready", "Next", "Known", "All", "Goal"};
         Filter[] values = Filter.values();
-        int fw = (listW - 6) / 5;
-        for (int i = 0; i < 5; i++) {
+        // each button as wide as its label needs, with whatever room is left shared out evenly
+        int textTotal = 0;
+        for (String label : labels) {
+            textTotal += font.width(label);
+        }
+        int pad = Math.max(4, (listW - 8 - textTotal - 2 * (labels.length - 1)) / labels.length);
+        for (int i = 0; i < labels.length; i++) {
             Filter f = values[i];
+            int bw = font.width(labels[i]) + pad;
             Button b = Button.builder(Component.literal(labels[i]), btn -> {
                 filter = f;
                 scroll = 0;
                 showLedger = false;
                 rebuildRows();
-            }).bounds(fx + i * fw, top + 18, fw - 2, 14).build();
+            }).bounds(fx, top + 18, bw, 14).build();
             filterBtns.add(addRenderableWidget(b));
+            fx += bw + 2;
         }
         searchBox = new EditBox(font, left + 6, top + 35, listW - 8, 14, Component.literal("Search"));
         searchBox.setHint(Component.literal("Search..."));
