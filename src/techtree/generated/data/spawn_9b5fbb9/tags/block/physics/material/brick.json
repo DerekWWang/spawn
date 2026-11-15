@@ -1,0 +1,16 @@
+{
+  "values": [
+    "minecraft:bricks",
+    "minecraft:brick_slab",
+    "minecraft:brick_stairs",
+    "minecraft:brick_wall",
+    "minecraft:mud_bricks",
+    "minecraft:mud_brick_slab",
+    "minecraft:mud_brick_stairs",
+    "minecraft:mud_brick_wall",
+    "minecraft:packed_mud",
+    "#minecraft:terracotta",
+    "minecraft:nether_bricks",
+    "minecraft:red_nether_bricks"
+  ]
+}

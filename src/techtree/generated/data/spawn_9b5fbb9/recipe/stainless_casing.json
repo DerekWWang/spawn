@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "S": "spawn_9b5fbb9:stainless_steel",
+    "P": "spawn_9b5fbb9:steel_plate"
+  },
+  "pattern": [
+    "SPS",
+    "P P",
+    "SPS"
+  ],
+  "result": {
+    "count": 4,
+    "id": "spawn_9b5fbb9:stainless_casing"
+  }
+}

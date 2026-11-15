@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    "spawn_9b5fbb9:hepa_filter",
+    "spawn_9b5fbb9:electric_motor",
+    "spawn_9b5fbb9:stainless_casing"
+  ],
+  "result": {
+    "count": 1,
+    "id": "spawn_9b5fbb9:fan_filter_unit"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,formed=false": {
+      "model": "spawn_9b5fbb9:block/hospital"
+    },
+    "facing=north,formed=true": {
+      "model": "spawn_9b5fbb9:block/hospital_on"
+    },
+    "facing=east,formed=false": {
+      "model": "spawn_9b5fbb9:block/hospital",
+      "y": 90
+    },
+    "facing=east,formed=true": {
+      "model": "spawn_9b5fbb9:block/hospital_on",
+      "y": 90
+    },
+    "facing=south,formed=false": {
+      "model": "spawn_9b5fbb9:block/hospital",
+      "y": 180
+    },
+    "facing=south,formed=true": {
+      "model": "spawn_9b5fbb9:block/hospital_on",
+      "y": 180
+    },
+    "facing=west,formed=false": {
+      "model": "spawn_9b5fbb9:block/hospital",
+      "y": 270
+    },
+    "facing=west,formed=true": {
+      "model": "spawn_9b5fbb9:block/hospital_on",
+      "y": 270
+    }
+  }
+}

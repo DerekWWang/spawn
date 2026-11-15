@@ -1,0 +1,23 @@
+{
+  "values": [
+    "spawn_9b5fbb9:bread",
+    "spawn_9b5fbb9:beer",
+    "spawn_9b5fbb9:smallpox_vaccine",
+    "spawn_9b5fbb9:vaccines",
+    "spawn_9b5fbb9:insulin",
+    "spawn_9b5fbb9:recombinant_medicines",
+    "minecraft:bread",
+    "minecraft:cooked_beef",
+    "minecraft:cooked_porkchop",
+    "minecraft:cooked_chicken",
+    "minecraft:cooked_mutton",
+    "minecraft:cooked_rabbit",
+    "minecraft:cooked_cod",
+    "minecraft:cooked_salmon",
+    "minecraft:baked_potato",
+    "minecraft:pumpkin_pie",
+    "minecraft:sweet_berries",
+    "minecraft:glow_berries",
+    "minecraft:melon_slice"
+  ]
+}

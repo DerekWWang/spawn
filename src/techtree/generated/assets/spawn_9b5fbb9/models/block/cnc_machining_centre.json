@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "spawn_9b5fbb9:block/cnc_machining_centre_front",
+    "side": "spawn_9b5fbb9:block/cnc_machining_centre_side",
+    "top": "spawn_9b5fbb9:block/cnc_machining_centre_side"
+  }
+}

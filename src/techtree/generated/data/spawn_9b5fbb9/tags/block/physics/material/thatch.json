@@ -1,0 +1,11 @@
+{
+  "values": [
+    "#minecraft:wool",
+    "#minecraft:wool_carpets",
+    "minecraft:hay_block",
+    "minecraft:bamboo_mosaic",
+    "minecraft:dried_kelp_block",
+    "minecraft:sponge",
+    "minecraft:wet_sponge"
+  ]
+}
