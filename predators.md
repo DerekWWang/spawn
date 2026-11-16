@@ -9,7 +9,9 @@ Wolves, brown bears, lions and polar bears have to eat. They are not monsters th
 attack on sight, and they are not scenery. Each one carries the time of its last full
 meal, and almost everything it does follows from that.
 
-![A brown bear and a lion beside a villager, to scale](images/bear-lion-close.png)
+![A brown bear beside a villager, to scale](images/brown-bear.png)
+
+![A lion beside a villager, to scale](images/lion.png)
 
 ## Hunger
 
