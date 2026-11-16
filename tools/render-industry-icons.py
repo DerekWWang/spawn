@@ -256,6 +256,20 @@ def coil(c, cx, cy, rx, ry, inner, R):
     c.ring(cx, cy, rx, ry, inner, R, ridges=True)
 
 
+def circ(c, cx, cy, r, col):
+    for y in range(16):
+        for x in range(16):
+            if math.hypot(x - cx, y - cy) <= r:
+                c.set(x, y, col)
+
+
+def annulus(c, cx, cy, r, rin, col):
+    for y in range(16):
+        for x in range(16):
+            if rin < math.hypot(x - cx, y - cy) <= r:
+                c.set(x, y, col)
+
+
 def build_item(name, rnd):
     c = Cv()
     O = lambda h: ramp(h)
@@ -437,13 +451,13 @@ def build_item(name, rnd):
         Rw = O('#8a6b48')
         for y in range(4, 12):
             for x in range(4, 13):
-                c.set(x, y, '#d9a441' if (x % 2 == 0) else '#a8702a')
-        c.rect(4, 4, 12, 4, '#f0c870')
-        c.rect(4, 11, 12, 11, '#7a5220')
+                c.set(x, y, '#e4eaee' if (x % 2 == 0) else '#a8b2ba')
+        c.rect(4, 4, 12, 4, '#ffffff')
+        c.rect(4, 11, 12, 11, '#6a727a')
         c.blob(3.5, 8, 1.9, 5.8, Rw)
         c.blob(12.5, 8, 1.9, 5.8, Rw)
         c.set(3, 8, Rw[0])
-        c.line(13, 12, 14, 14, '#d9a441')
+        c.line(13, 12, 14, 14, '#e4eaee')
     elif name == 'circuit_board':
         G, GD, CU = '#2e8b4e', '#1e5c34', '#e0a850'
         c.rect(2, 2, 13, 11, G)
@@ -813,6 +827,375 @@ def build_item(name, rnd):
         c.rect(12, 3, 13, 3, Rh[3])
         c.rect(4, 5, 4, 5, R[4])
         c.rect(2, 3, 2, 12, R[0])
+    elif name == 'pig_iron':
+        R = O('#4f535b')
+        c.poly([(1, 13), (3, 8), (12, 8), (14, 13)], R[2])
+        c.poly([(3, 8), (12, 8), (13, 5), (5, 5)], R[3])
+        c.line(13, 5, 14, 13, R[1])
+        c.line(12, 8, 14, 13, R[1])
+        c.line(2, 12, 13, 12, R[1])
+        for x, y in ((4, 6), (8, 6), (11, 6), (5, 10), (9, 9), (12, 11), (3, 12)):
+            c.set(x, y, R[0])
+        for x, y in ((6, 6), (7, 10), (10, 10)):
+            c.set(x, y, '#7a5a44')
+        c.set(5, 5, R[4])
+    elif name == 'iron_plate':
+        R = O('#4f545c')
+        c.box(1, 3, 9, 3, 5, R, top=R[3])
+        for (k, ox) in ((1, 1), (1, 7), (3, 1), (3, 7)):
+            c.set(1 + 5 - k + ox, 3 + k, R[0])
+        for (k, ox) in ((0, 2), (0, 5), (1, 4), (2, 2), (2, 5), (3, 4), (4, 3), (4, 6), (2, 7)):
+            c.set(1 + 5 - k + ox, 3 + k, R[2] if (k + ox) % 2 else R[1])
+        c.line(1, 8, 9, 8, R[3])
+        c.line(1, 10, 9, 10, R[0])
+        for x, y in ((3, 9), (7, 9)):
+            c.set(x, y, '#7a5a44')
+    elif name == 'precision_parts':
+        R = O('#c8d2da')
+        c.gear(5, 5, 2.4, 3.6, 8, R, hole=.9)
+        annulus(c, 11, 6, 3.4, 1.6, R[3])
+        annulus(c, 11, 6, 3.4, 2.7, R[2])
+        for (x, y) in ((11, 3), (13, 5), (13, 8), (9, 8), (9, 4), (11, 9)):
+            c.set(x, y, R[4])
+        c.rect(1, 12, 14, 13, R[2])
+        c.rect(1, 12, 14, 12, R[4])
+        c.rect(1, 13, 14, 13, R[1])
+        for x in range(2, 14, 2):
+            c.set(x, 12, R[1])
+            c.set(x + 1, 13, R[0])
+    elif name == 'insulated_wire':
+        R = O('#4a3222')
+        coil(c, 7, 8, 6, 5.4, .4, R)
+        c.set(7, 8, R[0])
+        for (x, y) in ((4, 5), (10, 5), (3, 8), (11, 11)):
+            c.set(x, y, R[4])
+        c.line(11, 12, 14, 13, '#c8794a')
+        c.set(14, 13, '#f0b080')
+    elif name == 'salt':
+        R = O('#efe0dc')
+        for (x, y, w, h, d) in ((2, 6, 5, 5, 3), (8, 3, 4, 4, 2), (9, 9, 4, 4, 2)):
+            c.box(x, y, w, h, d, R, top='#ffffff', side='#cfb8b4')
+            c.set(x + 1, y + d, '#ffffff')
+            c.line(x + 1, y + d + 2, x + 1, y + d + h - 2, '#f6dcd8')
+    elif name == 'fluorite':
+        P, G = '#8e5fb8', '#5fb88a'
+        x, y, w, h, d = 3, 4, 8, 8, 3
+        c.box(x, y, w, h, d, ramp(P), top=mix(P, '#FFFFFF', .35), side=mix(P, '#000000', .4))
+        for yy in range(y + d, y + d + h):
+            col = G if ((yy - y - d) // 2) % 2 else P
+            for xx in range(x, x + w):
+                c.set(xx, yy, col)
+        for j in range(d):
+            for yy in range(y + d - 1 - j, y + d - 1 - j + h):
+                base = G if ((yy - y - d + j + 1) // 2) % 2 else P
+                c.set(x + w + j, yy, mix(base, '#000000', .4))
+        c.set(4, y + d, '#ffffff')
+        c.set(4, y + d + 1, '#e8d8f4')
+    elif name in ('hydrochloric_acid', 'nitric_acid', 'methanol'):
+        if name == 'hydrochloric_acid':
+            bottle(c, (2, 6, 13, 13), (5, 3, 10, 5), '#cfe0e0', '#e4f0ee', 7, '#e0e0d8')
+            c.rect(4, 9, 11, 11, '#3a9a58')
+            c.rect(4, 9, 11, 9, '#6ac888')
+            for (x, y) in ((6, 1), (8, 1), (10, 1), (7, 2)):
+                c.set(x, y, '#d8ece4')
+        elif name == 'nitric_acid':
+            bottle(c, (4, 6, 11, 13), (6, 3, 9, 5), '#d6e4e8', '#c0661e', 7, '#8a6238')
+            for (x, y) in ((5, 2), (8, 1), (10, 2), (7, 1)):
+                c.set(x, y, '#d8944a')
+            c.set(3, 3, '#e8b070')
+        else:
+            bottle(c, (5, 7, 10, 13), (7, 4, 8, 6), '#d6e4e8', '#e8f4f6', 8, '#8a6238')
+            c.rect(6, 10, 9, 12, '#a8824f')
+            c.rect(6, 10, 9, 10, '#c8a266')
+            c.rect(7, 11, 8, 11, '#5a4028')
+    elif name == 'hydrofluoric_acid':
+        R = O('#7a808a')
+        c.vshade(4, 6, 11, 13, R)
+        c.vshade(6, 4, 9, 5, R)
+        c.rect(4, 6, 11, 6, R[3])
+        c.rect(4, 12, 11, 12, R[0])
+        c.rect(6, 2, 9, 3, '#d8c070')
+        c.rect(6, 2, 9, 2, '#f0e0a0')
+        c.set(9, 4, '#d8c070')
+        c.set(10, 5, '#b8a050')
+        c.rect(6, 9, 9, 10, '#c8ccd2')
+        c.rect(7, 9, 8, 9, '#b83a3a')
+    elif name == 'alumina':
+        R = O('#f4f4f0')
+        c.blob(7.5, 12, 6.6, 3.6, R, ymax=13)
+        c.blob(7.5, 9, 4.6, 4, R, ymax=13)
+        c.blob(7.5, 6.5, 2.4, 2.4, R)
+        for x, y in ((5, 11), (10, 11), (8, 8), (6, 9)):
+            c.set(x, y, '#c8d0d8')
+    elif name == 'aluminium_ingot':
+        raise RuntimeError('template')
+    elif name == 'phosphorus':
+        c.rect(3, 5, 12, 13, '#cfe0ea')
+        c.rect(4, 6, 11, 12, '#7fb4dc')
+        c.rect(4, 6, 11, 6, '#b8d8ee')
+        c.rect(4, 3, 11, 4, '#8a8f98')
+        c.rect(4, 3, 11, 3, '#c8cdd4')
+        for x in (5, 7, 9):
+            c.rect(x, 7 + (x % 2), x + 1, 12, '#efe6a0')
+            c.rect(x, 7 + (x % 2), x, 12, '#fffbd0')
+            c.set(x + 1, 11, '#c8bc70')
+        c.rect(4, 5, 4, 13, '#e8f4fa')
+        c.rect(11, 12, 11, 12, '#4a7aa0')
+    elif name == 'lens':
+        R = O('#a8d4f0')
+        c.blob(8, 9.5, 6.2, 5, [mix('#6a98b8', '#000000', .3)] * 5)
+        c.blob(8, 8.5, 6.2, 5, R)
+        c.rect(4, 5, 6, 6, '#ffffff')
+        c.rect(4, 7, 4, 7, '#ffffff')
+        c.set(10, 11, R[4])
+        c.set(11, 10, R[3])
+    elif name == 'vacuum_tube':
+        G = '#cfe6ee'
+        circ(c, 8, 6.5, 5, G)
+        circ(c, 8, 6.5, 4, '#4a5a6a')
+        c.rect(7, 12, 8, 12, G)
+        c.rect(6, 9, 9, 10, '#4a5a6a')
+        c.rect(7, 3, 8, 8, '#a3adb6')
+        c.rect(7, 3, 7, 8, '#d6dde3')
+        c.rect(5, 5, 5, 8, '#f08a28')
+        c.rect(5, 5, 5, 5, '#ffd24a')
+        c.rect(10, 5, 10, 8, '#f08a28')
+        c.rect(6, 11, 9, 12, '#2a2b31')
+        c.rect(6, 11, 9, 11, '#5a5c66')
+        c.set(6, 13, '#c8cfd6')
+        c.set(9, 13, '#c8cfd6')
+        c.set(6, 14, '#c8cfd6')
+        c.set(9, 14, '#c8cfd6')
+        c.set(5, 3, '#ffffff')
+        c.set(4, 4, '#ffffff')
+    elif name == 'photomask':
+        c.box(2, 3, 10, 10, 1, ramp('#cfe0ea'), top='#ffffff', side='#8aa0b0', front='#cfe0ea')
+        for y in range(5, 13):
+            for x in range(4, 12):
+                if (x % 2 == 0 and y % 2 == 1) or (y % 3 == 0 and x % 2 == 1) or (x + y) % 7 == 0:
+                    c.set(x, y, '#2a3040')
+        c.rect(3, 4, 3, 13, '#ffffff')
+    elif name == 'passive_components':
+        c.line(1, 5, 3, 5, '#c8cfd6')
+        c.line(12, 5, 14, 5, '#c8cfd6')
+        c.rect(3, 3, 12, 7, '#d8b878')
+        c.rect(3, 3, 12, 3, '#ecd49a')
+        c.rect(3, 7, 12, 7, '#a88850')
+        for x, col in ((5, '#c0392b'), (7, '#2a1c10'), (9, '#e0a020')):
+            c.rect(x, 3, x, 7, col)
+        R = O('#aab2bb')
+        c.vshade(3, 9, 8, 12, R)
+        c.rect(3, 9, 8, 9, R[4])
+        c.rect(3, 12, 8, 12, R[0])
+        c.rect(4, 13, 4, 14, '#c8cfd6')
+        c.rect(7, 13, 7, 14, '#c8cfd6')
+        c.rect(6, 10, 6, 12, '#3a5fc2')
+        c.rect(10, 10, 13, 12, '#d8b878')
+        c.rect(10, 10, 13, 10, '#ecd49a')
+        c.rect(11, 10, 11, 12, '#c0392b')
+        c.rect(13, 10, 13, 12, '#2a1c10')
+    elif name == 'electric_motor':
+        R = O('#7e8790')
+        c.hshade(3, 4, 11, 11, R)
+        for x in (5, 7, 9):
+            c.rect(x, 4, x, 11, R[1])
+            c.rect(x + 1, 4, x + 1, 11, R[3])
+        Cu = O('#c8794a')
+        c.rect(1, 5, 2, 10, Cu[2])
+        for y in range(5, 11, 2):
+            c.rect(1, y, 2, y, Cu[3])
+        c.rect(1, 10, 2, 10, Cu[0])
+        c.rect(12, 7, 14, 8, '#d6dde3')
+        c.rect(12, 8, 14, 8, '#8b949d')
+        c.rect(12, 5, 12, 10, R[0])
+        c.rect(3, 12, 11, 13, '#4a4f58')
+        c.rect(3, 12, 11, 12, '#6a6e78')
+    elif name == 'display_tube':
+        G = '#9ab0a8'
+        c.poly([(8, 3), (8, 12), (11, 9), (11, 6)], G)
+        c.rect(11, 7, 14, 9, '#aab8b0')
+        c.rect(14, 7, 14, 9, '#2a2b31')
+        c.line(9, 4, 11, 6, '#cfe0d8')
+        c.rect(1, 3, 8, 12, '#aab8b0')
+        for p in ((1, 3), (1, 12)):
+            c.p[p[1]][p[0]] = None
+        c.rect(2, 4, 7, 11, '#2a5a3a')
+        c.blob(4.5, 7.5, 3, 3.4, [mix('#5fe08a', '#000000', .5), '#3a9a5a', '#5fe08a', '#8af0a8', '#d8ffe0'])
+        c.set(3, 5, '#e8fff0')
+    elif name == 'cleanroom_suit':
+        R = O('#f0f2f4')
+        circ(c, 8, 4, 3, R[2])
+        c.rect(6, 3, 10, 5, R[2])
+        c.rect(7, 3, 9, 5, '#6a7a88')
+        c.rect(7, 3, 9, 3, '#9aaab8')
+        c.rect(4, 7, 11, 14, R[2])
+        c.rect(4, 7, 11, 7, R[4])
+        c.rect(2, 7, 3, 12, R[3])
+        c.rect(12, 7, 13, 12, R[1])
+        c.rect(7, 8, 8, 13, R[1])
+        c.rect(7, 8, 7, 13, R[3])
+        c.rect(4, 13, 11, 14, R[1])
+        c.set(8, 8, '#c8cfd6')
+        c.rect(2, 12, 3, 12, '#b8c0c8')
+        c.rect(12, 12, 13, 12, '#8a929b')
+    elif name == 'oil_sand':
+        R = O('#3a2c22')
+        c.blob(5.5, 9.5, 4.6, 3.8, R)
+        c.blob(10.5, 8.5, 3.8, 3.4, R)
+        c.blob(8, 11.5, 4.6, 2.6, R, ymax=13)
+        for x, y in ((4, 8), (6, 10), (9, 7), (11, 9), (8, 12), (12, 7), (5, 12)):
+            c.set(x, y, '#7a6248')
+        c.line(3, 10, 6, 12, '#8a8a9a')
+        c.line(9, 8, 12, 10, '#8a8a9a')
+        c.set(6, 7, '#b8b8c8')
+        c.set(10, 6, '#b8b8c8')
+    elif name == 'crude_oil':
+        W = O('#8a5a30')
+        c.vshade(3, 4, 12, 13, W, cols=lambda y: (4, 11) if y in (4, 13) else (3, 12))
+        for y in (6, 11):
+            c.rect(3, y, 12, y, '#2f3238')
+            c.rect(3, y + 1, 12, y + 1, '#575c68') if False else None
+        c.blob(7.5, 4, 4.4, 1.9, [ '#14151a'] * 5)
+        c.line(5, 3, 7, 3, '#4a4d5a')
+        c.rect(12, 5, 12, 5, '#14151a')
+        c.rect(12, 6, 13, 8, '#14151a')
+        c.rect(13, 9, 13, 10, '#14151a')
+        c.set(13, 11, '#14151a')
+    elif name == 'petrol':
+        Rd = O('#c0392b')
+        c.vshade(3, 6, 9, 13, Rd)
+        c.rect(3, 6, 9, 6, Rd[4])
+        c.rect(3, 13, 9, 13, Rd[0])
+        c.rect(5, 3, 8, 3, Rd[1])
+        c.rect(5, 4, 5, 5, Rd[1])
+        c.rect(8, 4, 8, 5, Rd[1])
+        c.rect(4, 9, 8, 10, '#f0e8d0')
+        c.rect(5, 9, 7, 9, '#b8a888')
+        c.line(10, 7, 14, 3, '#aab2bb')
+        c.line(10, 8, 14, 4, '#6a717b')
+        c.rect(14, 2, 14, 3, '#d6dde3')
+    elif name == 'lubricant':
+        S = O('#8a929b')
+        c.vshade(3, 9, 9, 13, S)
+        c.blob(6.5, 8.5, 3.6, 1.6, S)
+        c.rect(3, 9, 9, 9, S[4])
+        c.rect(4, 6, 7, 7, S[1])
+        c.rect(6, 5, 9, 5, S[3])
+        c.line(10, 10, 14, 4, '#c8cfd6')
+        c.line(10, 11, 14, 5, '#6a717b') if False else None
+        c.rect(13, 5, 13, 5, '#c8cfd6')
+        c.rect(14, 6, 14, 7, '#e0a030')
+        c.set(14, 6, '#f8d070')
+        c.rect(4, 11, 8, 12, '#b83a3a')
+    elif name == 'raw_rubber':
+        c.poly([(2, 5), (12, 4), (14, 9), (4, 11)], '#d8c49a')
+        c.poly([(4, 11), (14, 9), (13, 12), (5, 14)], '#a88850')
+        c.line(4, 11, 14, 9, '#8a6a40')
+        c.line(2, 5, 12, 4, '#ecdcb4')
+        for x, y in ((5, 7), (8, 8), (10, 6), (11, 7), (6, 12), (10, 11)):
+            c.set(x, y, '#b09860')
+        c.line(4, 8, 8, 7, '#c4aa78')
+    elif name == 'rubber':
+        c.box(2, 5, 10, 5, 3, ramp('#2a2a2e'), top='#43434b', side='#18181c', front='#2a2a2e')
+        c.line(3, 8, 11, 8, '#3a3a40')
+        c.set(4, 6, '#5a5a64')
+        c.set(5, 6, '#5a5a64')
+    elif name == 'rubber_tyre':
+        annulus(c, 7.5, 7.5, 6.6, 3.4, '#26262a')
+        for y in range(16):
+            for x in range(16):
+                d = math.hypot(x - 7.5, y - 7.5)
+                if 3.4 < d <= 6.6 and (x + y) < 11 and d > 5:
+                    c.set(x, y, '#4a4a52')
+        annulus(c, 7.5, 7.5, 3.4, 2.1, '#aab2bb')
+        annulus(c, 7.5, 7.5, 3.4, 3.0, '#e8eef2')
+    elif name == 'bauxite':
+        R = O('#9a4a2e')
+        for (x, y, rx, ry) in ((5, 9.5, 3.8, 3.4), (10.5, 9.5, 3.8, 3.4), (8, 5.5, 3.4, 3)):
+            c.blob(x, y, rx, ry, R)
+        for x, y in ((4, 9), (6, 11), (10, 8), (12, 11), (8, 5), (7, 8), (9, 11), (5, 7), (11, 6)):
+            c.set(x, y, '#e8d8b0')
+    elif name == 'soda_ash':
+        P = O('#c8b078')
+        c.rect(3, 7, 12, 14, P[2])
+        c.rect(3, 7, 4, 14, P[3])
+        c.rect(11, 7, 12, 14, P[1])
+        c.rect(3, 14, 12, 14, P[0])
+        c.rect(3, 10, 12, 11, '#3a5fc2')
+        c.rect(3, 10, 12, 10, '#6a8ae0')
+        c.blob(7.5, 6, 4.8, 2.6, O('#f4f4f0'))
+        c.line(3, 7, 4, 5, P[3])
+        c.line(12, 7, 11, 5, P[1])
+        c.rect(6, 12, 9, 12, '#f0e8d0')
+    elif name == 'caustic_soda':
+        R = O('#6a6e78')
+        c.vshade(3, 5, 12, 13, R)
+        c.rect(3, 6, 12, 6, R[0])
+        c.rect(3, 12, 12, 12, R[0])
+        for x in range(3, 13):
+            c.set(x, 8, '#e8c020')
+            c.set(x, 9, '#e8c020' if (x // 2) % 2 else '#1a1b20')
+        c.blob(7.5, 4.5, 4.6, 2.2, O('#f4f4f0'))
+        for x, y in ((5, 4), (8, 3), (10, 5), (7, 5)):
+            c.set(x, y, '#c8d0d8')
+    elif name == 'cryolite':
+        R = O('#dfeff6')
+        shade_chunk(c, [(2, 9), (5, 5), (9, 6), (10, 11), (6, 13), (3, 12)], R)
+        shade_chunk(c, [(8, 3), (12, 4), (14, 8), (11, 10), (9, 7)], R)
+        shade_chunk(c, [(9, 11), (13, 10), (14, 13), (10, 14)], R)
+        for x, y in ((5, 7), (11, 5), (6, 10), (12, 12)):
+            c.set(x, y, '#ffffff')
+        c.set(7, 9, '#a8c8e0')
+        c.set(10, 8, '#a8c8e0')
+    elif name == 'wolframite':
+        c.blob(8, 13, 6, 2, ramp('#2a2630'), ymax=14)
+        for (x0, y0, x1, y1) in ((4, 13, 3, 4), (7, 13, 8, 2), (10, 13, 13, 5), (6, 13, 12, 8)):
+            c.line(x0, y0, x1, y1, '#8a8a9a')
+            c.line(x0 + 1, y0, x1 + 1, y1, '#26242a')
+            c.line(x0 + 2, y0, x1 + 2, y1, '#7a3a2a')
+    elif name == 'tungsten':
+        R = O('#454c58')
+        for (x0, x1, y0, y1) in ((1, 12, 3, 7), (3, 14, 9, 13)):
+            c.hshade(x0, y0, x1, y1, R)
+            c.blob(x1, (y0 + y1) / 2, 1.2, (y1 - y0) / 2, R)
+            c.rect(x0, y0 + 1, x1 - 1, y0 + 1, R[4])
+    elif name == 'borax':
+        R = O('#ece8e0')
+        for (x, y, rx, ry) in ((5, 9.5, 3.8, 3.4), (10.5, 9, 3.6, 3.2), (8, 5.5, 3.2, 2.8)):
+            c.blob(x, y, rx, ry, R)
+        for x, y in ((4, 8), (9, 8), (8, 5), (11, 10), (6, 11)):
+            c.set(x, y, '#cfe6ee')
+            c.set(x + 1, y + 1, '#a8c8d8')
+        c.set(7, 4, '#ffffff')
+    elif name == 'boron_oxide':
+        c.blob(8, 10, 6.2, 4.4, O('#e8e4dc'), ymin=10, ymax=13)
+        c.blob(8, 10, 6.2, 2.2, O('#e8e4dc'))
+        c.blob(8, 10, 5, 1.4, [ '#8a8f98'] * 5)
+        for pts in (([(4, 9), (6, 4), (8, 9)]), ([(7, 9), (9, 3), (11, 9)]), ([(9, 9), (12, 6), (13, 9)])):
+            shade_chunk(c, pts, O('#cfe6ee'))
+        c.set(6, 6, '#ffffff')
+        c.set(9, 5, '#ffffff')
+    elif name in ('wafer_oxidised', 'wafer_diffused', 'wafer_gated', 'wafer_contacted'):
+        c.blob(8, 9.2, 7, 4.2, [mix('#3d4658', '#000000', .2)] * 5)
+        cfg = {
+            'wafer_oxidised': ('#6a6fc8', '#8a8fe0', None, None),
+            'wafer_diffused': ('#8a78b8', '#6fa078', '#7a8aa8', None),
+            'wafer_gated': ('#3fa0a8', '#6ac8c0', '#2f6a78', None),
+            'wafer_contacted': ('#5a8aa0', '#7aaec0', '#34406a', '#14161f'),
+        }[name]
+        base, alt, grid, dots = cfg
+        for y in range(16):
+            for x in range(16):
+                nx, ny = (x - 8) / 7, (y - 8) / 4.2
+                if nx * nx + ny * ny <= 1:
+                    col = alt if (x + y * 1.5 > 17) else base
+                    if name == 'wafer_oxidised' and abs((x - 8) * .8 + (y - 8) * 1.4 + 1) < 1.1:
+                        col = '#d0d4ff'
+                    if grid and ((x - 2) % 3 == 0 or (y - 4) % 2 == 0):
+                        col = grid
+                    if dots and (x - 2) % 3 == 1 and (y - 4) % 2 == 1:
+                        col = dots
+                    c.set(x, y, col)
     else:
         raise KeyError(name)
     c.outline()
@@ -1053,6 +1436,360 @@ def build_block(name, rnd):
             c.set(12, y + 2, '#3cdc5a')
         for x in range(3, 13, 2):
             c.rect(x, 13, x, 14, '#15161a')
+    elif name == 'firebrick':
+        bricks(c, 0, 0, 15, 15, '#dccb8c', '#a89860')
+        for x, y in ((3, 1), (10, 5), (6, 9), (13, 13), (2, 13), (9, 2)):
+            c.set(x, y, '#c8b574')
+    elif name == 'chimney':
+        bricks(c, 0, 0, 15, 15, '#8a3a2e', '#4a2a24')
+        for x, ln in ((2, 6), (6, 9), (10, 5), (13, 8)):
+            for y in range(0, ln):
+                c.set(x, y, '#2a2220' if y % 3 else '#3a2a26')
+        Ir = ramp('#6a6e78')
+        c.rect(0, 7, 15, 9, Ir[2])
+        c.rect(0, 7, 15, 7, Ir[3])
+        c.rect(0, 9, 15, 9, Ir[0])
+        for x in (2, 6, 10, 14):
+            c.set(x, 8, Ir[4])
+    elif name == 'steam_boiler':
+        Ir = ramp('#4a4f58')
+        c.rect(0, 0, 15, 15, Ir[2])
+        for y in (0, 15):
+            c.rect(0, y, 15, y, Ir[1])
+        for x in range(1, 16, 3):
+            for y in (1, 14):
+                c.set(x, y, Ir[4])
+        for y in range(4, 15, 3):
+            c.set(1, y, Ir[4])
+            c.set(14, y, Ir[4])
+        circ(c, 8, 9.5, 5, '#8a929b')
+        circ(c, 8, 9.5, 4, '#3a1a10')
+        circ(c, 8, 9.5, 3.2, '#f08a28')
+        circ(c, 8, 9.5, 1.8, '#ffd24a')
+        c.set(8, 9, '#fff4c0')
+        circ(c, 8, 3.5, 2.6, '#c9a23c')
+        circ(c, 8, 3.5, 1.8, '#f0f0e4')
+        c.line(8, 3, 9, 2, '#b83a3a')
+    elif name == 'stationary_engine':
+        Ir = ramp('#3a3d44')
+        c.rect(0, 0, 15, 15, Ir[2])
+        c.rect(0, 14, 15, 15, Ir[0])
+        c.rect(0, 0, 15, 0, Ir[3])
+        W = ramp('#7e8790')
+        annulus(c, 6, 7.5, 6.4, 5.2, W[3])
+        annulus(c, 6, 7.5, 5.2, 4.2, W[1])
+        for a in range(8):
+            ang = a * math.pi / 4
+            c.line(6, 7.5, 6 + 4.6 * math.cos(ang), 7.5 + 4.6 * math.sin(ang), W[2])
+        circ(c, 6, 7.5, 1.6, W[4])
+        c.set(6, 7, Ir[0])
+        B = ramp('#c9a23c')
+        c.hshade(11, 5, 15, 11, B)
+        c.rect(11, 5, 11, 11, B[0])
+        c.rect(13, 5, 13, 11, B[1])
+        c.rect(7, 7, 10, 8, '#d6dde3')
+        c.rect(7, 8, 10, 8, '#8b949d')
+    elif name == 'lead_chamber':
+        T = ramp('#6a4a28')
+        c.rect(0, 0, 15, 15, T[2])
+        c.rect(0, 0, 15, 0, T[3])
+        c.rect(0, 15, 15, 15, T[0])
+        L = ramp('#7a8494')
+        c.rect(2, 2, 13, 13, L[2])
+        for y in range(2, 14):
+            for x in range(2, 14):
+                if (x + y * 3) % 11 == 0:
+                    c.set(x, y, L[3])
+        for y in (5, 9):
+            c.rect(2, y, 13, y, '#b8c0cc')
+            c.rect(2, y + 1, 13, y + 1, L[1])
+        c.rect(7, 2, 7, 13, '#b8c0cc')
+        c.rect(8, 2, 8, 13, L[1])
+        for x, y in ((3, 3), (12, 3), (3, 12), (12, 12), (7, 7)):
+            c.set(x, y, L[4])
+    elif name == 'generator':
+        G = ramp('#2e5a40')
+        c.rect(0, 0, 15, 15, G[2])
+        c.rect(0, 0, 15, 0, G[3])
+        c.rect(0, 15, 15, 15, G[0])
+        c.rect(0, 0, 0, 15, G[3])
+        c.rect(15, 0, 15, 15, G[0])
+        Cu = ramp('#c8794a')
+        circ(c, 8, 9, 5.5, G[0])
+        circ(c, 8, 9, 4.8, Cu[2])
+        for a in range(12):
+            ang = a * math.pi / 6
+            c.line(8, 9, 8 + 4.8 * math.cos(ang), 9 + 4.8 * math.sin(ang), Cu[1] if a % 2 else Cu[3])
+        circ(c, 8, 9, 1.6, '#aab2bb')
+        c.set(8, 9, G[0])
+        B = ramp('#d6ae44')
+        for x in (3, 11):
+            c.rect(x, 2, x + 1, 3, B[2])
+            c.rect(x, 2, x, 2, B[4])
+            c.rect(x + 1, 3, x + 1, 3, B[0])
+    elif name == 'power_station':
+        S = ramp('#8a8f98')
+        c.rect(0, 0, 15, 15, S[2])
+        c.rect(0, 0, 15, 0, S[4])
+        c.rect(0, 15, 15, 15, S[0])
+        c.rect(0, 0, 0, 15, S[3])
+        c.rect(15, 0, 15, 15, S[1])
+        for cx in (3.5, 12.5):
+            circ(c, cx, 3.5, 2.8, '#2a2b31')
+            circ(c, cx, 3.5, 2, '#f0f0e4')
+            c.line(cx, 3.5, cx + 1, 2, '#b83a3a')
+        circ(c, 8, 3.5, 1.6, '#b82a2a')
+        c.set(7, 3, '#ff9a8a')
+        for x in (3, 7, 11):
+            c.rect(x, 8, x + 2, 14, '#3a3d44')
+            c.rect(x, 8, x + 2, 8, '#575c68')
+            c.rect(x + 1, 9, x + 1, 12, '#d6ae44')
+            c.rect(x, 13, x + 2, 13, '#c8cfd6')
+            c.rect(x + 1, 8, x + 1, 9, '#b83a3a')
+    elif name == 'power_cable':
+        K = ramp('#8a8d90')
+        c.rect(0, 0, 15, 15, K[2])
+        for y in range(16):
+            for x in range(16):
+                r = (x * 7 + y * 13) % 11
+                if r == 0:
+                    c.p[y][x] = K[1]
+                elif r == 1:
+                    c.p[y][x] = K[3]
+        c.rect(0, 0, 15, 0, K[3])
+        for y in range(11, 15):
+            for x in range(16):
+                c.set(x, y, '#e8c020' if ((x + y) // 2) % 2 else '#1a1b20')
+        circ(c, 8, 5.5, 4.6, '#6a717b')
+        circ(c, 8, 5.5, 3.6, '#1a1b20')
+        for (x, y) in ((7, 4), (9, 4), (8, 6), (7, 7), (9, 7)):
+            c.set(x, y, '#c8794a')
+        c.set(6, 3, '#4a4d55')
+    elif name == 'arc_furnace':
+        S = ramp('#8f98a2')
+        c.rect(0, 0, 15, 15, S[2])
+        c.rect(0, 5, 15, 5, S[3])
+        c.rect(0, 6, 15, 6, S[0])
+        c.rect(0, 15, 15, 15, S[0])
+        for x in range(1, 16, 3):
+            c.set(x, 8, S[4])
+            c.set(x, 13, S[4])
+        for x in (2, 7, 12):
+            c.rect(x, 0, x + 2, 5, '#1a1b20')
+            c.rect(x, 0, x, 5, '#3a3d46')
+        circ(c, 8, 11, 2.8, '#f08a28')
+        circ(c, 8, 11, 1.8, '#ffe890')
+        c.set(8, 11, '#ffffff')
+        c.rect(5, 14, 11, 14, '#6a6e78')
+    elif name == 'electrolytic_cell':
+        S = ramp('#6a727c')
+        c.rect(0, 0, 15, 15, S[2])
+        c.rect(0, 8, 15, 8, S[4])
+        c.rect(0, 9, 15, 15, S[1])
+        c.rect(0, 9, 15, 9, S[3])
+        c.rect(0, 15, 15, 15, S[0])
+        for x in (2, 6, 10):
+            c.rect(x, 4, x + 2, 9, '#1a1b20')
+            c.rect(x, 4, x, 9, '#3a3d46')
+        Cu = ramp('#d8844e')
+        c.rect(0, 1, 15, 3, Cu[2])
+        c.rect(0, 1, 15, 1, Cu[4])
+        c.rect(0, 3, 15, 3, Cu[0])
+        for x in (4, 8, 12):
+            c.set(x, 2, Cu[0])
+        for x in range(1, 16, 3):
+            c.set(x, 13, S[4])
+    elif name == 'vacuum_pump':
+        S = ramp('#7e8790')
+        c.rect(0, 0, 15, 15, S[2])
+        c.rect(0, 0, 15, 0, S[3])
+        c.rect(0, 13, 15, 15, '#3a3f47')
+        c.rect(0, 13, 15, 13, '#575c68')
+        circ(c, 5, 7.5, 4.6, '#cfe6ee')
+        circ(c, 5, 7.5, 3.6, '#3a4a58')
+        c.rect(1, 12, 9, 12, '#cfe6ee')
+        c.line(5, 7.5, 7, 5, '#f0f0e4')
+        c.set(3, 5, '#ffffff')
+        c.set(4, 4, '#ffffff')
+        annulus(c, 11.5, 9.5, 3.8, 2.6, '#4a4f58')
+        for a in range(4):
+            ang = a * math.pi / 2 + .5
+            c.line(11.5, 9.5, 11.5 + 2.8 * math.cos(ang), 9.5 + 2.8 * math.sin(ang), '#aab2bb')
+        circ(c, 11.5, 9.5, 1, '#d6dde3')
+        c.line(5, 12, 11, 13, '#1a1b20')
+    elif name == 'cleanroom_panel':
+        W = ramp('#eef0f2')
+        c.rect(0, 0, 15, 15, W[2])
+        c.rect(0, 0, 15, 0, '#ffffff')
+        c.rect(0, 15, 15, 15, W[1])
+        c.rect(15, 0, 15, 15, W[1])
+        c.rect(1, 1, 14, 1, '#c9d0d6')
+        c.rect(1, 14, 14, 14, '#c9d0d6')
+        c.rect(1, 1, 1, 14, '#c9d0d6')
+        c.rect(14, 1, 14, 14, '#c9d0d6')
+        c.rect(2, 7, 13, 7, '#c9d0d6')
+        c.rect(2, 8, 13, 8, '#ffffff')
+    elif name == 'filter_unit':
+        W = ramp('#eef0f2')
+        c.rect(0, 0, 15, 15, W[2])
+        c.rect(0, 0, 15, 0, '#ffffff')
+        c.rect(0, 15, 15, 15, W[1])
+        c.rect(15, 0, 15, 15, W[1])
+        c.rect(1, 1, 14, 9, '#b8c0c8')
+        for x in range(2, 14):
+            c.rect(x, 2, x, 8, '#dfe3e6' if x % 2 else '#f6f8f9')
+        circ(c, 8, 12.5, 2.6, '#4a4f58')
+        circ(c, 8, 12.5, 1.9, '#2a2d33')
+        c.line(6, 11, 10, 14, '#aab2bb')
+        c.line(10, 11, 6, 14, '#aab2bb')
+    elif name == 'water_purifier':
+        S = ramp('#8a929b')
+        c.rect(0, 0, 15, 15, S[2])
+        c.rect(0, 0, 15, 0, S[3])
+        c.rect(0, 15, 15, 15, S[0])
+        c.rect(1, 1, 14, 14, '#2c3a4a')
+        for x0 in (2, 9):
+            c.vshade(x0, 3, x0 + 3, 12, ramp('#3a78d0'))
+            c.rect(x0, 2, x0 + 3, 2, '#6a6e78')
+            c.rect(x0, 13, x0 + 3, 13, '#6a6e78')
+        c.rect(1, 1, 14, 1, '#aab2bb')
+        circ(c, 7.5, 7.5, 1.5, '#f0f0e4')
+        c.set(7, 7, '#b83a3a')
+        c.rect(7, 12, 8, 13, '#3cdc5a')
+    elif name == 'crystal_puller':
+        S = ramp('#8f98a2')
+        c.rect(0, 0, 15, 15, S[2])
+        c.rect(5, 6, 10, 15, S[3])
+        c.rect(0, 15, 15, 15, S[0])
+        c.rect(7, 0, 8, 5, '#d6dde3')
+        c.rect(8, 0, 8, 5, '#8b949d')
+        c.rect(5, 5, 10, 6, S[0])
+        c.rect(6, 5, 9, 5, S[4])
+        circ(c, 7.5, 10, 3, '#2a2b31')
+        circ(c, 7.5, 10, 2.2, '#f08a28')
+        circ(c, 7.5, 10, 1.2, '#ffd24a')
+        for y in (8, 13):
+            c.set(5, y, S[4])
+            c.set(10, y, S[4])
+        for y in (3, 8, 13):
+            c.set(2, y, S[4])
+            c.set(13, y, S[4])
+    elif name == 'diffusion_furnace':
+        S = ramp('#8f98a2')
+        c.rect(0, 0, 15, 15, S[2])
+        c.rect(0, 0, 15, 0, S[3])
+        c.rect(0, 15, 15, 15, S[0])
+        c.rect(15, 0, 15, 15, S[1])
+        for cy in (3, 8, 13):
+            circ(c, 8, cy, 2.4, '#e8e0d0')
+            circ(c, 8, cy, 1.8, '#f08a28')
+            circ(c, 8, cy, .9, '#ffd24a')
+        for y in (5, 10):
+            c.rect(1, y, 14, y, S[1])
+        for y in (1, 6, 11):
+            c.set(2, y, S[4])
+            c.set(13, y, S[4])
+    elif name == 'lithography_stepper':
+        Cr = ramp('#e6dcc0')
+        c.rect(0, 0, 15, 15, Cr[2])
+        c.rect(0, 0, 15, 0, Cr[4])
+        c.rect(0, 15, 15, 15, Cr[0])
+        c.rect(15, 0, 15, 15, Cr[1])
+        c.rect(2, 2, 8, 7, '#6a5a3a')
+        c.rect(3, 3, 7, 6, '#e0a030')
+        c.rect(3, 3, 7, 3, '#f8d070')
+        c.line(3, 6, 5, 4, '#fff0b0')
+        circ(c, 11.5, 9, 3.4, '#4a4f58')
+        circ(c, 11.5, 9, 2.4, '#2a3a5a')
+        circ(c, 11.5, 9, 1.2, '#5a8ac0')
+        c.set(11, 8, '#ffffff')
+        c.rect(10, 2, 13, 5, Cr[1])
+        c.rect(11, 3, 12, 4, '#8a8470')
+        for x, col in ((2, '#b83a3a'), (4, '#3cdc5a'), (6, '#4a4f58'), (8, '#4a4f58')):
+            c.rect(x, 12, x + 1, 13, col)
+        c.rect(2, 9, 8, 9, Cr[1])
+    elif name == 'wire_bonder':
+        S = ramp('#7e8790')
+        c.rect(0, 0, 15, 15, S[2])
+        c.rect(0, 0, 15, 0, S[3])
+        c.rect(0, 15, 15, 15, S[0])
+        c.rect(9, 0, 12, 5, '#1a1b20')
+        c.rect(9, 0, 9, 5, '#3a3d46')
+        c.rect(10, 5, 11, 6, '#aab2bb')
+        c.rect(9, 6, 12, 6, '#6a6e78')
+        annulus(c, 4, 4, 2.8, 1.2, '#d6ae44')
+        circ(c, 4, 4, 1.2, '#4a4f58')
+        c.line(5, 6, 10, 9, '#f0f0e4')
+        c.line(8, 7, 8, 11, '#d6dde3')
+        c.set(8, 11, '#ffffff')
+        c.rect(2, 12, 13, 14, '#3a3f47')
+        c.rect(2, 12, 13, 12, '#575c68')
+        c.rect(6, 11, 10, 11, '#2a2b31')
+        c.rect(7, 11, 9, 11, '#8fa0c8')
+    elif name == 'tar_sand':
+        for y in range(16):
+            for x in range(16):
+                r = rnd.random()
+                c.p[y][x] = '#d4b888' if r < .6 else '#c4a878' if r < .85 else '#e0c898'
+        for (cx, cy, r) in ((4, 4, 3.2), (11, 6, 3.6), (6, 11, 3.4), (13, 13, 2.4), (1, 12, 2)):
+            for y in range(16):
+                for x in range(16):
+                    if math.hypot(x - cx, y - cy) + rnd.random() * 1.2 <= r:
+                        c.p[y][x] = '#2a2018'
+        for y in range(15):
+            for x in range(15):
+                if c.p[y][x] == '#2a2018' and c.p[y + 1][x] == '#2a2018' and c.p[y][x + 1] == '#2a2018' and (x + y) % 3 == 0:
+                    c.p[y][x] = '#5a4a3a'
+    elif name == 'bauxite_ore':
+        for y in range(16):
+            for x in range(16):
+                r = rnd.random()
+                c.p[y][x] = '#9a4a2e' if r < .55 else '#84402a' if r < .8 else '#b05a38'
+        spots = []
+        while len(spots) < 14:
+            x, y = rnd.randint(1, 14), rnd.randint(1, 14)
+            if all(abs(x - a) + abs(y - b) > 3 for a, b in spots):
+                spots.append((x, y))
+        for x, y in spots:
+            c.set(x, y, '#e8d8b0')
+            c.set(x + 1, y, '#e8d8b0')
+            c.set(x, y + 1, '#c8b890')
+            c.set(x + 1, y + 1, '#6a3220')
+    elif name == 'borax_ore':
+        for y in range(16):
+            for x in range(16):
+                r = rnd.random()
+                c.p[y][x] = '#b89c70' if r < .6 else '#a8896a' if r < .85 else '#c8ac80'
+        for (cx, cy, rx, ry) in ((4, 3, 4.5, 3), (11, 4, 4.5, 3.4), (7, 9, 5, 3), (13, 11, 3.4, 3.4), (2, 13, 3.4, 2.6), (8, 14, 3, 1.6)):
+            for y in range(16):
+                for x in range(16):
+                    if ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 + rnd.random() * .3 <= 1:
+                        c.p[y][x] = '#dcdad2' if rnd.random() < .8 else '#ece8e0'
+        for x, y in ((3, 3), (10, 4), (7, 9), (13, 11), (2, 13), (12, 3), (5, 10)):
+            c.set(x, y, '#eaf6fa')
+            c.set(x + 1, y, '#eaf6fa')
+            c.set(x, y + 1, '#9ab8c8')
+            c.set(x + 1, y + 1, '#7a98a8')
+    elif name == 'distillation_column':
+        S = ramp('#7e8790')
+        for y in range(16):
+            c.vshade(0, y, 15, y, S)
+        Cu = ramp('#d8844e')
+        for y0 in (1, 7, 13):
+            c.rect(0, y0, 15, y0 + 1, Cu[2])
+            c.rect(0, y0, 15, y0, Cu[4])
+            c.rect(0, y0 + 1, 15, y0 + 1, Cu[0])
+            for x in range(1, 16, 3):
+                c.set(x, y0, Cu[3])
+        for y in (3, 4, 10, 11):
+            c.set(2, y, S[4])
+            c.set(13, y, S[4])
+        c.rect(5, 3, 10, 6, '#b08a30')
+        c.rect(6, 4, 9, 5, '#2c4560')
+        c.rect(6, 5, 9, 5, '#6ab0d8')
+        c.set(6, 4, '#a8d0e8')
+        c.rect(5, 9, 10, 9, S[0])
+        c.rect(7, 10, 8, 12, Cu[1])
     else:
         raise KeyError(name)
     return c
@@ -1095,13 +1832,37 @@ ITEMS = {
     'musket_ball': 'Musket Balls', 'paper_cartridge': 'Paper Cartridge', 'round_shot': 'Round Shot', 'stone_shot': 'Stone Shot', 'powder_charge': 'Powder Charge',
     'explosive_shell': 'Explosive Shell', 'cannon_barrel': 'Cannon Barrel', 'bombard_barrel': 'Bombard Barrel',
 }
+ITEMS.update({
+    'pig_iron': 'Pig Iron', 'iron_plate': 'Wrought Iron Plate', 'precision_parts': 'Precision Parts', 'insulated_wire': 'Insulated Wire',
+    'salt': 'Rock Salt', 'fluorite': 'Fluorite', 'hydrochloric_acid': 'Hydrochloric Acid', 'nitric_acid': 'Nitric Acid',
+    'hydrofluoric_acid': 'Hydrofluoric Acid', 'alumina': 'Alumina', 'aluminium_ingot': 'Aluminium Ingot', 'phosphorus': 'Phosphorus',
+    'methanol': 'Wood Spirit', 'lens': 'Optical Lens', 'vacuum_tube': 'Vacuum Tube', 'photomask': 'Photomask',
+    'passive_components': 'Resistors and Capacitors', 'electric_motor': 'Electric Motor', 'display_tube': 'Cathode Ray Tube', 'cleanroom_suit': 'Cleanroom Suit',
+})
+ITEMS.update({
+    'oil_sand': 'Oil Sand', 'crude_oil': 'Crude Oil', 'petrol': 'Petrol', 'lubricant': 'Lubricating Oil', 'raw_rubber': 'Raw Rubber',
+    'rubber': 'Vulcanised Rubber', 'rubber_tyre': 'Solid Rubber Tyre', 'bauxite': 'Bauxite', 'soda_ash': 'Soda Ash', 'caustic_soda': 'Caustic Soda',
+    'cryolite': 'Cryolite', 'wolframite': 'Wolframite', 'tungsten': 'Tungsten', 'silver': 'Silver', 'borax': 'Borax', 'boron_oxide': 'Boron Oxide',
+    'wafer_oxidised': 'Oxidised Wafer', 'wafer_diffused': 'Diffused Wafer', 'wafer_gated': 'Gate-Oxidised Wafer', 'wafer_contacted': 'Contact-Etched Wafer',
+})
 BLOCKS = {
     'workshop': 'Workshop', 'assembly_yard': 'Assembly Yard', 'niter_bed': 'Nitre Bed', 'powder_mill': 'Powder Mill', 'foundry': 'Foundry',
     'chemical_works': 'Chemical Works', 'machine_shop': 'Machine Shop', 'electronics_works': 'Electronics Works', 'galena_ore': 'Galena Ore',
     'pyrite_ore': 'Pyrite Ore', 'computer': 'Computer', 'server': 'Server',
 }
-ORES = {'galena_ore': ('#5d6470', '#8B887C'), 'pyrite_ore': ('#c9a93f', '#8B887C')}
-TEMPLATES = {'lead_ingot': ('ingot', '#6f7682'), 'steel_ingot': ('ingot', '#8f9aa3')}
+BLOCKS.update({
+    'rock_salt': 'Rock Salt Ore', 'fluorite_ore': 'Fluorite Ore', 'firebrick': 'Firebrick', 'chimney': 'Chimney Stack', 'steam_boiler': 'Steam Boiler',
+    'stationary_engine': 'Stationary Steam Engine', 'lead_chamber': 'Lead Chamber', 'generator': 'Generator', 'power_station': 'Power Station Switchboard',
+    'power_cable': 'Cable Duct', 'arc_furnace': 'Electric Arc Furnace', 'electrolytic_cell': 'Electrolytic Cell', 'vacuum_pump': 'Vacuum Pump',
+    'cleanroom_panel': 'Cleanroom Panel', 'filter_unit': 'Filter Fan Unit', 'water_purifier': 'Ultrapure Water Plant', 'crystal_puller': 'Crystal Puller',
+    'diffusion_furnace': 'Diffusion Furnace', 'lithography_stepper': 'Photolithography Stepper', 'wire_bonder': 'Wire Bonder',
+})
+BLOCKS.update({
+    'tar_sand': 'Oil Sand Deposit', 'bauxite_ore': 'Bauxite', 'wolframite_ore': 'Wolframite Ore', 'borax_ore': 'Borax Deposit',
+    'distillation_column': 'Distillation Column',
+})
+ORES = {'wolframite_ore': ('#3a3030', '#9a8f8a'), 'rock_salt': ('#e8cfc8', '#c9b98f'), 'fluorite_ore': ('#8e5fb8', '#8B887C'), 'galena_ore': ('#5d6470', '#8B887C'), 'pyrite_ore': ('#c9a93f', '#8B887C')}
+TEMPLATES = {'silver': ('ingot', '#d9dde2'), 'aluminium_ingot': ('ingot', '#c9d0d6'), 'lead_ingot': ('ingot', '#6f7682'), 'steel_ingot': ('ingot', '#8f9aa3')}
 VEHICLES = {'cart': 'Cart', 'wagon': 'Wagon', 'chariot': 'Chariot', 'motor_truck': 'Motor Truck', 'locomotive': 'Steam Locomotive',
             'rail_wagon': 'Goods Wagon', 'rail_carriage': 'Passenger Carriage', 'cannon': 'Cannon', 'bombard': 'Bombard', 'trebuchet': 'Trebuchet', 'field_gun': 'Field Gun'}
 
@@ -1127,12 +1888,19 @@ def lang_entries():
     return e
 
 
+OVERRIDES = {f'item.{NS}.fine_wire': 'Aluminium Bond Wire', f'item.{NS}.chip': 'Logic Integrated Circuit'}
+
+
 def write_lang():
     path = ASSETS / 'lang/en_us.json'
     raw = path.read_bytes().decode('utf-8')
+    import re
+    for k, v in OVERRIDES.items():
+        raw = re.sub(r'("' + re.escape(k) + r'"\s*:\s*)"(?:[^"\\]|\\.)*"', lambda m: m.group(1) + json.dumps(v, ensure_ascii=False), raw, count=1)
     existing = json.loads(raw)
     new = {k: v for k, v in lang_entries().items() if k not in existing}
     if not new:
+        path.write_bytes(raw.encode('utf-8'))
         return 0
     nl = '\r\n' if '\r\n' in raw else '\n'
     end = raw.rstrip().rfind('}')

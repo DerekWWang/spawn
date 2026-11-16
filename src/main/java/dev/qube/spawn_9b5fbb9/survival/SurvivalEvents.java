@@ -105,7 +105,12 @@ public final class SurvivalEvents {
         return new SurvivalState.Climate(ambient,insulation,actor.isInWater()||level.isRainingAt(actor.blockPosition()),sheltered,fire);
     }
     public static void applyCapacities(LivingEntity entity,SurvivalState s,boolean exempt){
-        modifier(entity,Attributes.MOVEMENT_SPEED,MOVE,exempt?1:s.movement());
+        // The load on the back is weighed once a second.
+        var data=entity.getPersistentData();
+        if(entity.tickCount%20==0||!data.contains("survivalBurden"))data.putDouble("survivalBurden",dev.qube.spawn_9b5fbb9.industry.Ledger.carried(entity));
+        double burden=data.getDoubleOr("survivalBurden",0),pace=dev.qube.spawn_9b5fbb9.industry.Ledger.pace(burden);
+        if(!exempt&&pace<.5&&entity.tickCount%100==0&&entity instanceof net.minecraft.server.level.ServerPlayer player)player.sendOverlayMessage(net.minecraft.network.chat.Component.literal("Overloaded: carrying "+Math.round(burden)+" kg. Load a cart."));
+        modifier(entity,Attributes.MOVEMENT_SPEED,MOVE,exempt?1:s.movement()*pace);
         modifier(entity,Attributes.ATTACK_SPEED,HANDS,exempt?1:s.manipulation());
         modifier(entity,Attributes.ATTACK_DAMAGE,ATTACK,exempt?1:s.manipulation());
         modifier(entity,Attributes.BLOCK_BREAK_SPEED,MIND,exempt?1:Math.min(s.manipulation(),Math.max(.05,s.mental())));
@@ -211,7 +216,9 @@ public final class SurvivalEvents {
             }
         }
         boolean edged=e.getSource().getEntity() instanceof LivingEntity a&&(
-            BuiltInRegistries.ITEM.getKey(a.getMainHandItem().getItem()).getPath().matches(".*(sword|spear|axe).*"));
+            BuiltInRegistries.ITEM.getKey(a.getMainHandItem().getItem()).getPath().matches(".*(sword|spear|axe).*"))
+            // Balls and shot tear and carry cloth into the wound: they bleed and fester like a cut.
+            ||source.equals("gunshot")||source.equals("artillery");
         s.injure(part,e.getHealthDamage()*6,edged);
         if(part.ordinal()<4&&target.getRandom().nextFloat()<.35){int start=part.ordinal()<2?8+part.ordinal()*5:18+(part.ordinal()-2)*5;s.injure(SurvivalState.Part.values()[start+target.getRandom().nextInt(5)],e.getHealthDamage()*8,edged);}
         if(part==SurvivalState.Part.BRAIN&&e.getHealthDamage()>=4&&target.getRandom().nextFloat()<.35)s.injure(target.getRandom().nextBoolean()?SurvivalState.Part.LEFT_EYE:SurvivalState.Part.RIGHT_EYE,e.getHealthDamage()*10,false);

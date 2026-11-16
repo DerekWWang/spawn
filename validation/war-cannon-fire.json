@@ -18,7 +18,7 @@
    ]
   },
   {
-   "step": 22
+   "step": 60
   },
   {
    "run": [
@@ -33,6 +33,11 @@
     "summon minecraft:villager -4.5 -60 2.5 {Tags:[\"g1\"],NoAI:1b}",
     "summon minecraft:villager -4.5 -60 -1.5 {Tags:[\"g2\"],NoAI:1b}",
     "summon minecraft:villager -5.5 -60 0.5 {Tags:[\"g3\"],NoAI:1b}",
+    "summon minecraft:villager -5.5 -60 2.5 {Tags:[\"g4\"],NoAI:1b}",
+    "summon minecraft:villager -5.5 -60 -1.5 {Tags:[\"g5\"],NoAI:1b}",
+    "summon minecraft:villager -6.5 -60 0.5 {Tags:[\"g6\"],NoAI:1b}",
+    "summon minecraft:villager -6.5 -60 2.5 {Tags:[\"g7\"],NoAI:1b}",
+    "summon minecraft:villager -6.5 -60 -1.5 {Tags:[\"g8\"],NoAI:1b}",
     "survival debug_skill @e[tag=g1,limit=1] gunnery 20",
     "survival debug_skill @e[tag=g2,limit=1] gunnery 20",
     "survival debug_skill @e[tag=g3,limit=1] gunnery 20",
@@ -43,7 +48,17 @@
     "survival control @e[tag=g1,limit=1] vehicle load",
     "survival control @e[tag=g1,limit=1] siege man",
     "survival control @e[tag=g2,limit=1] siege man",
-    "survival control @e[tag=g3,limit=1] siege man"
+    "survival control @e[tag=g3,limit=1] siege man",
+    "survival debug_skill @e[tag=g4,limit=1] gunnery 20",
+    "survival control @e[tag=g4,limit=1] siege man",
+    "survival debug_skill @e[tag=g5,limit=1] gunnery 20",
+    "survival control @e[tag=g5,limit=1] siege man",
+    "survival debug_skill @e[tag=g6,limit=1] gunnery 20",
+    "survival control @e[tag=g6,limit=1] siege man",
+    "survival debug_skill @e[tag=g7,limit=1] gunnery 20",
+    "survival control @e[tag=g7,limit=1] siege man",
+    "survival debug_skill @e[tag=g8,limit=1] gunnery 20",
+    "survival control @e[tag=g8,limit=1] siege man"
    ]
   },
   {

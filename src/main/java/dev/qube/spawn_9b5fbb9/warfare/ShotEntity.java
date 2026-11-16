@@ -24,11 +24,11 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-/** A cannonball, bombard stone, trebuchet stone or shell in flight. It follows a plain ballistic arc,
+/** A cannonball, bombard stone, trebuchet stone or shell in flight. It flies at its real speed under gravity and air drag,
  * ploughs through anything alive in its path, and spends its energy breaking what it strikes. */
 public class ShotEntity extends Entity implements ItemSupplier {
     private static final EntityDataAccessor<ItemStack> ITEM=SynchedEntityData.defineId(ShotEntity.class,EntityDataSerializers.ITEM_STACK);
-    public double power;
+    public double power,drag;
     public float entityDamage;
     public boolean explosive;
     public UUID owner;
@@ -36,7 +36,8 @@ public class ShotEntity extends Entity implements ItemSupplier {
     public ShotEntity(EntityType<?> type,Level level){super(type,level);}
     @Override protected void defineSynchedData(SynchedEntityData.Builder data){data.define(ITEM,ItemStack.EMPTY);}
     @Override public ItemStack getItem(){return entityData.get(ITEM);}
-    public void launch(ItemStack munition,Vec3 velocity,double power,float entityDamage,boolean explosive,Entity owner){
+    public void launch(ItemStack munition,Vec3 velocity,double power,float entityDamage,boolean explosive,Entity owner,double drag){
+        this.drag=drag;
         entityData.set(ITEM,munition.copyWithCount(1));setDeltaMovement(velocity);this.power=power;this.entityDamage=entityDamage;this.explosive=explosive;this.owner=owner==null?null:owner.getUUID();
     }
     @Override protected InterpolationHandler createInterpolationHandler(){return LinearInterpolationHandler.create(this,2);}
@@ -65,7 +66,8 @@ public class ShotEntity extends Entity implements ItemSupplier {
             if(Siege.impact(level,this,hit.getBlockPos(),end)){discard();return;}
             setDeltaMovement(motion.scale(.55));return;
         }
-        setPos(to.x,to.y,to.z);setDeltaMovement(motion.x,motion.y-Siege.GRAVITY,motion.z);
+        // Air drag grows with the square of speed; gravity is 9.8 m/s/s.
+        double slowed=1-drag*motion.length();setPos(to.x,to.y,to.z);setDeltaMovement(motion.x*slowed,motion.y*slowed-Siege.GRAVITY,motion.z*slowed);
         if(tickCount%2==0)level.sendParticles(ParticleTypes.SMOKE,to.x,to.y,to.z,1,0,0,0,0);
     }
     @Override protected void readAdditionalSaveData(ValueInput input){}

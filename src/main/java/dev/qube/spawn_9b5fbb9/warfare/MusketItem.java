@@ -26,17 +26,30 @@ public class MusketItem extends Item {
             }
             return InteractionResult.SUCCESS;
         }
+        if(player.isShiftKeyDown()&&Firearms.fouling(musket)>0){player.getPersistentData().putDouble("survivalClean",0);player.getPersistentData().remove("survivalReload");player.startUsingItem(hand);return InteractionResult.CONSUME;}
+        if(Firearms.fouling(musket)>=Firearms.FOULED_SOLID){if(!level.isClientSide())player.sendOverlayMessage(Component.literal("The barrel is fouled solid: sneak and use to scour it"));return InteractionResult.FAIL;}
+        if(Firearms.flintWorn(musket)&&!level.isClientSide()){
+            boolean fitted=player.getAbilities().instabuild;
+            for(int slot=0;!fitted&&slot<player.getInventory().getContainerSize();slot++){ItemStack stack=player.getInventory().getItem(slot);if(stack.is(net.minecraft.world.item.Items.FLINT)){stack.shrink(1);fitted=true;}}
+            if(!fitted){player.sendOverlayMessage(Component.literal("The flint is worn out: carry a spare"));return InteractionResult.FAIL;}
+            Firearms.reflint(musket);
+        }
         if(!Firearms.hasCartridge(player)){if(!level.isClientSide())player.sendOverlayMessage(Component.literal("No paper cartridges"));return InteractionResult.FAIL;}
-        player.getPersistentData().putDouble("survivalReload",0);player.startUsingItem(hand);return InteractionResult.CONSUME;
+        player.getPersistentData().remove("survivalClean");player.getPersistentData().putDouble("survivalReload",0);player.startUsingItem(hand);return InteractionResult.CONSUME;
     }
     @Override public ItemUseAnimation getUseAnimation(ItemStack stack){return Firearms.loaded(stack)?ItemUseAnimation.NONE:ItemUseAnimation.CROSSBOW;}
     @Override public int getUseDuration(ItemStack stack,LivingEntity user){return 72000;}
     @Override public void onUseTick(Level level,LivingEntity user,ItemStack musket,int remaining){
         if(!(level instanceof ServerLevel server)||!(user instanceof Player player))return;
-        double progress=player.getPersistentData().getDoubleOr("survivalReload",0)+Firearms.reloadRate(player);
-        if(progress<Firearms.RELOAD_WORK){
+        if(player.getPersistentData().contains("survivalClean")){
+            double scoured=player.getPersistentData().getDoubleOr("survivalClean",0)+Firearms.reloadRate(player);
+            if(scoured<Firearms.CLEAN_WORK){player.getPersistentData().putDouble("survivalClean",scoured);if(player.tickCount%20==0)player.sendOverlayMessage(Component.literal("Cleaning "+Math.round(100*scoured/Firearms.CLEAN_WORK)+"%"));return;}
+            player.getPersistentData().remove("survivalClean");player.stopUsingItem();Firearms.clean(musket);player.sendOverlayMessage(Component.literal("Barrel clean"));return;
+        }
+        double work=Firearms.loadWork(musket),progress=player.getPersistentData().getDoubleOr("survivalReload",0)+Firearms.reloadRate(player);
+        if(progress<work){
             player.getPersistentData().putDouble("survivalReload",progress);
-            if(player.tickCount%20==0)player.sendOverlayMessage(Component.literal("Loading "+Math.round(100*progress/Firearms.RELOAD_WORK)+"%"));
+            if(player.tickCount%20==0)player.sendOverlayMessage(Component.literal("Loading "+Math.round(100*progress/work)+"%"));
             return;
         }
         player.getPersistentData().remove("survivalReload");player.stopUsingItem();
@@ -44,5 +57,5 @@ public class MusketItem extends Item {
         Firearms.setLoaded(musket,true);player.sendOverlayMessage(Component.literal("Loaded"));
         server.playSound(null,player.getX(),player.getY(),player.getZ(),SoundEvents.CROSSBOW_LOADING_END.value(),SoundSource.PLAYERS,1,.7f);
     }
-    @Override public boolean releaseUsing(ItemStack stack,Level level,LivingEntity user,int remaining){user.getPersistentData().remove("survivalReload");return false;}
+    @Override public boolean releaseUsing(ItemStack stack,Level level,LivingEntity user,int remaining){user.getPersistentData().remove("survivalReload");user.getPersistentData().remove("survivalClean");return false;}
 }

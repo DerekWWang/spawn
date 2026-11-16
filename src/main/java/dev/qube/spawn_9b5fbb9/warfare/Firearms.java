@@ -32,8 +32,19 @@ import net.minecraft.world.phys.Vec3;
 public final class Firearms {
     private Firearms(){}
     public static final ResourceKey<DamageType> GUNSHOT=ResourceKey.create(Registries.DAMAGE_TYPE,Identifier.fromNamespaceAndPath(IndustrialContent.MODID,"gunshot"));
-    /** Loading drill at full skill and capacity; a raw recruit takes two thirds longer. */
-    public static final double RELOAD_WORK=240;
+    /** Loading drill at full skill and capacity: eighteen seconds, three rounds a minute. A raw recruit takes two thirds longer. */
+    public static final double RELOAD_WORK=360;
+    /** A minute with rod, rag and water to scour the barrel; a flint is good for about forty sparks. */
+    public static final double CLEAN_WORK=1200;
+    public static final int FLINT_LIFE=40,FOULED_SOLID=40;
+    private static void put(ItemStack musket,String key,int value){var data=ItemAging.data(musket);if(value<=0)data.remove(key);else data.putInt(key,value);ItemAging.data(musket,data);}
+    /** Shots fired since the barrel was last cleaned. Black powder leaves half its weight behind as fouling. */
+    public static int fouling(ItemStack musket){return ItemAging.data(musket).getIntOr("fouling",0);}
+    public static void clean(ItemStack musket){put(musket,"fouling",0);}
+    public static boolean flintWorn(ItemStack musket){return ItemAging.data(musket).getIntOr("flintShots",0)>=FLINT_LIFE;}
+    public static void reflint(ItemStack musket){put(musket,"flintShots",0);}
+    /** Each round rams harder down a dirtier barrel. */
+    public static double loadWork(ItemStack musket){return RELOAD_WORK*(1+.04*Math.min(FOULED_SOLID,fouling(musket)));}
     public static final double RANGE=120;
     public record Result(boolean fired,Entity hit,String message){}
     public static void init(){}
@@ -64,10 +75,12 @@ public final class Firearms {
     }
     public static Result fire(LivingEntity shooter,ItemStack musket,ServerLevel level,Vec3 direction){
         if(!loaded(musket))return new Result(false,null,"The musket is not loaded");
+        if(flintWorn(musket)){level.playSound(null,shooter.getX(),shooter.getEyeY(),shooter.getZ(),SoundEvents.FLINTANDSTEEL_USE,SoundSource.PLAYERS,1,.5f);return new Result(false,null,"No spark: the flint is worn out");}
+        int fouling=fouling(musket);put(musket,"fouling",fouling+1);put(musket,"flintShots",ItemAging.data(musket).getIntOr("flintShots",0)+1);
         setLoaded(musket,false);musket.hurtAndBreak(1,level,shooter,item->{});
         Vec3 eye=shooter.getEyePosition(),muzzle=eye.add(direction.scale(1.1));
         boolean wet=level.isRainingAt(shooter.blockPosition().above());
-        if(level.getRandom().nextFloat()<(wet?.5f:.1f)){
+        if(level.getRandom().nextFloat()<(wet?.5f:.1f)+.01f*fouling){
             level.playSound(null,eye.x,eye.y,eye.z,SoundEvents.FLINTANDSTEEL_USE,SoundSource.PLAYERS,1,.8f);
             return new Result(false,null,wet?"Misfire: the priming is wet":"Misfire: a flash in the pan");
         }

@@ -111,6 +111,12 @@ public final class WarfareGameTests {
         }
         h.assertTrue(hit&&(!target.isAlive()||target.getHealth()<=target.getMaxHealth()-6),"A drilled shot at six blocks hits and wounds badly: "+shots+" shots, "+misfires+" misfires");
         h.assertTrue(musket.getDamageValue()>0&&Firearms.damageAt(10)>Firearms.damageAt(100),"The piece wears, and the ball loses force with range");
+        h.assertTrue(Firearms.fouling(musket)==shots&&Firearms.loadWork(musket)>Firearms.RELOAD_WORK,"Every round fouls the barrel and the next rams harder");
+        Firearms.clean(musket);h.assertTrue(Firearms.fouling(musket)==0&&Firearms.loadWork(musket)==Firearms.RELOAD_WORK,"A scoured barrel loads at drill speed");
+        for(int i=shots;i<Firearms.FLINT_LIFE;i++){Firearms.setLoaded(musket,true);Firearms.fire(shooter,musket,level,aim.scale(-1));}
+        Firearms.setLoaded(musket,true);var dull=Firearms.fire(shooter,musket,level,aim.scale(-1));
+        h.assertTrue(!dull.fired()&&dull.message().contains("flint")&&Firearms.loaded(musket),"After forty sparks the flint is done and the charge stays in the barrel");
+        Firearms.reflint(musket);h.assertTrue(!Firearms.flintWorn(musket),"A new flint puts the lock back in order");
         shooter.discard();target.discard();h.succeed();
     }
     public static void moraleRout(GameTestHelper h){
@@ -183,7 +189,7 @@ public final class WarfareGameTests {
                 Ledger.add(gun.cargo,"spawn_9b5fbb9:powder_charge",2);
                 h.runAfterDelay(65,()->{
                     h.assertTrue(gun.shot.equals("spawn_9b5fbb9:round_shot")&&Ledger.count(gun.cargo,"spawn_9b5fbb9:round_shot")==2&&Ledger.count(gun.cargo,"spawn_9b5fbb9:powder_charge")==1,"Loading draws exactly one round and one charge from the store");
-                    h.assertTrue(gun.loadProgress>0&&!gun.ready&&gun.loadProgress<gun.spec().artillery().reloadTicks()/4d,"One man serves a three-man piece slowly: "+gun.loadProgress);
+                    h.assertTrue(gun.loadProgress>0&&!gun.ready&&gun.loadProgress<gun.spec().artillery().reloadTicks()/4d,"One man serves an eight-man piece slowly: "+gun.loadProgress);
                     gun.discard();gunner.discard();h.succeed();
                 });
             });
@@ -193,9 +199,14 @@ public final class WarfareGameTests {
         IndustrialGameTests.floor(h);var engine=Vehicles.spawn(h.getLevel(),"trebuchet",at(h,8.5,2,8.5),0);var master=IndustrialGameTests.worker(h,8,5,Skill.GUNNERY,10);
         var art=engine.spec().artillery();
         h.assertTrue(Siege.lay(master,engine,at(h,8.5,2,14.5)).message().contains("back"),"A trebuchet lobs high and cannot hit what is under its nose");
-        double far=Math.toDegrees(Siege.elevation(art.velocity(),60,0,true)),flat=Math.toDegrees(Siege.elevation(4.0,60,0,false));
-        h.assertTrue(far>art.minPitch()&&far<art.maxPitch()&&flat<10,"At sixty blocks a trebuchet throws in a high arc where a cannon fires nearly flat: "+far+" vs "+flat);
-        h.assertTrue(Double.isNaN(Siege.elevation(art.velocity(),200,0,true)),"Beyond its reach there is no firing solution");
+        var cannon=Vehicles.SPECS.get("cannon").artillery();
+        double far=Math.toDegrees(Siege.elevation(art,150,0)),flat=Math.toDegrees(Siege.elevation(cannon,60,0));
+        h.assertTrue(far>art.minPitch()&&far<art.maxPitch()&&flat<1,"At a hundred and fifty blocks a trebuchet throws in a high arc; at sixty a cannon at 440 m/s fires dead flat: "+far+" vs "+flat);
+        h.assertTrue(Math.abs(Siege.heightAt(art,Math.toRadians(far),150))<.05&&Double.isInfinite(Siege.elevation(art,60,0)),"The firing solution lands on the mark");
+        double reach=Siege.reach(art),vacuum=art.velocity()*art.velocity()/Siege.GRAVITY;
+        h.assertTrue(reach>180&&reach<vacuum&&Double.isNaN(Siege.elevation(art,300,0)),"A 50 m/s release reaches about two hundred metres, less than it would in a vacuum, and no further: "+reach);
+        double shot=Siege.range(cannon,Math.toRadians(15)),noAir=cannon.velocity()*cannon.velocity()*Math.sin(Math.toRadians(30))/Siege.GRAVITY;
+        h.assertTrue(shot>1200&&shot<3500&&shot<noAir/2,"Air drag holds a six-pounder at full elevation to a couple of kilometres, a fraction of its vacuum range: "+shot+" vs "+noAir);
         h.assertTrue(engine.immobileReason().equals("fixed emplacement")&&art.powderCharges()==0,"It is built where it shoots and needs no powder");
         engine.discard();master.discard();h.succeed();
     }

@@ -6,9 +6,18 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "spawn_9b5fbb9:tin_ore"
+          "name": "spawn_9b5fbb9:cassiterite",
+          "modifier": [
+            {
+              "type": "minecraft:set_count",
+              "count": 60
+            }
+          ]
         }
-      ]
+      ],
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ]
 }

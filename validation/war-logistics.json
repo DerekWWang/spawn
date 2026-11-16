@@ -18,7 +18,7 @@
    ]
   },
   {
-   "step": 22
+   "step": 60
   },
   {
    "run": [
@@ -28,17 +28,19 @@
   },
   {
    "run": [
-    "fill -7 -60 0 7 -60 0 spawn_9b5fbb9:rail_track[axis=x,part=center]",
-    "fill -7 -60 -1 7 -60 -1 spawn_9b5fbb9:rail_track[axis=x,part=neg]",
-    "fill -7 -60 1 7 -60 1 spawn_9b5fbb9:rail_track[axis=x,part=pos]",
-    "setblock -1 -61 3 minecraft:water",
-    "execute positioned -1.5 -60 0.5 rotated -90 0 run survival deploy locomotive",
+    "fill -9 -60 0 9 -60 0 spawn_9b5fbb9:rail_track[axis=x,part=center]",
+    "fill -9 -60 -1 9 -60 -1 spawn_9b5fbb9:rail_track[axis=x,part=neg]",
+    "fill -9 -60 1 9 -60 1 spawn_9b5fbb9:rail_track[axis=x,part=pos]",
+    "setblock 1 -61 3 minecraft:water",
+    "execute positioned 0.5 -60 0.5 rotated -90 0 run survival deploy locomotive",
     "execute positioned -5.5 -60 0.5 rotated -90 0 run survival deploy rail_wagon",
-    "summon minecraft:villager -1.5 -60 2.5 {Tags:[\"drv\"],NoAI:1b}",
+    "summon minecraft:villager 1.5 -60 3.5 {Tags:[\"drv\"],NoAI:1b}",
     "item replace entity @e[tag=drv,limit=1] weapon.mainhand with minecraft:coal 16",
     "survival control @e[tag=drv,limit=1] vehicle load",
     "survival control @e[tag=drv,limit=1] vehicle board",
     "survival control @e[tag=drv,limit=1] vehicle couple",
+    "survival control @e[tag=drv,limit=1] vehicle status",
+    "execute positioned 0.5 -60 0.5 run data merge entity @e[type=spawn_9b5fbb9:vehicle,sort=nearest,limit=1] {steam:1.0d,water:3000.0d}",
     "execute positioned -5.5 -60 5.5 rotated -90 0 run survival deploy wagon",
     "summon minecraft:horse -4.5 -60 7.5 {Tame:1b,Tags:[\"h1\"]}",
     "summon minecraft:horse -6.5 -60 7.5 {Tame:1b,Tags:[\"h2\"]}",
@@ -56,8 +58,8 @@
    "run": [
     "survival control @e[tag=drv,limit=1] vehicle status",
     "survival control @e[tag=carter,limit=1] vehicle status",
-    "survival control @e[tag=drv,limit=1] vehicle drive 6 -60 0",
-    "survival control @e[tag=carter,limit=1] vehicle drive 5 -60 5"
+    "survival control @e[tag=drv,limit=1] vehicle drive 9 -60 0",
+    "survival control @e[tag=carter,limit=1] vehicle drive 3 -60 5"
    ]
   },
   {
@@ -76,8 +78,8 @@
   },
   {
    "burst": "train_and_wagon_moving",
-   "frames": 8,
-   "every": 15
+   "frames": 12,
+   "every": 20
   },
   {
    "run": [

@@ -1,0 +1,186 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 60
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "fill -7 -61 -3 -1 -57 3 spawn_9b5fbb9:cleanroom_panel",
+    "fill -6 -60 -2 -2 -58 2 minecraft:air",
+    "fill -6 -57 -2 -2 -57 2 spawn_9b5fbb9:filter_unit",
+    "fill -6 -60 3 -2 -58 3 minecraft:glass",
+    "setblock -1 -60 0 minecraft:iron_door[half=lower,facing=east]",
+    "setblock -1 -59 0 minecraft:iron_door[half=upper,facing=east]",
+    "setblock -4 -60 0 spawn_9b5fbb9:electronics_works",
+    "setblock -6 -60 -2 spawn_9b5fbb9:lithography_stepper",
+    "setblock -5 -60 -2 spawn_9b5fbb9:diffusion_furnace",
+    "setblock -4 -60 -2 spawn_9b5fbb9:water_purifier",
+    "setblock -3 -60 -2 spawn_9b5fbb9:vacuum_pump",
+    "setblock -2 -60 -2 spawn_9b5fbb9:wire_bonder",
+    "setblock -6 -60 0 spawn_9b5fbb9:crystal_puller",
+    "fill -4 -61 0 3 -61 0 spawn_9b5fbb9:power_cable",
+    "setblock 3 -60 0 spawn_9b5fbb9:power_station",
+    "setblock 4 -60 0 spawn_9b5fbb9:generator",
+    "setblock 3 -60 1 spawn_9b5fbb9:generator",
+    "setblock 5 -60 0 spawn_9b5fbb9:stationary_engine",
+    "setblock 4 -60 1 spawn_9b5fbb9:stationary_engine",
+    "setblock 3 -60 -1 spawn_9b5fbb9:steam_boiler",
+    "fill 3 -60 -2 3 -54 -2 spawn_9b5fbb9:chimney",
+    "setblock 4 -61 -2 minecraft:water",
+    "summon minecraft:villager 5.5 -60 1.5 {Tags:[\"stoker\"],NoAI:1b}",
+    "summon minecraft:villager -2.5 -60 1.5 {Tags:[\"op\"],NoAI:1b}",
+    "item replace entity @e[tag=op,limit=1] armor.chest with spawn_9b5fbb9:cleanroom_suit",
+    "survival debug_skill @e[tag=op,limit=1] engineering 16",
+    "survival control @e[tag=op,limit=1] works set chip"
+   ]
+  },
+  {
+   "step": 120
+  },
+  {
+   "run": [
+    "survival control @e[tag=op,limit=1] works status"
+   ]
+  },
+  {
+   "run": [
+    "item replace entity @e[tag=stoker,limit=1] weapon.mainhand with minecraft:coal 64",
+    "survival control @e[tag=stoker,limit=1] works fuel",
+    "survival control @e[tag=stoker,limit=1] works status"
+   ]
+  },
+  {
+   "camera": {
+    "pos": [
+     1,
+     -55,
+     10
+    ],
+    "look_at": [
+     -1,
+     -59,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "fab_and_power_station"
+  },
+  {
+   "camera": {
+    "pos": [
+     -4,
+     -58.2,
+     7.5
+    ],
+    "look_at": [
+     -4,
+     -59,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "cleanroom_through_window"
+  },
+  {
+   "step": 2300
+  },
+  {
+   "run": [
+    "survival control @e[tag=op,limit=1] works status"
+   ]
+  },
+  {
+   "run": [
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:silicon_die 16",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:chip_package 16",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "item replace entity @e[tag=op,limit=1] weapon.mainhand with spawn_9b5fbb9:fine_wire 64",
+    "survival control @e[tag=op,limit=1] works deposit",
+    "survival control @e[tag=op,limit=1] works operate"
+   ]
+  },
+  {
+   "step": 2000
+  },
+  {
+   "run": [
+    "survival control @e[tag=op,limit=1] works status",
+    "survival control @e[tag=stoker,limit=1] works status"
+   ]
+  },
+  {
+   "run": [
+    "setblock -7 -59 0 minecraft:air"
+   ]
+  },
+  {
+   "step": 120
+  },
+  {
+   "run": [
+    "survival control @e[tag=op,limit=1] works status"
+   ]
+  },
+  {
+   "camera": {
+    "pos": [
+     -12,
+     -57,
+     4
+    ],
+    "look_at": [
+     -7,
+     -59,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "breached_wall"
+  }
+ ]
+}

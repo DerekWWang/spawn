@@ -31,11 +31,26 @@ import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
  * if it takes a curve too fast. */
 public final class Railway {
     private Railway(){}
-    public static final double SPACING=3.4,CURVE_LIMIT=.3;
-    public static final long LAY_TICKS=400;
+    /** A right-angle curve is taken at a crawl: 11 km/h. */
+    public static final double CURVE_LIMIT=.15;
+    /** Half a metre per second each second on the brakes; a fifth of that from the regulator; one block of climb in thirty. */
+    public static final double BRAKE=.0012,ACCELERATION=.0005;
+    public static final int GRADE_RUN=30;
+    public static final double TENDER_WATER=3000;
+    /** Centre-to-centre distance of two coupled vehicles: half of each plus buffers and coupling. */
+    public static double coupling(double first,double second){return (first+second)/2+.35;}
+    private static double length(ServerLevel level,VehicleEntity engine,int index){
+        return index==0?engine.spec().length():level.getEntity(engine.cars.get(index-1)) instanceof VehicleEntity car?car.spec().length():5;
+    }
+    /** How far behind the engine's centre the given vehicle of its train rides. */
+    private static double offset(ServerLevel level,VehicleEntity engine,int index){
+        double behind=0;for(int i=1;i<=index;i++)behind+=coupling(length(level,engine,i-1),length(level,engine,i));return behind;
+    }
+    /** Two and a half man-hours to bed, sleeper, rail and spike a metre of line. */
+    public static final long LAY_TICKS=2500;
     /** Materials for one metre of line. */
     public static final Map<String,Integer> METRE;
-    static {var bill=new LinkedHashMap<String,Integer>();bill.put("spawn_9b5fbb9:steel_rail",2);bill.put("spawn_9b5fbb9:sleeper",2);bill.put("minecraft:gravel",2);bill.put("spawn_9b5fbb9:metal_rivet",4);METRE=Collections.unmodifiableMap(bill);}
+    static {var bill=new LinkedHashMap<String,Integer>();bill.put("spawn_9b5fbb9:steel_rail",2);bill.put("spawn_9b5fbb9:sleeper",2);bill.put("minecraft:gravel",2);bill.put("spawn_9b5fbb9:metal_rivet",8);METRE=Collections.unmodifiableMap(bill);}
     public static void init(){NeoForge.EVENT_BUS.addListener(Railway::useRail);}
 
     // ---- Track ----------------------------------------------------------------------------------------
@@ -80,10 +95,11 @@ public final class Railway {
         Direction along=axis==Direction.Axis.X?Direction.EAST:Direction.SOUTH;
         for(Direction direction:new Direction[]{along,along.getOpposite()})for(int dy:new int[]{-1,1}){
             BlockPos neighbour=pos.relative(direction).above(dy);if(!centre(level,neighbour))continue;
-            for(int run=1;run<=2;run++){BlockPos beyond=neighbour.relative(direction,run);if(!centre(level,beyond)&&(centre(level,beyond.above())||centre(level,beyond.below())))return "Too steep: a railway may rise one block only after a level run of two";}
+            // Adhesion will not take a loaded train up more than one in thirty.
+            for(int run=1;run<GRADE_RUN;run++){BlockPos beyond=neighbour.relative(direction,run);if(centre(level,beyond))continue;if(centre(level,beyond.above())||centre(level,beyond.below()))return "Too steep: a railway climbs one block in thirty; this step is only "+run+" beyond the last";break;}
         }
         String missing=Logistics.missing(actor,METRE);
-        return missing.isEmpty()?"":"Each metre of line takes 2 steel rails, 2 sleepers, 2 gravel ballast and 4 spikes within reach (carried, in a container, or in a wagon alongside); short by "+missing;
+        return missing.isEmpty()?"":"Each metre of line takes 2 metres of steel rail, 2 sleepers, 2 cubic metres of gravel ballast and 8 spikes within reach (carried, in a container, or in a wagon alongside); short by "+missing;
     }
     /** Only the timed world job may commit a metre of line. */
     public static boolean completeLay(LivingEntity actor,BlockPos pos){
@@ -128,34 +144,39 @@ public final class Railway {
             BlockPos head=path.getFirst();int dx,dz;
             if(path.size()>1){dx=Integer.signum(head.getX()-path.get(1).getX());dz=Integer.signum(head.getZ()-path.get(1).getZ());}else{dx=engine.facing.getStepX();dz=engine.facing.getStepZ();}
             BlockPos more=next(level,head,dx,dz);
-            if(more==null){engine.headS=0;engine.velocity=0;break;}
+            if(more==null){
+                // Nothing stops a train at the end of the line but the ground.
+                boolean fast=Math.abs(engine.velocity)>.08;engine.headS=0;
+                if(fast){derail(engine,level,"Ran off the end of the line");return;}
+                engine.velocity=0;break;
+            }
             boolean curve=more.getX()-head.getX()!=dx||more.getZ()-head.getZ()!=dz;
-            if(curve&&Math.abs(engine.velocity)>CURVE_LIMIT){derail(engine,level);return;}
+            if(curve&&Math.abs(engine.velocity)>CURVE_LIMIT){derail(engine,level,"Derailed: the train took the curve too fast");return;}
             path.addFirst(more);engine.headS+=segment(more,head);
             int stepX=more.getX()-head.getX(),stepZ=more.getZ()-head.getZ();engine.facing=stepX>0?Direction.EAST:stepX<0?Direction.WEST:stepZ>0?Direction.SOUTH:Direction.NORTH;
         }
-        double need=engine.headS+engine.cars.size()*SPACING+1.5;
+        double need=engine.headS+offset(level,engine,engine.cars.size())+1.5;
         while(path.size()>2&&length(path.subList(0,path.size()-1))>=need)path.removeLast();
     }
     private static void reverse(VehicleEntity engine,ServerLevel level,double distance){
-        var path=engine.path;engine.headS+=distance;double need=engine.headS+engine.cars.size()*SPACING;
+        var path=engine.path;engine.headS+=distance;double need=engine.headS+offset(level,engine,engine.cars.size());
         extendTail(engine,level,need);double total=length(path);
-        if(total<need){engine.headS=Math.max(0,total-engine.cars.size()*SPACING);engine.velocity=0;}
+        if(total<need){engine.headS=Math.max(0,total-offset(level,engine,engine.cars.size()));engine.velocity=0;}
         while(path.size()>2&&engine.headS>=segment(path.get(0),path.get(1))){engine.headS-=segment(path.get(0),path.get(1));path.removeFirst();}
     }
-    private static void derail(VehicleEntity engine,ServerLevel level){
+    private static void derail(VehicleEntity engine,ServerLevel level,String what){
         engine.velocity=0;engine.throttle=0;engine.destination=null;engine.headS=0;engine.damage+=25;
-        for(Entity rider:engine.getPassengers()){rider.hurtServer(level,level.damageSources().flyIntoWall(),4);if(rider instanceof ServerPlayer player)player.sendOverlayMessage(Component.literal("Derailed: the train took the curve too fast"));}
+        for(Entity rider:engine.getPassengers()){rider.hurtServer(level,level.damageSources().flyIntoWall(),4);if(rider instanceof ServerPlayer player)player.sendOverlayMessage(Component.literal(what));}
         for(UUID id:engine.cars)if(level.getEntity(id) instanceof VehicleEntity car)car.damage+=10;
         level.sendParticles(ParticleTypes.LARGE_SMOKE,engine.getX(),engine.getY()+1,engine.getZ(),30,1,1,1,.02);
         if(engine.damage>=engine.spec().health())engine.wreck(level);
     }
     /** Positions the engine and every loaded car along the consist's path. */
     private static void layout(VehicleEntity engine,ServerLevel level){
-        var path=engine.path;extendTail(engine,level,engine.headS+engine.cars.size()*SPACING);
+        var path=engine.path;extendTail(engine,level,engine.headS+offset(level,engine,engine.cars.size()));
         for(int index=0;index<=engine.cars.size();index++){
             VehicleEntity vehicle=index==0?engine:level.getEntity(engine.cars.get(index-1)) instanceof VehicleEntity car?car:null;if(vehicle==null)continue;
-            double s=engine.headS+index*SPACING,walked=0;Vec3 at=node(path.getLast());Vec3 ahead=null;
+            double s=engine.headS+offset(level,engine,index),walked=0;Vec3 at=node(path.getLast());Vec3 ahead=null;
             for(int i=0;i+1<path.size();i++){
                 double part=segment(path.get(i),path.get(i+1));
                 if(s<=walked+part){Vec3 a=node(path.get(i)),b=node(path.get(i+1));at=a.lerp(b,(s-walked)/part);ahead=a.subtract(b);break;}
@@ -167,12 +188,18 @@ public final class Railway {
         }
     }
     public static long fuelAboard(VehicleEntity engine){return Ledger.count(engine.cargo,"minecraft:coal")+Ledger.count(engine.cargo,"minecraft:charcoal")+Ledger.count(engine.cargo,"spawn_9b5fbb9:coke");}
-    /** Each unit of fuel carries the train a set distance; coke goes furthest. */
+    /** A 25 kg sack of fuel takes a light engine about 1.8 km: fourteen kilograms to the kilometre, fifty pounds a mile. */
     private static boolean stoke(VehicleEntity engine){
-        if(Ledger.take(engine.cargo,"spawn_9b5fbb9:coke",1)>0){engine.fuelBurn+=450;return true;}
-        if(Ledger.take(engine.cargo,"minecraft:coal",1)>0){engine.fuelBurn+=300;return true;}
-        if(Ledger.take(engine.cargo,"minecraft:charcoal",1)>0){engine.fuelBurn+=240;return true;}
+        if(Ledger.take(engine.cargo,"spawn_9b5fbb9:coke",1)>0){engine.fuelBurn+=1950;return true;}
+        if(Ledger.take(engine.cargo,"minecraft:coal",1)>0){engine.fuelBurn+=1800;return true;}
+        if(Ledger.take(engine.cargo,"minecraft:charcoal",1)>0){engine.fuelBurn+=1650;return true;}
         return false;
+    }
+    /** Gross weight of the train in tonnes. */
+    public static double tonnes(VehicleEntity engine,ServerLevel level){
+        double kilograms=engine.spec().tare()+Ledger.mass(engine.cargo);
+        for(UUID id:engine.cars)if(level.getEntity(id) instanceof VehicleEntity car)kilograms+=car.spec().tare()+Ledger.mass(car.cargo);
+        return kilograms/1000;
     }
     private static boolean waterBeside(ServerLevel level,BlockPos centre){
         for(BlockPos pos:BlockPos.betweenClosed(centre.offset(-4,-3,-4),centre.offset(4,1,4)))if(level.getFluidState(pos).is(FluidTags.WATER))return true;return false;
@@ -185,27 +212,40 @@ public final class Railway {
         }
         var spec=engine.spec();Entity driver=engine.getFirstPassenger();double command=0;
         boolean capable=driver instanceof LivingEntity living&&SurvivalApi.isHumanoid(living)&&(SurvivalApi.exempt(living)||SurvivalApi.state(living).mental()>.05);
+        // Steam: a fire tended from the footplate brings a cold boiler to working pressure in two hours and to full pressure in four,
+        // and burns ten kilograms an hour standing; untended, it dies back.
+        if(capable&&engine.water>0&&(engine.fuelBurn>0||fuelAboard(engine)>0)){
+            engine.steam=Math.min(1,engine.steam+.00025);if(Math.abs(engine.velocity)<.002)engine.fuelBurn-=.72;
+            while(engine.fuelBurn<=0)if(!stoke(engine)){engine.fuelBurn=0;break;}
+        }else engine.steam=Math.max(0,engine.steam-.0002);
+        double tonnes=tonnes(engine,level),limit=engine.immobileReason().isEmpty()?spec.speed()*Math.min(1,150/tonnes):0;
+        if(engine.path.size()>1&&engine.path.get(0).getY()!=engine.path.get(1).getY())limit*=.6*Math.min(1,60/tonnes);
         if(capable&&engine.destination==null&&driver instanceof ServerPlayer player){var input=player.getLastClientInput();command=(input.forward()?1:0)-(input.backward()?1:0);}
         else if(capable&&engine.destination!=null){
             Vec3 offset=engine.destination.subtract(engine.position());double distance=offset.horizontalDistance();
-            if(distance<3)engine.destination=null;
-            else{Vec3 heading=Vec3.directionFromRotation(0,engine.getYRot());command=(offset.x*heading.x+offset.z*heading.z>=0?1:-1)*(distance<14?.4:1);}
+            if(distance<3&&Math.abs(engine.velocity)<.02)engine.destination=null;
+            else{
+                // The driver shuts off and brakes with the stopping distance in hand.
+                Vec3 heading=Vec3.directionFromRotation(0,engine.getYRot());double allowed=Math.sqrt(2*BRAKE*.8*Math.max(0,distance-3))+.008;
+                command=(offset.x*heading.x+offset.z*heading.z>=0?1:-1)*(limit<=0?1:Math.min(1,allowed/limit));
+            }
         }else if(!capable)engine.destination=null;
         engine.throttle=command;
-        double weight=1;for(UUID id:engine.cars)if(level.getEntity(id) instanceof VehicleEntity car)weight+=.6+.9*Ledger.total(car.cargo)/Math.max(1,car.spec().capacity());
-        double limit=engine.immobileReason().isEmpty()?spec.speed()*Math.min(1,5/weight):0;
-        if(engine.path.size()>1&&engine.path.get(0).getY()!=engine.path.get(1).getY())limit*=.5;
-        engine.velocity+=Mth.clamp(command*limit-engine.velocity,-.012,.006);
+        double target=command*limit,rate=command==0?.0001:target*engine.velocity<0||Math.abs(target)<Math.abs(engine.velocity)?BRAKE:ACCELERATION*Math.min(1,80/tonnes);
+        engine.velocity+=Mth.clamp(target-engine.velocity,-rate,rate);
         if(Math.abs(engine.velocity)<.002&&command==0)engine.velocity=0;
         double step=engine.velocity;
         if(step>0)advance(engine,level,step);else if(step<0)reverse(engine,level,-step);
         if(engine.isRemoved())return;
         layout(engine,level);
         if(step!=0){
-            engine.water=Math.max(0,engine.water-1);engine.fuelBurn-=Math.abs(step)*(1+.15*engine.cars.size());
+            // Seven litres of water boiled for every kilogram of coal burned.
+            double work=Math.abs(step)*(1+.15*engine.cars.size());
+            engine.water=Math.max(0,engine.water-.1*work);engine.fuelBurn-=work;engine.lubricate(level,Math.abs(step));
+            if(engine.isRemoved())return;
             while(engine.fuelBurn<=0)if(!stoke(engine)){engine.fuelBurn=0;engine.velocity=0;break;}
-            if(engine.tickCount%4==0)level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,engine.getX(),engine.getY()+3.2,engine.getZ(),1,.1,.1,.1,.01);
-        }else if(engine.tickCount%20==0&&engine.water<12000&&waterBeside(level,engine.blockPosition()))engine.water=Math.min(12000,engine.water+1500);
+            if(engine.tickCount%4==0){Vec3 funnel=engine.position().add(Vec3.directionFromRotation(0,engine.getYRot()).scale(2.76));level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,funnel.x,engine.getY()+3.7,funnel.z,1,.08,.1,.08,.01);}
+        }else if(engine.tickCount%20==0&&engine.water<TENDER_WATER&&waterBeside(level,engine.blockPosition()))engine.water=Math.min(TENDER_WATER,engine.water+60);
     }
     private static ActionResult ok(String text){return new ActionResult(true,text);}
     private static ActionResult fail(String text){return new ActionResult(false,text);}
@@ -218,12 +258,12 @@ public final class Railway {
         if(actor.getVehicle()!=vehicle&&actor.distanceToSqr(vehicle)>36)return fail("Stand within six blocks of the coupling");
         VehicleEntity engine=null,car=null;
         if(vehicle.spec().kind()==Kind.ENGINE){
-            engine=vehicle;Vec3 end=tail(engine);double best=(SPACING+2.5)*(SPACING+2.5);
-            for(VehicleEntity other:level.getEntitiesOfClass(VehicleEntity.class,new net.minecraft.world.phys.AABB(end,end).inflate(SPACING+3)))
+            engine=vehicle;Vec3 end=tail(engine);double best=81;
+            for(VehicleEntity other:level.getEntitiesOfClass(VehicleEntity.class,new net.minecraft.world.phys.AABB(end,end).inflate(10)))
                 if(other.spec().kind()==Kind.CAR&&other.coupledTo.isEmpty()&&other.distanceToSqr(end)<best){best=other.distanceToSqr(end);car=other;}
         }else{
-            car=vehicle;if(!car.coupledTo.isEmpty())return fail("Already coupled");double best=(SPACING+2.5)*(SPACING+2.5);
-            for(VehicleEntity other:level.getEntitiesOfClass(VehicleEntity.class,car.getBoundingBox().inflate(SPACING*14)))
+            car=vehicle;if(!car.coupledTo.isEmpty())return fail("Already coupled");double best=81;
+            for(VehicleEntity other:level.getEntitiesOfClass(VehicleEntity.class,car.getBoundingBox().inflate(120)))
                 if(other.spec().kind()==Kind.ENGINE&&tail(other).distanceToSqr(car.position())<best){best=tail(other).distanceToSqr(car.position());engine=other;}
         }
         if(engine==null||car==null)return fail("Bring the engine (or the end of its train) within a wagon's length of the uncoupled car");

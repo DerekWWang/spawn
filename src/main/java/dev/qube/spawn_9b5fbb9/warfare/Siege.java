@@ -48,7 +48,8 @@ import static net.minecraft.commands.Commands.*;
  * masonry after repeated hits, and earth banks soak up cannon fire as they did in history. */
 public final class Siege {
     private Siege(){}
-    public static final double GRAVITY=.05;
+    /** 9.8 m/s/s at twenty ticks to the second. */
+    public static final double GRAVITY=.0245;
     public static final ResourceKey<DamageType> ARTILLERY=ResourceKey.create(Registries.DAMAGE_TYPE,Identifier.fromNamespaceAndPath(IndustrialContent.MODID,"artillery"));
     private static final String M="spawn_9b5fbb9:";
     /** Accumulated structural damage per world, keyed by block position. */
@@ -96,11 +97,38 @@ public final class Siege {
     }
 
     // ---- Gunnery --------------------------------------------------------------------------------------
-    /** Launch elevation in radians for a target dx away and dy above, or NaN when out of range. */
-    public static double elevation(double velocity,double dx,double dy,boolean high){
-        double v2=velocity*velocity,root=v2*v2-GRAVITY*(GRAVITY*dx*dx+2*dy*v2);
-        if(root<0||dx<1e-6)return Double.NaN;
-        return Math.atan((v2+(high?1:-1)*Math.sqrt(root))/(GRAVITY*dx));
+    /** Height above the muzzle after {@code dx} of horizontal flight at the given elevation, with gravity and quadratic air drag,
+     * stepped exactly as {@link ShotEntity} flies. NaN when the shot falls short. */
+    public static double heightAt(Artillery art,double pitch,double dx){
+        double vx=art.velocity()*Math.cos(pitch),vy=art.velocity()*Math.sin(pitch)-GRAVITY/2,x=0,y=0;
+        for(int tick=0;tick<1200;tick++){
+            double nx=x+vx,ny=y+vy;if(nx>=dx)return y+(ny-y)*(dx-x)/(nx-x);
+            x=nx;y=ny;double slowed=1-art.drag()*Math.sqrt(vx*vx+vy*vy);vx*=slowed;vy=vy*slowed-GRAVITY;
+            if(y<-512||vx<1e-4)break;
+        }
+        return Double.NaN;
+    }
+    /** Level-ground range at the given elevation. */
+    public static double range(Artillery art,double pitch){
+        double vx=art.velocity()*Math.cos(pitch),vy=art.velocity()*Math.sin(pitch)-GRAVITY/2,x=0,y=0;
+        for(int tick=0;tick<4000;tick++){
+            double ny=y+vy;if(ny<0&&tick>0)return x+vx*(y/(y-ny));
+            x+=vx;y=ny;double slowed=1-art.drag()*Math.sqrt(vx*vx+vy*vy);vx*=slowed;vy=vy*slowed-GRAVITY;
+        }
+        return x;
+    }
+    public static double reach(Artillery art){return range(art,Math.toRadians(art.highArc()?45:Math.min(40,art.maxPitch())));}
+    /** Launch elevation in radians for a target dx away and dy above, found by ranging shots on paper within the piece's limits of
+     * elevation. NaN when the target is beyond reach; negative infinity when it is too close for the mounting. */
+    public static double elevation(Artillery art,double dx,double dy){
+        if(dx<1e-6)return Double.NaN;
+        // A flat-firing piece raises the muzzle to reach further; a trebuchet's high arc shortens as the release steepens.
+        double low=Math.toRadians(art.highArc()?45:art.minPitch()),high=Math.toRadians(art.highArc()?art.maxPitch():Math.min(45,art.maxPitch()));
+        double far=art.highArc()?low:high,near=art.highArc()?high:low,atFar=heightAt(art,far,dx),atNear=heightAt(art,near,dx);
+        if(Double.isNaN(atFar)||atFar<dy)return Double.NaN;
+        if(!Double.isNaN(atNear)&&atNear>dy)return Double.NEGATIVE_INFINITY;
+        for(int step=0;step<48;step++){double middle=(far+near)/2,height=heightAt(art,middle,dx);if(!Double.isNaN(height)&&height>=dy)far=middle;else near=middle;}
+        return far;
     }
     private static ActionResult ok(String text){return new ActionResult(true,text);}
     private static ActionResult fail(String text){return new ActionResult(false,text);}
@@ -134,9 +162,9 @@ public final class Siege {
         if(gun==null||gun.spec().artillery()==null)return fail("No siege piece within reach");
         if(actor.getVehicle()!=gun&&actor.distanceToSqr(gun)>64)return fail("Stand within eight blocks of the piece");
         Artillery art=gun.spec().artillery();Vec3 muzzle=muzzle(gun);double dx=target.subtract(muzzle).horizontalDistance();
-        double pitch=elevation(art.velocity(),dx,target.y-muzzle.y,art.highArc())*Mth.RAD_TO_DEG;
-        if(Double.isNaN(pitch))return fail("Out of range: this piece reaches about "+(int)(art.velocity()*art.velocity()/GRAVITY)+" blocks on level ground");
-        if(pitch<art.minPitch()||pitch>art.maxPitch())return fail("The piece cannot be laid at "+(int)pitch+" degrees (limits "+(int)art.minPitch()+" to "+(int)art.maxPitch()+"); move it "+((pitch>art.maxPitch())==art.highArc()?"back":"closer"));
+        double pitch=elevation(art,dx,target.y-muzzle.y)*Mth.RAD_TO_DEG;
+        if(Double.isNaN(pitch))return fail("Out of range: this piece reaches about "+(int)reach(art)+" blocks on level ground; move it closer");
+        if(Double.isInfinite(pitch))return fail("Too close: the mounting cannot be laid on a target at "+(int)dx+" blocks; move it back");
         gun.fireTarget=target;return ok("Laid on "+BlockPos.containing(target).toShortString()+" at "+(int)dx+" blocks, elevation "+Math.round(pitch)+" degrees");
     }
     public static ActionResult cease(VehicleEntity gun){if(gun==null)return fail("No siege piece within reach");gun.fireTarget=null;return ok("Cease fire");}
@@ -189,8 +217,8 @@ public final class Siege {
         if(target!=null){Vec3 bearing=target.subtract(gun.position());gun.setYRot((float)(Mth.atan2(-bearing.x,bearing.z)*Mth.RAD_TO_DEG));}
         Vec3 muzzle=muzzle(gun);
         if(target!=null){
-            Vec3 offset=target.subtract(muzzle);pitch=elevation(art.velocity(),offset.horizontalDistance(),offset.y,art.highArc())*Mth.RAD_TO_DEG;
-            if(Double.isNaN(pitch)||pitch<art.minPitch()||pitch>art.maxPitch())return fail("The target cannot be reached from here");
+            Vec3 offset=target.subtract(muzzle);pitch=elevation(art,offset.horizontalDistance(),offset.y)*Mth.RAD_TO_DEG;
+            if(Double.isNaN(pitch)||Double.isInfinite(pitch))return fail("The target cannot be reached from here");
             yaw=Mth.atan2(-offset.x,offset.z)*Mth.RAD_TO_DEG;gun.setYRot((float)yaw);
         }else{yaw=gun.getYRot();pitch=Mth.clamp(-gunner.getXRot(),art.minPitch(),art.maxPitch());}
         ItemStack munition=new ItemStack(Ledger.item(gun.shot));boolean shell=gun.shot.equals(M+"explosive_shell");
@@ -206,7 +234,7 @@ public final class Siege {
         ShotEntity shot=IndustrialContent.SHOT.get().create(level,EntitySpawnReason.TRIGGERED);if(shot==null)return fail("The shot could not be launched");
         shot.setPos(muzzle.x,muzzle.y,muzzle.z);Vec3 velocity=direction.scale(art.velocity());
         // Compensates the discrete integration so flight matches the laid elevation.
-        shot.launch(munition,new Vec3(velocity.x,velocity.y-GRAVITY/2,velocity.z),art.blockPower(),art.entityDamage(),shell,gunner);
+        shot.launch(munition,new Vec3(velocity.x,velocity.y-GRAVITY/2,velocity.z),art.blockPower(),art.entityDamage(),shell,gunner,art.drag());
         level.addFreshEntity(shot);
         if(art.powderCharges()>0){
             level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,muzzle.x,muzzle.y,muzzle.z,25,.5,.4,.5,.03);level.sendParticles(ParticleTypes.FLAME,muzzle.x,muzzle.y,muzzle.z,10,.2,.2,.2,.05);

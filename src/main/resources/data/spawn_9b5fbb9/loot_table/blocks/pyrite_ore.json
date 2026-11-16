@@ -6,14 +6,18 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "spawn_9b5fbb9:pyrite"
+          "name": "spawn_9b5fbb9:pyrite",
+          "modifier": [
+            {
+              "type": "minecraft:set_count",
+              "count": 300
+            }
+          ]
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ]
 }

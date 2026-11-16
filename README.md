@@ -59,7 +59,7 @@ sleep do not satisfy the quota.
    suitable seeds on moist prepared soil. Rice also needs adjacent paddy water.
 3. Build a metal-free kiln and campfire from natural materials. Sticks/logs supply
    initial kiln heat; kiln charcoal improves the reserve.
-4. Tend a block of clay in a fueled kiln to make a jar. Collect surface water
+4. Tend eight lumps of clay in a fueled kiln to make a jar. Collect surface water
    and boil an **open** jar near a lit fire for 1,000 loaded ticks. Jar quality
    determines its capacity.
 5. Store food in pottery and seal it with an actual lid. Rough, standard, and
@@ -78,6 +78,21 @@ bloomeries consume fuel; ordinary heating can continue unattended. Pottery,
 forge, anvil, and loom work pauses when its worker is absent,
 dead, too far away, or incapable. Work speed follows the worker's current
 capacities. Unfinished inputs do not become finished tools or food.
+
+**Quantities are real.** One metal, mineral or chemical item is a kilogram; a
+coal, coke or charcoal item is a 25 kg sack; a wire item is a metre; a liquid
+item a litre; a brick item one brick; a building block its cubic metre. A cubic
+metre of haematite seam breaks down to 1,600 kg of sorted ore, a metre of
+copper lode to 420 kg of malachite, a metre of tin lode to 60 kg of black tin,
+a coal block to 52 sacks, a clay block to 480 brick-sized lumps. A bloomery
+charge is 48 kg of roasted ore with two sacks of charcoal for a 12 kg bloom;
+four kilograms of bloom hammer down to 3 kg of bar. Copper gives half the weight of its
+ore, tin and lead three quarters. A sack of fuel holds a forge fire eight
+hours; a log holds a kiln twelve times as long but cannot reach working heat
+in a bloomery or forge; a stick is kindling. Four cubic metres of wood char to
+eight sacks over two days. Broken ore, coal and clay lie where they fell and
+do not rot, and what you carry weighs on you: 35 kg costs nothing, 120 kg or more
+leaves you at a tenth of your pace. Bulk goes on wheels.
 
 Grid crafting also takes 100 loaded ticks of manual work, scaled by mental and
 manipulation capacity and the relevant skill. One actor can perform one manual job at a time across
@@ -99,14 +114,14 @@ work earns XP from actual active ticks. Passion changes learning (none 35%,
 interested 100%, burning 150%); it does not create materials or grant work
 permission. Learning slows after 4,000 net XP per skill per day. Skills at level
 10 and above gradually decay, with a buffer after losing a level. Passions
-start neutral and can be assigned explicitly; there are no backstories or
+start at none (a 35% learning rate) and are assigned only by an operator; there are no backstories or
 permanent profession classes. Learning survives respawn and existing six-skill
 saves migrate to the new scale.
 
 | Skill | Default requirements and effects |
 | --- | --- |
 | Pottery | Fueled kiln and 25% manipulation; effective level 5 makes standard jars, 12 makes fine. |
-| Smithing | Copper equipment needs level 4, bronze 8, iron 12; iron armor needs 14. Real blanks, fuel and anvil work remain required. |
+| Smithing | Copper tools and weapons need level 4, bronze 8, iron 12; copper and bronze armor needs 12 and iron armor 14. Real blanks, fuel and anvil work remain required. |
 | Weaving | Hand-process flax into fiber and cordage, then spin, weave and sew at a loom. Pants need 2 and jackets 4. |
 | Farming | Tilling, sowing and harvesting improve work speed; seasons and growth time still apply. |
 | Foraging | Gathering actual wild stands and fruit improves field work. |
@@ -154,7 +169,8 @@ Hold a fired pot in your main hand:
 - `/survival act drink`: drink an open filled vessel, an ordinary water bottle,
   or nearby surface water. Boiled pottery water is safe.
 
-Shift-use a pot on a block for its context action. Pots hold two, three, or four
+Use a pot on water to fill it, beside a lit campfire to boil it, and on farmland
+to irrigate; shift-use seals it, stores into it or takes from it. Pots hold two, three, or four
 food stacks according to quality and cannot nest containers. Transport keeps
 their contents and freshness.
 Worn-out pottery spills stored food and leaves shards.
@@ -236,22 +252,81 @@ terrain. Definitions can extend `humanoids`, `forbidden_entities`, and
 
 ## Industry and realistic production chains
 
-Beyond the kiln, bloomery, forge, anvil and loom, eight **works** carry
-production into the gunpowder and machine ages. A works holds a bulk ledger of
-delivered materials (industrial quantities never fit in slots), runs its selected
-recipe batch after batch, and needs every input, heat or power, and qualified
-labour to do so. Nothing is produced without its full bill of materials.
+Beyond the kiln, bloomery, forge, anvil and loom, nine **works** carry production
+from the gunpowder age to the electronic one. A works holds a bulk ledger of
+delivered materials, runs its selected recipe batch after batch, and needs every
+input, qualified labour, and the physical plant its process really needs.
+The process-by-process comparison with real practice, and the short list of
+things that remain Minecraft conventions, is in the
+[realism audit](docs/realism-audit.md).
 
-| Works | Built from | What it does |
-| --- | --- | --- |
-| Workshop | planks, logs, cordage (grid) | Wheels, vehicle frames, harness, saddles, sleepers, gun carriages, musket stocks and final musket assembly, paper cartridges, powder charges |
-| Assembly yard | logs, planks, cordage (grid) | Many hands on one job: carts, wagons, chariots, siege engines, boilers, engines, locomotives, rolling stock, and the other works |
-| Nitre bed | planks, clay, dirt (grid) | Spoiled food, wood ash and straw mature unattended for five days into nitre earth |
-| Powder mill | workshop | Saltpetre, charcoal and sulfur at 15:3:2. A naked flame within four blocks of a working mill destroys it |
-| Foundry | assembly yard | Steel, bronze cannon barrels, bombard barrels, furnace silicon (heated) |
-| Chemical works | assembly yard | Saltpetre leaching, sulfur from pyrite, coke and coal tar, fermentation and distillation of fuel alcohol, acid, resin, photoresist, polysilicon (heated) |
-| Machine shop | assembly yard (needs a steam engine) | Plate, machine parts, rail, wire drawing, shells (steam powered: burns fuel) |
-| Electronics works | assembly yard (needs a steam engine and dynamos) | Crystal growth, wafers, lithography, chips, circuit boards, computers and servers (powered) |
+| Works | Built from | What it does | Site must have |
+| --- | --- | --- | --- |
+| Workshop | planks, logs, cordage (grid) | Wheels, frames, harness, sleepers, gun carriages, muskets, cartridges, powder bags, hand-drawn wire, chimney blocks, lead chambers, cable ducts, cleanroom suits | Roof, 12 m2 of floor |
+| Assembly yard | logs, planks, cordage (grid) | Many hands on one job: lime, brick and firebrick clamps, vehicles, ordnance, boilers, engines, generators, every other works and all heavy plant | Open ground |
+| Nitre bed | planks, clay, dirt (grid) | 64 kg of rotting matter, ash and straw ripen for a year (112 days) | Roof |
+| Powder mill | workshop | Saltpetre, charcoal and sulfur at 75:15:10 by weight | No naked flame within four blocks |
+| Foundry | assembly yard (3,000 bricks) | Bulk ore calcining and smelting, crucible steel, pig iron, puddled iron, Bessemer steel, gun founding, cupellation, glass; furnace silicon and phosphorus by arc furnace | 12 firebrick, a 4-high chimney, 16 m2 of roofed floor; 24 and 8 with a blast for iron; a blowing engine for steel |
+| Chemical works | assembly yard | Saltpetre, sulfur, coke and tar, wood spirit, alcohol, acids, soda, caustic, alumina, cryolite, rubber, oil refining; aluminium and tungsten by electrolysis; polysilicon | Roof, chimney, water, 16 m2; lead chambers for acids; a distillation column for oil |
+| Machine shop | assembly yard, from four tonnes of cast iron and hand-made parts | Rolled plate, rail, machine and precision parts, wire, insulated wire, lenses, tyres, motors, pumps, filters, panels | Roof, 40 m2, and a stationary steam engine with boiler, flue and feed water |
+| Electronics works | assembly yard | Valves, passives, packages, boards, crystal growth, wafers, masks, the four-mask MOS flow, chips, computers, servers | Roof, 16 m2, electric power; named equipment; a cleanroom for every wafer step |
+| Power station | assembly yard | Supplies kilowatts along cable ducts | Generators, boiler, 6-high chimney, feed water, fuel |
+
+**Time is man-hours.** Every recipe is rated in man-hours at 1,000 ticks to the
+hour of the game clock: a wheel is 16, a cart 40 on top of its parts, a cannon
+barrel 300, a steam engine 1,500, a locomotive 12,000, a computer 4,000 and a
+server 30,000. Hands share the work up to the job's crew. `industryTimeScale`
+in the server config scales all of it for servers that want a shorter road.
+
+**Mass is conserved.** A six-pounder barrel is 400 kg of bronze, a bombard
+1.5 tonnes of wrought iron, a boiler 1.2 tonnes of plate, a locomotive 14
+tonnes of steel, 5 of plate and 3 of cast iron. A blast furnace charge is 3.6
+tonnes of ore, 80 sacks of coke and lime for 2 tonnes of pig; a Bessemer
+blow turns 5 tonnes into 4.5. A metre of rail is 31 kg. Copper is drawn 140 m
+to the kilogram. No recipe turns out more metal than went in, and nothing
+assembled weighs more than its parts (tested).
+
+**The tree is era-gated and tested.** Hand, water and charcoal reach muskets,
+cannon, acids, soda, glass and a first steam engine built from hammered plate
+and cast iron, lubricated with tallow. Only the machine shop that engine
+drives makes precision parts, rail, rolled plate, locomotives and dynamos.
+Only a power station makes aluminium, furnace silicon, phosphorus, tungsten
+and so valves. Only a cleanroom makes chips. Remove any link (pig iron, the
+machine shop, the power station, filters, fluorite, salt, bauxite, wolframite,
+borax, silver, rubber, lenses, lead chambers, coke, glass) and a computer
+cannot be built.
+
+**Site rules.** A works checks its surroundings every five seconds and reports
+what is missing in `/survival works status`. Working floor is counted in roofed
+square metres around the works. Chimney stacks must be open to the sky. Fuel
+burns at real rates: a furnace hearth 25 kg an hour, a still 12, the boiler of
+a shop engine 100. A generator turned by its own stationary engine gives 35 kW;
+each job draws its real load (an arc furnace 400 kW, twelve megawatt-hours to
+the tonne of silicon; a potline 25 kWh to the kilogram of aluminium), the station burns 2.5 kg of coal per
+kilowatt-hour, and a cable run loses two percent per hundred metres, up to a
+mile.
+
+**Cleanrooms.** The electronics works must stand in a sealed room at least
+5 x 5 x 3 inside, whose every inward-facing block is cleanroom panel, glass, a
+filter unit, a cable duct or an iron door, with one ceiling filter unit per four
+square blocks of floor. Cleanliness rises only while the room is sealed and
+powered, the door is shut and everyone inside wears a cleanroom suit; it falls
+fast otherwise and returns to zero on any breach. Wafer work needs 95%, and
+at dicing the yield runs from half the dice at 95% to all of them at 100%.
+
+**Chips are made the way chips were made.** A boule is pulled from polysilicon
+and sawn to 400 wafers. Lots of 25 wafers go through field oxidation, boron
+diffusion, gate oxidation, contact cut and aluminium metallisation, each
+photo step exposing through its own emulsion mask (silver halide on glass,
+used up by one lot). A good wafer dices to 160 working dice; sixteen dice,
+sixteen ceramic packages and 256 aluminium bond wires make sixteen 16-pin
+logic packages. A computer takes 2,800 of them, 120 boards, 8 km of hook-up
+wire, 20 kg of solder and 6,000 passives; a server 20,000 chips (320,000
+bonds), 900 boards and 60 km of wire.
+
+**Industry injures.** Finished batches at foundries, chemical works and machine
+shops carry a skill-dependent chance of burns, acid scalds and poisoning, or a
+lost finger.
 
 Right-click a works with a material to deliver the stack (sneak to deliver every
 matching stack you carry), with fuel to stoke it, and with an empty hand to
@@ -261,18 +336,11 @@ does the same for players, and `/survival control <actor> works ...` for control
 `/survival works bill <recipe>` expands a product through every intermediate
 down to what is mined, grown or gathered.
 
-Quantities are deliberately industrial. A computer takes 1,200 integrated
-circuits, a server 4,800; each chip needs a die cut from a patterned wafer, a
-ceramic package and forty bond wires, so a server's chips alone consume 192,000
-fine wires (drawn from 48,000 copper wires), plus 30,000 more for its wiring,
-160 circuit boards, 8,000 solder joints, steel, transformers and machine parts.
-Hand routes (wire drawn at the anvil, machine parts filed from forged blanks)
-exist so the first machine shop can be built; after that, scale needs powered
-works, several crews, and transport. Galena (with limestone-hosted copper) and
-pyrite (in coal seams) are new accessory minerals for lead and sulfur. A
-computer within eight blocks of a gun halves its dispersion as a fire-control
-table. Data packs may retune or add recipes in the `industry` group of
-`content_rules.json`.
+Galena and fluorite (with limestone-hosted copper), pyrite, rock salt, tar sand
+and borax (with coal measures), wolframite (with tin lodes) and bauxite (with
+ironstone) are accessory minerals in newly generated chunks. A computer within
+eight blocks of a gun halves its dispersion as a fire-control table. Data packs
+may retune or add recipes in the `industry` group of `content_rules.json`.
 
 ## Military service, arms and orders
 
@@ -285,10 +353,11 @@ conscripts at 35.
 
 Soldiers fight with what they are handed. `equip <target>`, or sneak-interacting
 with your own soldier while holding kit, puts armour on, a shield in the off
-hand and anything else in the weapon hand; food, arrows and paper cartridges go
-into the pack. A replaced item comes back to the giver, and issued kit drops on
-death. Soldiers draw rations from any supply vehicle within eight blocks, refill
-a canteen at water, and break ranks to forage when both run out.
+hand and anything else in the weapon hand; food, arrows, paper cartridges and
+spare flints go into the pack. A replaced item comes back to the giver, and
+issued kit drops on death. Soldiers draw rations from any supply vehicle within
+eight blocks, refill a canteen at water, and break ranks to forage when both
+run out.
 
 `/survival military order <soldiers> ...`: `hold`, `follow`, `retreat`,
 `move <pos> [line|column|square]`, `guard <pos> [radius]`, `attack|charge|fire <target>`,
@@ -305,11 +374,16 @@ and server code may call `Military.recruit/conscript/equip/order`.
 - Bows (24 blocks) and crossbows (40, slower, flatter) loose real arrows from
   the quiver, which can be recovered. An archer ordered to `fire` with an empty
   quiver holds; ordered to `attack`, he closes with whatever is in hand.
-- The **musket** is a flintlock. Loading takes a paper cartridge and about
-  twenty seconds for a raw recruit, twelve for a drilled one; players hold use
-  through the drill and use again to fire. It misfires one shot in ten, one in
-  two in the rain, is a volley weapon beyond thirty blocks, and hits hard
-  through armour and shields. Gunfire stampedes loose animals.
+- The **musket** is a flintlock. A cartridge is a 31 g ball over six drams of
+  powder, ninety-six to the kilogram. Loading takes eighteen seconds for a drilled man
+  and thirty for a raw recruit; players hold use through the drill and use
+  again to fire. It misfires one shot in ten, one in two in the rain, and more
+  as it fouls: every round dirties the barrel, slows the next load by 4% and
+  adds a point of misfire, until at forty rounds it will not load at all.
+  Sneak and use to scour it (a minute); soldiers stop to clean at thirty. A
+  flint is good for forty sparks, then wants a spare. It is a volley weapon
+  beyond thirty blocks and hits hard through armour and shields. Gunfire
+  stampedes loose animals.
 - Morale falls with wounds, hunger, thirst, dead comrades and incoming shot, and
   recovers when fed and led. Below 20 a soldier breaks and runs, rallying only
   near the commander; unwatched conscripts and hopeless volunteers desert.
@@ -318,42 +392,67 @@ and server code may call `Military.recruit/conscript/equip/order`.
 
 ## Transport and logistics
 
-| Vehicle | Moves by | Crew and load | Notes |
-| --- | --- | --- | --- |
-| Cart | 1 draught animal | driver, 576 units | |
-| Wagon | 2–4 | driver and mate, 1,728 | The supply train of an army |
-| Chariot | 2 horses | driver and one fighter | Twice a wagon's pace on a made road, crippled off it; the fighter shoots from the car |
-| Motor truck | combustion engine | 2, 3,456 | Burns fuel alcohol; bogs down off the road |
-| Locomotive | steam | 2, tender 512 | Rails only; needs coal, coke or charcoal and boiler water |
-| Goods wagon / carriage | hauled | 6,912 units / 8 passengers | Up to twelve cars per engine |
+| Vehicle | Moves by | Payload | Top speed | Notes |
+| --- | --- | --- | --- | --- |
+| Cart | 1 draught animal | 500 kg | 10 km/h | |
+| Wagon | 2-4 | 2,000 kg | 9 km/h (10 behind four horses) | Wants three horses fully laden |
+| Chariot | 2 horses | 100 kg and a fighter | 30 km/h | Crippled off a made road; the fighter shoots from the car |
+| Motor truck | combustion engine | 3,000 kg | 25 km/h | A litre of petrol every 3 km (alcohol every 2); bogs down off the road |
+| Locomotive | steam | bunker 5,000 kg, 3,000 L | 43 km/h | Rails only |
+| Goods wagon / carriage | hauled | 10,000 kg / 8 passengers | | Up to twelve cars per engine |
 
-Vehicles are assembled at a yard from frames, wheels, harness, engines and plate
-and roll out as entities. Lead a tamed adult horse, mule, donkey, camel or ox
-to a vehicle and click it to harness (oxen pull more and walk slower). Click to
-board; the first seat drives with the movement keys. Sneak-click with goods to
-load, with an empty hand to unload. Pace depends on the team, the load and the
-ground: made roads (path, gravel, cobble, brick, planks) carry wheels at full
-speed, turf slows them, and sand, snow, mud and plough bog them down.
+Cargo goes by weight: a log is 600 kg, a sack of coal 25, a sleeper 85, a
+metre of rail 31. A horse starts about 1,200 kg gross on a made road, so a
+loaded vehicle may need more animals than its minimum, and tells you how many.
+Teams eat: every animal in harness takes a kilogram of fodder from the load
+ten times a day, by weight (hay, wheat, maize, roots, apples), or grazes if
+halted on grass;
+an unfed team weakens and finally starves. Bearings want a litre of tallow or
+oil every fifty kilometres and burn out without it.
+
+Nothing starts or stops at once. A team or a lorry gains half a metre per
+second each second and takes its real distance to stop, and a driver ordered
+to a place slows in time to stop there. Pace depends on the team, the load and
+the ground: made roads (path, gravel, cobble, brick, planks) carry wheels at
+full speed, turf slows them, and sand, snow, mud and plough bog them down.
+
+Vehicles are assembled at a yard and roll out as entities. Lead a tamed adult
+horse, mule, donkey, camel or ox to a vehicle and click it to harness (oxen
+pull more and walk slower). Click to board; the first seat drives with the
+movement keys. Sneak-click with goods to load, with an empty hand to unload.
 `/survival vehicle status|load|unload|deliver|pickup|hitch|unhitch|board|leave|drive|halt|couple|uncouple`
 (and the `control` forms) cover everything; `deliver` and `pickup` move bulk
 cargo straight between a vehicle and a works drawn up within six blocks.
 
-**Railways** are laid, not placed. Each metre of line takes 2 steel rails,
-2 sleepers, 2 gravel ballast and 4 spikes, a firm bed three blocks wide, and
-400 base work ticks of construction labour (use a steel rail on the ground, or
-`/survival lay_track <pos>`; materials may sit in a wagon alongside). A line
-rises one block only after a level run. An engine needs fuel in its tender and
-takes on water when stopped within four blocks of it; heavier trains and
-grades are slower, and a curve taken above half speed derails the train.
+**Railways** are laid, not placed. Each metre of line takes 2 metres of steel
+rail, 2 sleepers, 2 cubic metres of gravel ballast and 8 spikes, a firm bed
+three blocks wide, and two and a half man-hours (use a steel rail on the
+ground, or `/survival lay_track <pos>`; materials may sit in a wagon
+alongside). A line climbs no more than one block in thirty.
+
+A locomotive is a twenty-four tonne tank engine. A cold boiler takes two hours'
+firing, with someone on the footplate, before it will move, and burns ten
+kilograms of coal an hour standing in steam. Running, it burns a 25 kg sack
+every 1.8 km and boils seven litres of water for each kilogram, refilling at
+60 L a second when stopped within four blocks of water. It gathers way at a
+fifth of a metre per second each second (less with a heavy train), needs 150 m
+to stop from full speed, derails on a curve taken above 11 km/h, and runs off
+the end of the line if nobody brakes.
 
 ## Siege warfare
 
-| Piece | Ammunition | Crew | Character |
-| --- | --- | --- | --- |
-| Cannon | round shot + 1 powder charge | 3 | Flat direct fire to ~320 blocks; breaks one masonry block a shot and batters the next |
-| Bombard | stone shot + 3 charges | 4 | Four minutes to load, smashes through several blocks, may burst |
-| Trebuchet | stone shot, no powder | 4 | Built where it shoots; lobs in a high arc between ~45 and ~105 blocks |
-| Field gun | explosive shell or round shot + 1 charge | 3 | Rifled steel breech-loader; long range, bursting shell |
+| Piece | Round | Crew | Team | Character |
+| --- | --- | --- | --- | --- |
+| Cannon | 3 kg round shot + half a kilogram of powder | 8 | 4-6 | Bronze six-pounder, 440 m/s, two rounds a minute; flat to a hundred metres, about 2.2 km at full elevation; breaks one masonry block a shot and batters the next |
+| Bombard | 40 kg stone + 10 kg powder | 8 | 6-10 | 220 m/s; a few shots a day, smashes through several blocks, may burst |
+| Trebuchet | 40 kg stone, no powder | 12 | built in place | 50 m/s release in a high arc between about 95 and 230 m; one stone an hour |
+| Field gun | 8 kg shell + 2 kg powder | 6 | 4-6 | Rifled steel breech-loader of the 1870s, 455 m/s, a round in thirty seconds, about 6 km at full elevation |
+
+Shot flies at its real speed under 9.8 m/s2 and air drag proportional to the
+square of speed, so a cannon ball crosses a siege line in a fraction of a
+second and still falls far short of its vacuum range. A shot that leaves the
+loaded world is lost, so these reaches are never seen in full. Laying a piece solves
+that trajectory within the mounting's limits of elevation.
 
 Put ammunition in the piece's store, man it (`/survival siege man`, a `crew`
 order, or the gunner's seat), and the crew loads at a pace set by their number
@@ -469,7 +568,11 @@ The industry, transport and warfare scenes are `validation/war-*.json`
 (vehicles, artillery, railway, items and works, a crewed cannon breaching a
 wall, a train and a horse-drawn wagon under way, and a recruited swordsman and
 musketeer in action). `tools/generate-industry-data.py` regenerates their data
-files, track model and vehicle models; `tools/render-industry-icons.py` the icons.
+files and track model, `tools/generate-vehicle-models.py` the true-scale vehicle
+models and their layout table, and `tools/render-industry-icons.py` the icons.
+`validation/war-materials.json` shows every later material, ore and plant block;
+`validation/war-cleanroom.json` builds a fab with its own power station, pumps it
+clean, packages chips and then breaches the wall.
 
 The realism implementation and final checks are recorded in the
 [realism validation report](docs/superpowers/plans/2026-11-07-realism-validation.md).

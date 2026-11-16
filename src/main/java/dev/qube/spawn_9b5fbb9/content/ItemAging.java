@@ -77,6 +77,7 @@ public final class ItemAging {
         java.util.List<ItemStack> inputs=new java.util.ArrayList<>();for(int i=0;i<event.getInventory().getContainerSize();i++)inputs.add(event.getInventory().getItem(i));
         inherit(event.getCrafting(),inputs,level);
     }
+    private static final java.util.Set<String> INERT=java.util.Set.of("hematite","malachite","cassiterite","galena","pyrite","salt","fluorite","bauxite","wolframite","oil_sand","borax","coal","charcoal","coke","clay_ball","brick","flint","quicklime","limestone","sulfur","pig_iron");
     public static void weather(ItemEntity entity) {
         if(!(entity.level() instanceof ServerLevel level))return;
         entity.setUnlimitedLifetime();
@@ -85,6 +86,8 @@ public final class ItemAging {
         if(isFood(stack)||stack.is(SurvivalContent.item("fertilized_egg")))return;
         CompoundTag tag=data(stack);long now=SurvivalApi.calendar(level);long last=tag.getLongOr("weatherTick",now);
         String id=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
+        // Rock does not rot: broken ore, coal, clay, brick and lime lie where they fell.
+        if(INERT.contains(id)||id.startsWith("crushed_")||id.startsWith("roasted_"))return;
         boolean durable=id.contains("ingot")||id.contains("stone")||id.contains("pot")||id.contains("scrap")||id.contains("copper")||id.contains("bronze")||id.contains("iron")||id.contains("gold")||id.contains("diamond")||id.contains("ceramic")||id.contains("obsidian");
         double age=tag.getDoubleOr("weatherAge",0)+Math.max(0,now-last)*exposure;
         tag.putLong("weatherTick",now);tag.putDouble("weatherAge",age);data(stack,tag);

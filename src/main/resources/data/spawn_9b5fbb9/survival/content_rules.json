@@ -176,7 +176,7 @@
   "production": {
     "fire_pot": {
       "ticks": 2000,
-      "input": "minecraft:clay",
+      "input": "minecraft:clay_ball",
       "station": "kiln",
       "skill": "POTTERY",
       "minimumSkill": 0,

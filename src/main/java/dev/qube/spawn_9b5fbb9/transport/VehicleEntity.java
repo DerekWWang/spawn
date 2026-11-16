@@ -43,7 +43,13 @@ public class VehicleEntity extends Entity {
     public final List<UUID> team=new ArrayList<>();
     public Vec3 destination;
     public double throttle,velocity,water,fuelBurn;
+    /** Boiler pressure 0..1; metres of running left on the last greasing; feeds the team has missed; calendar tick of its last feed. */
+    public double steam,grease,fodder;
+    public int teamHunger;
+    public long fedAt;
     public float damage;
+    /** Client only: metres rolled, for wheel and rod animation. */
+    public float roll,rollO;
     // Ordnance state (see Siege).
     public String shot="";
     public int charges,shotsFired;
@@ -75,26 +81,33 @@ public class VehicleEntity extends Entity {
     @Override protected Vec3 getPassengerAttachmentPoint(Entity passenger,EntityDimensions dimensions,float scale){
         int index=Math.max(0,getPassengers().indexOf(passenger));double side=0,up=.9,forward=0;
         switch(kind()){
-            case "cart"->{up=.95;forward=.55;}
-            case "wagon"->{side=index==0?-.4:.4;up=1.25;forward=1.0;}
-            case "chariot"->{side=index==0?-.3:.3;up=.5;forward=index==0?.1:-.25;}
-            case "motor_truck"->{side=index==0?-.5:.5;up=1.05;forward=.95;}
-            case "locomotive"->{side=index==0?-.45:.45;up=.72;forward=-1.0;}
-            case "rail_carriage"->{side=index%2==0?-.5:.5;up=.85;forward=1.05-.7*(index/2);}
-            case "trebuchet"->{up=.3;forward=-1.7;}
-            default->{up=.35;forward=-spec().length()/2-.3;}
+            case "cart"->{up=1.0;forward=.75;}
+            case "wagon"->{side=index==0?-.4:.4;up=1.7;forward=1.7;}
+            case "chariot"->{side=index==0?-.25:.25;up=.7;forward=index==0?.05:-.3;}
+            case "motor_truck"->{side=index==0?-.45:.45;up=1.28;forward=.7;}
+            case "locomotive"->{side=index==0?-.55:.55;up=1.18;forward=-1.5;}
+            case "rail_carriage"->{side=index%2==0?-.6:.6;up=1.1;forward=2.1-1.4*(index/2);}
+            case "trebuchet"->{side=1.0;up=.3;forward=-2.0;}
+            // The gunner stands at the trail, clear of the recoil.
+            default->{side=.75;up=.05;forward=-spec().length()/2+.4;}
         }
         return new Vec3(side,up,forward).yRot(-getYRot()*Mth.DEG_TO_RAD);
     }
 
     @Override public void tick(){
         super.tick();
+        if(level().isClientSide()){
+            // Wheels turn by the distance actually covered along the heading.
+            Vec3 heading=Vec3.directionFromRotation(0,getYRot());rollO=roll;roll+=(float)((getX()-xo)*heading.x+(getZ()-zo)*heading.z);
+            return;
+        }
         if(!(level() instanceof ServerLevel level))return;
         Spec spec=spec();
         if(spec.rail()){if(spec.kind()==Kind.ENGINE)Railway.tick(this,level);}
         else roadTick(level,spec);
         if(spec.artillery()!=null)Siege.tick(this,level);
         if(tickCount%20==0){
+            feedTeam(level);
             while(getPassengers().size()>spec.seats())getPassengers().getLast().stopRiding();
             for(Entity rider:getPassengers())if(rider instanceof LivingEntity living&&SurvivalApi.isHumanoid(living)&&Math.abs(velocity)>.03)SkillApi.award(living,Skill.RIDING,rider==getFirstPassenger()?3:.5);
         }
@@ -104,11 +117,17 @@ public class VehicleEntity extends Entity {
         Spec spec=spec();
         if(spec.kind()==Kind.CAR)return "";
         if(spec.speed()<=0)return "fixed emplacement";
-        if(spec.drawn()){double pull=0;if(level() instanceof ServerLevel level)for(UUID id:team)pull+=Vehicles.draught(level.getEntity(id));if(pull+1e-6<spec.teamMin())return "needs a team of "+spec.teamMin()+" draught animals";}
-        if(spec.kind()==Kind.MOTOR&&Ledger.count(cargo,"spawn_9b5fbb9:fuel_alcohol")<=0)return "out of fuel alcohol";
+        if(spec.drawn()){
+            double pull=0;if(level() instanceof ServerLevel level)for(UUID id:team)pull+=Vehicles.draught(level.getEntity(id));
+            if(pull+1e-6<spec.teamMin())return "needs a team of "+spec.teamMin()+" draught animals";
+            // A horse starts about 1200 kg gross on a made road.
+            double gross=spec.tare()+Ledger.mass(cargo);if(gross>1200*pull+1e-6)return "the team cannot start "+Math.round(gross)+" kg gross: harness "+(int)Math.ceil(gross/1200)+" horses or lighten the load";
+        }
+        if(spec.kind()==Kind.MOTOR&&fuelBurn<=0&&Ledger.count(cargo,"spawn_9b5fbb9:petrol")<=0&&Ledger.count(cargo,"spawn_9b5fbb9:fuel_alcohol")<=0)return "out of petrol and fuel alcohol";
         if(spec.kind()==Kind.ENGINE){
             if(Railway.fuelAboard(this)<=0&&fuelBurn<=0)return "no coal, coke or charcoal in the tender";
             if(water<=0)return "boiler dry: stop beside water to refill";
+            if(steam<.5)return "raising steam ("+Math.round(steam*100)+"%): a cold boiler takes two hours' firing with a crew on the footplate before it will move";
         }
         return "";
     }
@@ -116,7 +135,7 @@ public class VehicleEntity extends Entity {
         if(!immobileReason().isEmpty())return 0;
         if(!spec.drawn())return 1;
         double pull=0,pace=1;for(UUID id:team){Entity animal=level.getEntity(id);pull+=Vehicles.draught(animal);if(animal!=null)pace=Math.min(pace,Vehicles.pace(animal));}
-        return Math.min(1.2,Math.sqrt(pull/spec.teamMin()))*pace;
+        return Math.min(1.2,Math.sqrt(pull/spec.teamMin()))*pace*Math.max(.3,1-.05*teamHunger);
     }
     /** Made roads carry wheels at full pace; turf slows them, and sand, snow, mud and plough bog them down. */
     private double ground(ServerLevel level,Spec spec){
@@ -132,7 +151,7 @@ public class VehicleEntity extends Entity {
         return factor;
     }
     private void roadTick(ServerLevel level,Spec spec){
-        double forward=0,turn=0;Entity driver=getFirstPassenger();
+        double forward=0,turn=0,arrive=Double.MAX_VALUE;Entity driver=getFirstPassenger();
         boolean capable=driver instanceof LivingEntity living&&SurvivalApi.isHumanoid(living)&&(SurvivalApi.exempt(living)||SurvivalApi.state(living).mental()>.05);
         if(capable&&destination==null&&driver instanceof ServerPlayer player){
             var input=player.getLastClientInput();forward=(input.forward()?1:0)-(input.backward()?.4:0);
@@ -141,11 +160,16 @@ public class VehicleEntity extends Entity {
         }else if(capable&&destination!=null){
             double dx=destination.x-getX(),dz=destination.z-getZ(),distance=Math.sqrt(dx*dx+dz*dz);
             if(distance<2.5)destination=null;
-            else{float wanted=(float)(Mth.atan2(dz,dx)*Mth.RAD_TO_DEG)-90,difference=Mth.wrapDegrees(wanted-getYRot());turn=Mth.clamp(difference/12,-1,1);forward=Math.abs(difference)>70?.35:1;}
+            else{arrive=distance-2.5;float wanted=(float)(Mth.atan2(dz,dx)*Mth.RAD_TO_DEG)-90,difference=Mth.wrapDegrees(wanted-getYRot());turn=Mth.clamp(difference/12,-1,1);forward=Math.abs(difference)>70?.35:1;}
         }else if(!capable)destination=null;
-        double limit=spec.speed()<=0?0:spec.speed()*traction(level,spec)*ground(level,spec)/(1+.6*Ledger.total(cargo)/Math.max(1,spec.capacity()));
+        double limit=spec.speed()<=0?0:spec.speed()*traction(level,spec)*ground(level,spec)/(1+.6*Ledger.mass(cargo)/Math.max(1,spec.capacity()));
         if(driver instanceof LivingEntity living&&SurvivalApi.isHumanoid(living))limit*=.8+.2*SkillApi.level(living,Skill.RIDING)/20d;
-        velocity+=Mth.clamp(forward*limit-velocity,-.02,.012);
+        // Real rates: a team or an early lorry gains half a metre per second each second, and stops at 1.5 or 3 m/s/s.
+        boolean motor=spec.kind()==Kind.MOTOR;double accel=motor?.0015:.00125,brake=motor?.0075:.004;
+        // A driver with somewhere to stop slows in time to stop there.
+        if(arrive<Double.MAX_VALUE)limit=Math.min(limit,Math.sqrt(2*brake*.8*arrive)+.01);
+        double target=forward*limit,rate=forward==0?.0015:target*velocity<0||Math.abs(target)<Math.abs(velocity)?brake:accel;
+        velocity+=Mth.clamp(target-velocity,-rate,rate);
         if(Math.abs(velocity)<.003&&forward==0)velocity=0;
         if(Math.abs(velocity)>.01&&turn!=0)setYRot(getYRot()+(float)(turn*spec.turn()*Math.signum(velocity)));
         Vec3 heading=Vec3.directionFromRotation(0,getYRot());
@@ -154,8 +178,36 @@ public class VehicleEntity extends Entity {
         setDeltaMovement(motion);move(MoverType.SELF,motion);
         if(horizontalCollision)velocity*=.4;
         double travelled=position().subtract(before).horizontalDistance();
-        if(spec.kind()==Kind.MOTOR&&travelled>0){fuelBurn+=travelled;while(fuelBurn>=40){fuelBurn-=40;if(Ledger.take(cargo,"spawn_9b5fbb9:fuel_alcohol",1)==0){velocity=0;break;}}}
+        if(motor&&travelled>0){
+            // Thirty litres of petrol to the hundred kilometres; alcohol carries two thirds as far.
+            fuelBurn-=travelled;
+            while(fuelBurn<=0){if(Ledger.take(cargo,"spawn_9b5fbb9:petrol",1)>0)fuelBurn+=3000;else if(Ledger.take(cargo,"spawn_9b5fbb9:fuel_alcohol",1)>0)fuelBurn+=2000;else{fuelBurn=0;velocity=0;break;}}
+        }
+        if(travelled>0)lubricate(level,travelled);
         positionTeam(level,spec,heading);
+    }
+    /** Axles and engines run on grease: tallow or oil from the load, a litre every fifty kilometres. Run dry and the bearings burn out. */
+    public void lubricate(ServerLevel level,double travelled){
+        grease-=travelled;if(grease>0)return;
+        if(Ledger.take(cargo,"spawn_9b5fbb9:lubricant",1)>0){grease+=Vehicles.GREASE_INTERVAL;return;}
+        grease=0;damage+=(float)(spec().health()*travelled/20000);if(damage>=spec().health())wreck(level);
+    }
+    /** Animals in harness eat from the load every tenth of a day, or graze if the vehicle is halted on grass. Unfed teams weaken, then starve. */
+    private void feedTeam(ServerLevel level){
+        if(team.isEmpty()){fedAt=0;return;}
+        long now=SurvivalApi.calendar(level);if(fedAt==0||fedAt>now)fedAt=now;
+        for(int guard=0;now-fedAt>=2400&&guard<240;guard++){
+            fedAt+=2400;int unfed=0;
+            for(UUID id:team){
+                if(!(level.getEntity(id) instanceof Mob animal))continue;
+                // A feed is a kilogram: forage is drawn from the load into the nosebag by weight.
+                for(String feed:Vehicles.FODDER)while(fodder<1&&Ledger.take(cargo,feed,1)>0)fodder+=Ledger.mass(feed);
+                boolean fed=fodder>=1;if(fed)fodder-=1;
+                if(!fed&&Math.abs(velocity)<.003&&level.getBlockState(animal.getOnPos()).is(Blocks.GRASS_BLOCK))fed=true;
+                if(!fed){unfed++;if(teamHunger>=40&&!animal.isInvulnerable())animal.hurtServer(level,level.damageSources().starve(),1);}
+            }
+            teamHunger=unfed>0?Math.min(60,teamHunger+1):Math.max(0,teamHunger-2);
+        }
     }
     private void positionTeam(ServerLevel level,Spec spec,Vec3 heading){
         if(team.isEmpty())return;Vec3 right=new Vec3(-heading.z,0,heading.x);int index=0;boolean pairs=team.size()>1;
@@ -204,7 +256,7 @@ public class VehicleEntity extends Entity {
     public void wreck(ServerLevel level){
         if(isRemoved())return;
         ejectPassengers();releaseTeam();Railway.removed(this,level);
-        long powder=Ledger.count(cargo,"minecraft:gunpowder")+6*Ledger.count(cargo,"spawn_9b5fbb9:powder_charge")+Ledger.count(cargo,"spawn_9b5fbb9:paper_cartridge")+4*Ledger.count(cargo,"spawn_9b5fbb9:explosive_shell")+6L*charges;
+        long powder=Ledger.count(cargo,"minecraft:gunpowder")+Ledger.count(cargo,"spawn_9b5fbb9:powder_charge")/2+Ledger.count(cargo,"spawn_9b5fbb9:paper_cartridge")/96+Ledger.count(cargo,"spawn_9b5fbb9:explosive_shell")+charges/2;
         for(String volatileItem:List.of("minecraft:gunpowder","spawn_9b5fbb9:powder_charge","spawn_9b5fbb9:paper_cartridge","spawn_9b5fbb9:explosive_shell"))cargo.remove(volatileItem);
         int stacks=0;
         for(String id:new ArrayList<>(cargo.keySet()))while(stacks<16&&cargo.containsKey(id)){ItemStack stack=Ledger.withdrawStack(cargo,id);if(stack.isEmpty())break;spawnAtLocation(level,stack);stacks++;}
@@ -223,14 +275,14 @@ public class VehicleEntity extends Entity {
     private static Vec3 point(ValueInput in,String name){return in.getBooleanOr(name,false)?new Vec3(in.getDoubleOr(name+"X",0),in.getDoubleOr(name+"Y",0),in.getDoubleOr(name+"Z",0)):null;}
     @Override protected void addAdditionalSaveData(ValueOutput out){
         out.putString("kind",kind());out.store("cargo",CompoundTag.CODEC,Ledger.save(cargo));out.putString("team",ids(team));point(out,"destination",destination);
-        out.putDouble("water",water);out.putDouble("fuelBurn",fuelBurn);out.putFloat("damage",damage);
+        out.putDouble("water",water);out.putDouble("fuelBurn",fuelBurn);out.putFloat("damage",damage);out.putDouble("steam",steam);out.putDouble("grease",grease);out.putDouble("fodder",fodder);out.putInt("teamHunger",teamHunger);out.putLong("fedAt",fedAt);
         out.putString("shot",shot);out.putInt("charges",charges);out.putInt("shotsFired",shotsFired);out.putDouble("loadProgress",loadProgress);out.putBoolean("ready",ready);out.putString("crew",String.join(",",crew));point(out,"fireTarget",fireTarget);
         int[] nodes=new int[path.size()*3];for(int i=0;i<path.size();i++){nodes[i*3]=path.get(i).getX();nodes[i*3+1]=path.get(i).getY();nodes[i*3+2]=path.get(i).getZ();}
         out.putIntArray("path",nodes);out.putDouble("headS",headS);out.putString("cars",ids(cars));out.putString("facing",facing.getName());out.putString("coupledTo",coupledTo);out.putDouble("throttle",throttle);
     }
     @Override protected void readAdditionalSaveData(ValueInput in){
         setKind(in.getStringOr("kind","cart"));Ledger.load(cargo,in.read("cargo",CompoundTag.CODEC).orElse(new CompoundTag()));ids(in.getStringOr("team",""),team);destination=point(in,"destination");
-        water=Mth.clamp(in.getDoubleOr("water",0),0,12000);fuelBurn=in.getDoubleOr("fuelBurn",0);damage=in.getFloatOr("damage",0);
+        water=Mth.clamp(in.getDoubleOr("water",0),0,3000);fuelBurn=in.getDoubleOr("fuelBurn",0);damage=in.getFloatOr("damage",0);steam=Mth.clamp(in.getDoubleOr("steam",0),0,1);grease=in.getDoubleOr("grease",0);fodder=Math.max(0,in.getDoubleOr("fodder",0));teamHunger=Mth.clamp(in.getIntOr("teamHunger",0),0,60);fedAt=in.getLongOr("fedAt",0);
         shot=in.getStringOr("shot","");charges=in.getIntOr("charges",0);shotsFired=in.getIntOr("shotsFired",0);loadProgress=in.getDoubleOr("loadProgress",0);ready=in.getBooleanOr("ready",false);
         crew.clear();for(String id:in.getStringOr("crew","").split(","))if(!id.isBlank())crew.add(id);fireTarget=point(in,"fireTarget");
         path.clear();int[] nodes=in.getIntArray("path").orElse(new int[0]);for(int i=0;i+2<nodes.length;i+=3)path.add(new BlockPos(nodes[i],nodes[i+1],nodes[i+2]));

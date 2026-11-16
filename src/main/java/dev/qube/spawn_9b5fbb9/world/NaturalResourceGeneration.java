@@ -30,6 +30,15 @@ public final class NaturalResourceGeneration {
     private static BlockState accessory(long seed,ResourceFields.Mineral mineral,int x,int y,int z){
         double roll=ResourceFields.unit(ResourceFields.hash(seed^0x5EEDL,x,z,y*31L+401));
         if(mineral==ResourceFields.Mineral.COPPER&&roll<.14)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.GALENA_ORE.get().defaultBlockState();
+        // Fluorspar is the classic gangue of limestone-hosted lead veins; rock salt beds lie with coal-measure sandstones.
+        if(mineral==ResourceFields.Mineral.COPPER&&roll<.20)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.FLUORITE_ORE.get().defaultBlockState();
+        if(mineral==ResourceFields.Mineral.COAL&&roll>.90)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.ROCK_SALT.get().defaultBlockState();
+        // The same sedimentary basins carry bituminous sands and evaporite borates; tin lodes carry wolframite;
+        // weathered ironstone grades into lateritic bauxite.
+        if(mineral==ResourceFields.Mineral.COAL&&roll>.80)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.TAR_SAND.get().defaultBlockState();
+        if(mineral==ResourceFields.Mineral.COAL&&roll>.76)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.BORAX_ORE.get().defaultBlockState();
+        if(mineral==ResourceFields.Mineral.TIN&&roll<.15)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.WOLFRAMITE_ORE.get().defaultBlockState();
+        if(mineral==ResourceFields.Mineral.IRON&&roll<.10)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.BAUXITE_ORE.get().defaultBlockState();
         if(mineral==ResourceFields.Mineral.COAL&&roll<.12)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.PYRITE_ORE.get().defaultBlockState();
         return ore(mineral);
     }

@@ -1,6 +1,1 @@
-{
-  "model": {
-    "type": "minecraft:model",
-    "model": "spawn_9b5fbb9:item/motor_truck"
-  }
-}
+{"model":{"type":"minecraft:model","model":"spawn_9b5fbb9:item/motor_truck"}}

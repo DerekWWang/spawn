@@ -9,11 +9,9 @@
           "name": "spawn_9b5fbb9:assembly_yard"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ]
 }

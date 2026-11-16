@@ -155,6 +155,7 @@ public final class Military {
             int added=rationValue(held)*held.getCount();service.putInt("rations",service.getIntOr("rations",0)+added);held.setCount(0);save(soldier,service);return ok("Issued "+added+" rations (pack "+service.getIntOr("rations",0)+")");
         }
         if(held.is(ItemTags.ARROWS)){service.putInt("arrows",service.getIntOr("arrows",0)+held.getCount());held.setCount(0);save(soldier,service);return ok("Quiver: "+service.getIntOr("arrows",0)+" arrows");}
+        if(held.is(Items.FLINT)){service.putInt("flints",service.getIntOr("flints",0)+held.getCount());held.setCount(0);save(soldier,service);return ok("Spare flints: "+service.getIntOr("flints",0));}
         if(held.is(SurvivalContent.item("paper_cartridge"))){service.putInt("cartridges",service.getIntOr("cartridges",0)+held.getCount());held.setCount(0);save(soldier,service);return ok("Cartridge box: "+service.getIntOr("cartridges",0));}
         var equippable=held.get(DataComponents.EQUIPPABLE);
         EquipmentSlot slot=shield(held)?EquipmentSlot.OFFHAND:equippable!=null&&equippable.slot().getType()==EquipmentSlot.Type.HUMANOID_ARMOR?equippable.slot():EquipmentSlot.MAINHAND;
@@ -393,7 +394,7 @@ public final class Military {
     private static void fight(Mob soldier,LivingEntity target,ServerLevel level,CompoundTag service,SurvivalState body,String mode){
         ItemStack weapon=soldier.getMainHandItem();Weapon kind=kind(weapon);long now=level.getGameTime();double distance=soldier.distanceTo(target);
         soldier.getLookControl().setLookAt(target,30,30);
-        boolean ammunition=switch(kind){case BOW,CROSSBOW->service.getIntOr("arrows",0)>0;case MUSKET->Firearms.loaded(weapon)||service.getIntOr("cartridges",0)>0;default->false;};
+        boolean ammunition=switch(kind){case BOW,CROSSBOW->service.getIntOr("arrows",0)>0;case MUSKET->Firearms.loaded(weapon)&&!Firearms.flintWorn(weapon)||service.getIntOr("cartridges",0)>0&&(!Firearms.flintWorn(weapon)||service.getIntOr("flints",0)>0);default->false;};
         if(kind!=Weapon.MELEE&&ammunition&&!mode.equals("charge")&&body.manipulation()>=.2){
             double range=switch(kind){case BOW->24;case CROSSBOW->40;default->48;};
             if(distance>range||!soldier.hasLineOfSight(target)){if(mode.equals("fire")||mode.equals("hold"))halt(soldier);else go(soldier,target.position(),1.1);return;}
@@ -401,9 +402,15 @@ public final class Military {
             if(now<service.getLongOr("nextAttack",0))return;
             double skill=body.skills.level(Skill.MARKSMANSHIP),pace=(.6+.4*skill/20)*Math.max(.2,body.manipulation());
             if(kind==Weapon.MUSKET){
+                if(Firearms.flintWorn(weapon)){service.putInt("flints",service.getIntOr("flints",0)-1);Firearms.reflint(weapon);}
                 if(!Firearms.loaded(weapon)){
+                    // Thirty rounds foul a barrel badly enough that the soldier stops to scour it.
+                    if(Firearms.fouling(weapon)>=30){
+                        if(!service.getBooleanOr("cleaning",false)){service.putBoolean("cleaning",true);service.putLong("nextAttack",now+(long)(Firearms.CLEAN_WORK/pace));return;}
+                        service.putBoolean("cleaning",false);Firearms.clean(weapon);
+                    }
                     // The loading drill: the cartridge is spent when ramming begins.
-                    if(!service.getBooleanOr("ramming",false)){service.putInt("cartridges",service.getIntOr("cartridges",0)-1);service.putBoolean("ramming",true);service.putLong("nextAttack",now+(long)(Firearms.RELOAD_WORK/pace));return;}
+                    if(!service.getBooleanOr("ramming",false)){service.putInt("cartridges",service.getIntOr("cartridges",0)-1);service.putBoolean("ramming",true);service.putLong("nextAttack",now+(long)(Firearms.loadWork(weapon)/pace));return;}
                     service.putBoolean("ramming",false);Firearms.setLoaded(weapon,true);
                 }
                 Vec3 aim=target.getEyePosition().subtract(0,target.getBbHeight()*.3,0).subtract(soldier.getEyePosition()).normalize();

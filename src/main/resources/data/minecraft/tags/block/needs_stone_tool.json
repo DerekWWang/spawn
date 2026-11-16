@@ -6,6 +6,11 @@
     "spawn_9b5fbb9:cassiterite_ore",
     "spawn_9b5fbb9:hematite_ore",
     "spawn_9b5fbb9:galena_ore",
-    "spawn_9b5fbb9:pyrite_ore"
+    "spawn_9b5fbb9:pyrite_ore",
+    "spawn_9b5fbb9:rock_salt",
+    "spawn_9b5fbb9:fluorite_ore",
+    "spawn_9b5fbb9:bauxite_ore",
+    "spawn_9b5fbb9:wolframite_ore",
+    "spawn_9b5fbb9:borax_ore"
   ]
 }

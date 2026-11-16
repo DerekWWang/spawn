@@ -42,11 +42,14 @@ import static net.minecraft.commands.Commands.*;
 public final class Vehicles {
     private Vehicles(){}
     public enum Kind {DRAFT,MOTOR,ENGINE,CAR,ARTILLERY}
-    /** @param velocity muzzle or release speed in blocks per tick; @param blockPower masonry-breaking budget per shot. */
+    /** @param velocity muzzle or release speed in blocks per tick (20 m/s each); @param reloadTicks crew-drill ticks per round;
+     *  @param crew the full detachment; @param blockPower masonry-breaking budget per shot; @param powderCharges kilogram bags per round;
+     *  @param drag quadratic air-drag coefficient per metre, from the shot's mass and frontal area. */
     public record Artillery(double velocity,int reloadTicks,int crew,double spreadDegrees,float entityDamage,double blockPower,boolean highArc,
-                            int powderCharges,Set<String> ammunition,double burstChance,float minPitch,float maxPitch){}
-    /** @param capacity cargo units (items); @param teamMin draught animals needed to move at all; @param speed blocks per tick on a made road. */
-    public record Spec(String id,Kind kind,float width,float height,float length,int seats,long capacity,int teamMin,int teamMax,double speed,float turn,float health,Artillery artillery){
+                            int powderCharges,Set<String> ammunition,double burstChance,float minPitch,float maxPitch,double drag){}
+    /** @param capacity payload in kilograms; @param tare unladen weight in kilograms; @param teamMin horse-equivalents needed to move at all;
+     *  @param speed top speed in blocks per tick on a made road (0.1 is 7.2 km/h). */
+    public record Spec(String id,Kind kind,float width,float height,float length,int seats,long capacity,long tare,int teamMin,int teamMax,double speed,float turn,float health,Artillery artillery){
         public boolean rail(){return kind==Kind.ENGINE||kind==Kind.CAR;}
         public boolean drawn(){return teamMax>0;}
         public EntityDimensions dimensions(){return EntityDimensions.fixed(width,height);}
@@ -55,22 +58,26 @@ public final class Vehicles {
     private static void spec(Spec spec){SPECS.put(spec.id,spec);}
     static {
         String M="spawn_9b5fbb9:";
-        spec(new Spec("cart",Kind.DRAFT,1.6f,1.3f,2.2f,1,576,1,1,.17,3.2f,30,null));
-        spec(new Spec("wagon",Kind.DRAFT,2f,1.7f,3.2f,2,1728,2,4,.14,2.2f,50,null));
-        // A light two-horse car for a driver and one fighter: fast on open level ground, useless in rough country.
-        spec(new Spec("chariot",Kind.DRAFT,1.6f,1.2f,1.8f,2,64,2,2,.30,4.5f,24,null));
-        spec(new Spec("motor_truck",Kind.MOTOR,2.2f,2f,3.6f,2,3456,0,0,.42,2.4f,80,null));
-        spec(new Spec("locomotive",Kind.ENGINE,2.4f,2.8f,3.4f,2,512,0,0,.6,0,200,null));
-        spec(new Spec("rail_wagon",Kind.CAR,2.4f,2.2f,3.2f,0,6912,0,0,0,0,100,null));
-        spec(new Spec("rail_carriage",Kind.CAR,2.4f,2.6f,3.2f,8,256,0,0,0,0,100,null));
-        // Smoothbore field piece: flat direct fire that batters timber and masonry a few shots at a time.
-        spec(new Spec("cannon",Kind.ARTILLERY,1.6f,1.2f,2.4f,1,256,2,4,.11,2f,60,new Artillery(4.0,600,3,1.2,36,9,false,1,Set.of(M+"round_shot"),.002,-5,35)));
-        // Wrought-iron siege bombard: an enormous stone ball, a handful of shots a day, and it may burst.
-        spec(new Spec("bombard",Kind.ARTILLERY,2f,1.6f,3f,1,128,4,6,.05,1f,120,new Artillery(2.6,4800,4,2.5,60,26,false,3,Set.of(M+"stone_shot"),.03,0,30)));
-        // Counterweight trebuchet: built where it will shoot, lobbing stones in a high arc without powder.
-        spec(new Spec("trebuchet",Kind.ARTILLERY,3f,4f,3f,1,128,0,0,0,1.5f,160,new Artillery(2.3,1800,4,1.5,40,13,true,0,Set.of(M+"stone_shot"),0,45,78)));
-        // Rifled steel breech-loader firing explosive shell at long range.
-        spec(new Spec("field_gun",Kind.ARTILLERY,1.8f,1.3f,2.6f,1,256,2,4,.12,2.5f,80,new Artillery(6.0,200,3,.4,30,8,false,1,Set.of(M+"explosive_shell",M+"round_shot"),0,-5,45)));
+        // One horse, half a tonne, a brisk walk; trotting only when light.
+        spec(new Spec("cart",Kind.DRAFT,1.9f,1.5f,3.0f,1,500,250,1,1,.14,3.2f,30,null));
+        // Two tonnes behind a four-horse team at walking pace: the unit of pre-railway freight.
+        spec(new Spec("wagon",Kind.DRAFT,2f,1.9f,4.2f,2,2000,700,2,4,.12,2.2f,50,null));
+        // A light two-horse car for a driver and one fighter: a gallop on open level ground, useless in rough country.
+        spec(new Spec("chariot",Kind.DRAFT,1.7f,1.4f,2.4f,2,100,60,2,2,.42,4.5f,24,null));
+        // A three-ton lorry of the 1910s: 25 km/h on a made road.
+        spec(new Spec("motor_truck",Kind.MOTOR,2.3f,2.5f,5.5f,2,3000,2900,0,0,.35,2.4f,80,null));
+        // Twenty-four tonnes of tank engine; the bunker carries its coal.
+        spec(new Spec("locomotive",Kind.ENGINE,2.7f,3.6f,6.4f,2,5000,23900,0,0,.6,0,200,null));
+        spec(new Spec("rail_wagon",Kind.CAR,2.5f,2.3f,5.0f,0,10000,4750,0,0,0,0,100,null));
+        spec(new Spec("rail_carriage",Kind.CAR,2.7f,3.3f,6.0f,8,1000,7200,0,0,0,0,100,null));
+        // Bronze six-pounder: 440 m/s from a half-kilogram charge, two rounds a minute from a drilled detachment of eight.
+        spec(new Spec("cannon",Kind.ARTILLERY,1.9f,1.5f,3.0f,1,300,730,4,6,.10,2f,60,new Artillery(22,600,8,.5,36,9,false,1,Set.of(M+"round_shot"),.002,-5,15,.00076)));
+        // Wrought-iron siege bombard on its timber bed: a 40 kg stone over ten kilograms of powder, a few shots a day, and it may burst.
+        spec(new Spec("bombard",Kind.ARTILLERY,1.8f,1.6f,3.4f,1,600,5000,6,10,.03,1f,120,new Artillery(11,4800,8,1.2,60,26,false,20,Set.of(M+"stone_shot"),.03,0,20,.00053)));
+        // Counterweight trebuchet: built where it will shoot, a dozen men winding down the arm for each stone.
+        spec(new Spec("trebuchet",Kind.ARTILLERY,3.4f,3.4f,5.0f,1,600,18000,0,0,0,1.5f,160,new Artillery(2.5,1000,12,1.0,40,13,true,0,Set.of(M+"stone_shot"),0,45,78,.00053)));
+        // Rifled steel breech-loader of the 1870s: an 8 kg shell at 455 m/s over two kilograms of black powder, relaid after every round.
+        spec(new Spec("field_gun",Kind.ARTILLERY,1.9f,1.7f,3.4f,1,300,1200,4,6,.12,2.5f,80,new Artillery(22.75,600,6,.15,30,8,false,4,Set.of(M+"explosive_shell"),0,-5,18,.000143)));
     }
     public static void init(){NeoForge.EVENT_BUS.addListener(Vehicles::commands);}
 
@@ -78,9 +85,14 @@ public final class Vehicles {
         Spec spec=SPECS.get(kind);if(spec==null)return null;
         VehicleEntity vehicle=IndustrialContent.VEHICLE.get().create(level,EntitySpawnReason.TRIGGERED);if(vehicle==null)return null;
         vehicle.setKind(kind);vehicle.setPos(pos.x,pos.y,pos.z);vehicle.setYRot(yaw);vehicle.yRotO=yaw;
+        vehicle.grease=GREASE_INTERVAL;
         if(spec.rail()){BlockPos track=Railway.trackAt(level,BlockPos.containing(pos));if(track==null)return null;Railway.place(vehicle,level,track);}
         level.addFreshEntity(vehicle);return vehicle;
     }
+    /** Metres a vehicle runs on one litre of grease or oil before its bearings want more. */
+    public static final double GREASE_INTERVAL=50000;
+    /** What a team in harness will eat from the load, by weight: a working horse needs ten kilograms a day. */
+    public static final List<String> FODDER=List.of("minecraft:hay_block","minecraft:wheat","spawn_9b5fbb9:maize","minecraft:carrot","minecraft:potato","minecraft:beetroot","minecraft:apple","minecraft:wheat_seeds");
     /** Draught power of one animal relative to a horse; zero means it cannot be harnessed. */
     public static double draught(Entity animal){
         if(!(animal instanceof Mob mob)||!mob.isAlive()||mob.isBaby())return 0;
@@ -111,13 +123,14 @@ public final class Vehicles {
         String invalid=reach(actor,vehicle);if(!invalid.isEmpty())return fail(invalid);
         ItemStack held=actor.getItemInHand(hand);if(held.isEmpty())return fail("Hold the goods to load");
         if(held.isDamaged()||held.getMaxStackSize()==1&&held.isDamageableItem())return fail("Bulk cargo is for goods and materials, not worn equipment");
-        long room=vehicle.spec().capacity()-Ledger.total(vehicle.cargo);if(room<=0)return fail("The "+vehicle.kind().replace('_',' ')+" is full ("+vehicle.spec().capacity()+" units)");
-        String id=Ledger.id(held);long moved=Math.min(room,held.getCount());Ledger.add(vehicle.cargo,id,moved);held.shrink((int)moved);room-=moved;
-        if(everything&&actor instanceof Player player)for(int slot=0;slot<player.getInventory().getContainerSize()&&room>0;slot++){
+        String id=Ledger.id(held);double each=Ledger.mass(id),room=vehicle.spec().capacity()-Ledger.mass(vehicle.cargo);
+        if(room<each)return fail("The "+vehicle.kind().replace('_',' ')+" cannot carry more ("+Math.round(Ledger.mass(vehicle.cargo))+" of "+vehicle.spec().capacity()+" kg aboard)");
+        long moved=(long)Math.min(Math.floor(room/each),held.getCount());Ledger.add(vehicle.cargo,id,moved);held.shrink((int)moved);room-=moved*each;
+        if(everything&&actor instanceof Player player)for(int slot=0;slot<player.getInventory().getContainerSize()&&room>=each;slot++){
             ItemStack other=player.getInventory().getItem(slot);if(other.isEmpty()||other.isDamaged()||!Ledger.id(other).equals(id))continue;
-            long part=Math.min(room,other.getCount());Ledger.add(vehicle.cargo,id,part);other.shrink((int)part);moved+=part;room-=part;
+            long part=(long)Math.min(Math.floor(room/each),other.getCount());Ledger.add(vehicle.cargo,id,part);other.shrink((int)part);moved+=part;room-=part*each;
         }
-        return ok("Loaded "+moved+"; cargo "+Ledger.total(vehicle.cargo)+"/"+vehicle.spec().capacity());
+        return ok("Loaded "+moved+"; cargo "+Math.round(Ledger.mass(vehicle.cargo))+"/"+vehicle.spec().capacity()+" kg");
     }
     public static ActionResult unload(LivingEntity actor,VehicleEntity vehicle,String itemId,int count){
         String invalid=reach(actor,vehicle);if(!invalid.isEmpty())return fail(invalid);
@@ -144,13 +157,13 @@ public final class Vehicles {
     public static ActionResult pickup(LivingEntity actor,VehicleEntity vehicle){
         String invalid=reach(actor,vehicle);if(!invalid.isEmpty())return fail(invalid);
         WorksEntity works=worksBeside(vehicle);if(works==null)return fail("Draw up within six blocks of a works");
-        long room=vehicle.spec().capacity()-Ledger.total(vehicle.cargo),moved=0;
+        double room=vehicle.spec().capacity()-Ledger.mass(vehicle.cargo);long moved=0;
         for(String id:new ArrayList<>(works.products.keySet())){
-            if(id.startsWith("vehicle:")||room<=0)continue;long part=Math.min(room,works.products.get(id));
-            Ledger.take(works.products,id,part);Ledger.add(vehicle.cargo,id,part);room-=part;moved+=part;
+            double each=Ledger.mass(id);if(id.startsWith("vehicle:")||room<each)continue;long part=(long)Math.min(Math.floor(room/each),works.products.get(id));
+            Ledger.take(works.products,id,part);Ledger.add(vehicle.cargo,id,part);room-=part*each;moved+=part;
         }
         if(moved>0)works.setChanged();
-        return moved>0?ok("Took on "+moved+" finished units; cargo "+Ledger.total(vehicle.cargo)+"/"+vehicle.spec().capacity()):fail("No finished goods to take on, or no room");
+        return moved>0?ok("Took on "+moved+" finished units; cargo "+Math.round(Ledger.mass(vehicle.cargo))+"/"+vehicle.spec().capacity()+" kg"):fail("No finished goods to take on, or no room");
     }
     private static WorksEntity worksBeside(VehicleEntity vehicle){
         WorksEntity found=null;double best=36.01;var level=vehicle.level();
@@ -193,10 +206,10 @@ public final class Vehicles {
     }
     public static String status(VehicleEntity vehicle){
         Spec spec=vehicle.spec();var out=new StringBuilder(spec.id().replace('_',' '));
-        out.append(" | cargo ").append(Ledger.total(vehicle.cargo)).append('/').append(spec.capacity()).append(": ").append(Ledger.describe(vehicle.cargo));
-        if(spec.drawn())out.append(" | team ").append(vehicle.team.size()).append('/').append(spec.teamMax()).append(" (needs ").append(spec.teamMin()).append(')');
-        if(spec.kind()==Kind.MOTOR)out.append(" | fuel alcohol aboard ").append(Ledger.count(vehicle.cargo,"spawn_9b5fbb9:fuel_alcohol"));
-        if(spec.kind()==Kind.ENGINE)out.append(" | water ").append((long)vehicle.water).append("/12000 | cars ").append(vehicle.cars.size());
+        out.append(" | cargo ").append(Math.round(Ledger.mass(vehicle.cargo))).append('/').append(spec.capacity()).append(" kg: ").append(Ledger.describe(vehicle.cargo));
+        if(spec.drawn())out.append(" | team ").append(vehicle.team.size()).append('/').append(spec.teamMax()).append(" (needs ").append(spec.teamMin()).append(')').append(vehicle.teamHunger>0?", unfed for "+vehicle.teamHunger+" feeds":"");
+        if(spec.kind()==Kind.MOTOR)out.append(" | petrol ").append(Ledger.count(vehicle.cargo,"spawn_9b5fbb9:petrol")).append(" L, alcohol ").append(Ledger.count(vehicle.cargo,"spawn_9b5fbb9:fuel_alcohol")).append(" L");
+        if(spec.kind()==Kind.ENGINE)out.append(" | steam ").append(Math.round(vehicle.steam*100)).append("% | water ").append((long)vehicle.water).append("/3000 L | cars ").append(vehicle.cars.size());
         String blocked=vehicle.immobileReason();if(!blocked.isEmpty())out.append(" | ").append(blocked);
         if(spec.artillery()!=null)out.append(" | ").append(dev.qube.spawn_9b5fbb9.warfare.Siege.status(vehicle));
         out.append(" | condition ").append(Math.round(100*(1-vehicle.damage/spec.health()))).append('%');
