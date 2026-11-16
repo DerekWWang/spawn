@@ -5,7 +5,7 @@ title: Illness
 
 # Illness
 
-There are two infections that pass between people, and three other ways to fall ill.
+There are two infections that pass between people, and two other ways to fall ill. The numbers behind them are on [Survival and Physiology](Survival-and-Physiology), and the medicines on [Clothing and Medical Care](Clothing-and-Medical-Care).
 
 | Illness | How you get it | What it does | Treatment |
 | --- | --- | --- | --- |

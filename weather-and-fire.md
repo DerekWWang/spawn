@@ -1,5 +1,5 @@
 ---
-title: Weather and fire
+title: Weather and Fire
 ---
 {% include nav.html %}
 

@@ -75,7 +75,7 @@ ignores all of them.
 Teeth and claws open wounds as a blade does.
 
 - A bite bleeds. Bandage it.
-- A bite tears the garment over the wound.
+- A bite tears the garment over the wound: see [Clothing and Medical Care](Clothing-and-Medical-Care).
 - A bite festers three times as often as a clean cut. Carry antiseptic.
 
 ## Living with them
