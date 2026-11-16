@@ -1,0 +1,113 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 22
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "summon minecraft:villager -6.5 -60 0.5 {Tags:[\"cmd\"],NoAI:1b,Rotation:[-90f,0f]}",
+    "summon minecraft:villager -5.5 -60 2.5 {Tags:[\"r1\"]}",
+    "summon minecraft:villager -5.5 -60 -1.5 {Tags:[\"r2\"]}",
+    "summon minecraft:villager 5.5 -60 3.5 {Tags:[\"foe1\"],NoAI:1b}",
+    "summon minecraft:villager 5.5 -60 -3.5 {Tags:[\"foe2\"],NoAI:1b}",
+    "survival control @e[tag=cmd,limit=1] military recruit @e[tag=r1,limit=1]",
+    "item replace entity @e[tag=cmd,limit=1] weapon.mainhand with minecraft:bread 6",
+    "survival control @e[tag=cmd,limit=1] military recruit @e[tag=r1,limit=1]",
+    "survival control @e[tag=cmd,limit=1] military conscript @e[tag=r2,limit=1]",
+    "item replace entity @e[tag=cmd,limit=1] weapon.mainhand with minecraft:iron_sword",
+    "survival control @e[tag=cmd,limit=1] military conscript @e[tag=r2,limit=1]",
+    "survival control @e[tag=cmd,limit=1] military equip @e[tag=r1,limit=1]",
+    "item replace entity @e[tag=cmd,limit=1] weapon.mainhand with minecraft:shield",
+    "survival control @e[tag=cmd,limit=1] military equip @e[tag=r1,limit=1]",
+    "item replace entity @e[tag=cmd,limit=1] weapon.mainhand with spawn_9b5fbb9:musket",
+    "survival control @e[tag=cmd,limit=1] military equip @e[tag=r2,limit=1]",
+    "item replace entity @e[tag=cmd,limit=1] weapon.mainhand with spawn_9b5fbb9:paper_cartridge 12",
+    "survival control @e[tag=cmd,limit=1] military equip @e[tag=r2,limit=1]",
+    "survival control @e[tag=cmd,limit=1] military order @e[tag=r1] attack @e[tag=foe1,limit=1]",
+    "survival control @e[tag=cmd,limit=1] military order @e[tag=r2] fire @e[tag=foe2,limit=1]",
+    "survival control @e[tag=cmd,limit=1] military roster"
+   ]
+  },
+  {
+   "camera": {
+    "pos": [
+     0,
+     -52,
+     12
+    ],
+    "look_at": [
+     0,
+     -60,
+     0
+    ]
+   }
+  },
+  {
+   "burst": "swordsman_closes_and_fights",
+   "frames": 8,
+   "every": 12
+  },
+  {
+   "run": [
+    "survival control @e[tag=cmd,limit=1] military roster",
+    "data get entity @e[tag=foe2,limit=1] Health"
+   ]
+  },
+  {
+   "step": 285
+  },
+  {
+   "burst": "musketeer_fires",
+   "frames": 16,
+   "every": 3
+  },
+  {
+   "step": 60
+  },
+  {
+   "run": [
+    "survival control @e[tag=cmd,limit=1] military roster"
+   ]
+  },
+  {
+   "camera": {
+    "pos": [
+     -2,
+     -58,
+     -7
+    ],
+    "look_at": [
+     -5,
+     -59,
+     -1.5
+    ]
+   }
+  },
+  {
+   "shot": "musketeer_close"
+  }
+ ]
+}

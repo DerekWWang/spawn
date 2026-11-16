@@ -48,9 +48,9 @@ public final class RealismData {
     private static double number(JsonElement value,String key){if(!value.isJsonPrimitive()||!value.getAsJsonPrimitive().isNumber())throw new IllegalArgumentException(key+" must be numeric");return value.getAsDouble();}
     private static JsonObject group(JsonObject data,String name){return data.has(name)?data.getAsJsonObject(name):new JsonObject();}
     private static void content(JsonObject data){
-        for(String key:data.keySet())if(!java.util.Set.of("crops","husbandry","decay","production").contains(key))throw new IllegalArgumentException("Unknown content group: "+key);
+        for(String key:data.keySet())if(!java.util.Set.of("crops","husbandry","decay","production","industry").contains(key))throw new IllegalArgumentException("Unknown content group: "+key);
         SeasonalCrops.reloadDefinitions(group(data,"crops"));Husbandry.reloadDefinitions(group(data,"husbandry"));
-        ItemAging.reloadDefinitions(group(data,"decay"));Production.reloadDefinitions(group(data,"production"));
+        ItemAging.reloadDefinitions(group(data,"decay"));Production.reloadDefinitions(group(data,"production"));dev.qube.spawn_9b5fbb9.industry.Industry.reloadDefinitions(group(data,"industry"));
     }
     public static void reload(ResourceManager resources){
         var next=physiology(read(resources,"physiology.json"));var nextContent=read(resources,"content_rules.json");

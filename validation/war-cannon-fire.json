@@ -1,0 +1,110 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 22
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "fill 6 -60 -3 7 -57 3 minecraft:cobblestone",
+    "execute positioned -3.5 -60 0.5 rotated -90 0 run survival deploy cannon",
+    "summon minecraft:villager -4.5 -60 2.5 {Tags:[\"g1\"],NoAI:1b}",
+    "summon minecraft:villager -4.5 -60 -1.5 {Tags:[\"g2\"],NoAI:1b}",
+    "summon minecraft:villager -5.5 -60 0.5 {Tags:[\"g3\"],NoAI:1b}",
+    "survival debug_skill @e[tag=g1,limit=1] gunnery 20",
+    "survival debug_skill @e[tag=g2,limit=1] gunnery 20",
+    "survival debug_skill @e[tag=g3,limit=1] gunnery 20",
+    "survival control @e[tag=g1,limit=1] siege status",
+    "item replace entity @e[tag=g1,limit=1] weapon.mainhand with spawn_9b5fbb9:round_shot 4",
+    "survival control @e[tag=g1,limit=1] vehicle load",
+    "item replace entity @e[tag=g1,limit=1] weapon.mainhand with spawn_9b5fbb9:powder_charge 4",
+    "survival control @e[tag=g1,limit=1] vehicle load",
+    "survival control @e[tag=g1,limit=1] siege man",
+    "survival control @e[tag=g2,limit=1] siege man",
+    "survival control @e[tag=g3,limit=1] siege man"
+   ]
+  },
+  {
+   "step": 300
+  },
+  {
+   "run": "survival control @e[tag=g1,limit=1] siege status"
+  },
+  {
+   "step": 360
+  },
+  {
+   "run": "survival control @e[tag=g1,limit=1] siege status"
+  },
+  {
+   "camera": {
+    "pos": [
+     -1,
+     -56,
+     9
+    ],
+    "look_at": [
+     1.5,
+     -59,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "cannon_loaded_crew"
+  },
+  {
+   "run": "survival control @e[tag=g1,limit=1] siege fire 6 -59 0"
+  },
+  {
+   "burst": "cannon_fire",
+   "frames": 24,
+   "every": 1
+  },
+  {
+   "shot": "wall_after_one_shot"
+  },
+  {
+   "camera": {
+    "pos": [
+     1,
+     -57,
+     0.5
+    ],
+    "look_at": [
+     6,
+     -59,
+     0.5
+    ]
+   }
+  },
+  {
+   "shot": "breach_close"
+  },
+  {
+   "run": "survival control @e[tag=g1,limit=1] siege status"
+  }
+ ]
+}

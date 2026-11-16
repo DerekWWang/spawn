@@ -4,6 +4,19 @@
     "spawn_9b5fbb9:kiln",
     "spawn_9b5fbb9:forge",
     "spawn_9b5fbb9:bloomery",
-    "spawn_9b5fbb9:anvil"
+    "spawn_9b5fbb9:anvil",
+    "spawn_9b5fbb9:limestone",
+    "spawn_9b5fbb9:malachite_ore",
+    "spawn_9b5fbb9:cassiterite_ore",
+    "spawn_9b5fbb9:hematite_ore",
+    "spawn_9b5fbb9:galena_ore",
+    "spawn_9b5fbb9:pyrite_ore",
+    "spawn_9b5fbb9:foundry",
+    "spawn_9b5fbb9:chemical_works",
+    "spawn_9b5fbb9:machine_shop",
+    "spawn_9b5fbb9:electronics_works",
+    "spawn_9b5fbb9:computer",
+    "spawn_9b5fbb9:server",
+    "spawn_9b5fbb9:rail_track"
   ]
 }

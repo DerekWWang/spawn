@@ -1,0 +1,94 @@
+{
+  "steps": [
+    {
+      "camera": {
+        "pos": [
+          -480,
+          95,
+          -291
+        ],
+        "look_at": [
+          -486,
+          90,
+          -298
+        ]
+      }
+    },
+    {
+      "step": 20
+    },
+    {
+      "shot": "natural-flax-stand-a"
+    },
+    {
+      "camera": {
+        "pos": [
+          -492,
+          94,
+          -294
+        ],
+        "look_at": [
+          -486,
+          90,
+          -298
+        ]
+      }
+    },
+    {
+      "shot": "natural-flax-stand-b"
+    },
+    {
+      "run": [
+        "fill -330 58 -176 -310 100 -156 minecraft:air",
+        "kill @e[type=minecraft:item,x=-330,y=58,z=-176,dx=20,dy=43,dz=20]",
+        "summon minecraft:villager -321.5 58 -166.5 {Tags:[\"quarry_worker\"],NoAI:1b}",
+        "survival debug_skill @e[tag=quarry_worker,limit=1] mining 12",
+        "item replace entity @e[tag=quarry_worker,limit=1] weapon.mainhand with spawn_9b5fbb9:knapped_stone_pickaxe",
+        "survival control @e[tag=quarry_worker,limit=1] mine -320 57 -167"
+      ]
+    },
+    {
+      "camera": {
+        "pos": [
+          -305,
+          67,
+          -151
+        ],
+        "look_at": [
+          -320,
+          57,
+          -166
+        ]
+      }
+    },
+    {
+      "step": 300
+    },
+    {
+      "shot": "natural-quarry-extraction-a"
+    },
+    {
+      "camera": {
+        "pos": [
+          -326,
+          63,
+          -160
+        ],
+        "look_at": [
+          -320,
+          57,
+          -167
+        ]
+      }
+    },
+    {
+      "shot": "natural-quarry-extraction-b"
+    },
+    {
+      "run": [
+        "survival query @e[tag=quarry_worker,limit=1]",
+        "execute unless block -320 57 -167 spawn_9b5fbb9:malachite_ore run say finite_ore_extracted"
+      ]
+    }
+  ]
+}

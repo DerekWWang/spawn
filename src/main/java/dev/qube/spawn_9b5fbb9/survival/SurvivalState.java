@@ -18,7 +18,9 @@ public final class SurvivalState {
         LEFT_TOE_1,LEFT_TOE_2,LEFT_TOE_3,LEFT_TOE_4,LEFT_TOE_5,
         RIGHT_TOE_1,RIGHT_TOE_2,RIGHT_TOE_3,RIGHT_TOE_4,RIGHT_TOE_5;
     }
-    public record Climate(double ambient,double insulation,boolean wet,boolean sheltered,boolean fire) {
+    public record Climate(double ambient,double insulation,boolean wet,boolean sheltered,boolean fire,double wind,double enclosure,boolean regional) {
+        public Climate(double ambient,double insulation,boolean wet,boolean sheltered,boolean fire){this(ambient,insulation,wet,sheltered,fire,0,0,false);}
+        public Climate(double ambient,double insulation,boolean wet,boolean sheltered,boolean fire,double wind,double enclosure){this(ambient,insulation,wet,sheltered,fire,wind,enclosure,true);}
         public static final Climate MILD=new Climate(18,0,false,false,false);
     }
     public record Outcome(double damage,boolean dehydrated) {}
@@ -90,11 +92,13 @@ public final class SurvivalState {
         // Bounded substeps keep large sleep/test intervals equivalent to real entity updates.
         while(ticks>0){
             long step=Math.min(20,Math.min(ticks,DAY-dayElapsed));
+            skills.alignDay(dayElapsed);skills.advance(step);
             livedTicks+=step;dayElapsed+=step;ticks-=step;
             hunger=clamp(hunger-rules.number("hungerPerDay")*step/DAY*(sleeping?.5:activity.food),0,100);
             double insulation=clamp(climate.insulation*(climate.wet?.65:1),0,.95);
             double ambient=climate.ambient+(climate.wet?-4:0);
-            if(climate.sheltered)ambient=18+(ambient-18)*.5;
+            if(climate.sheltered&&!climate.regional)ambient=18+(ambient-18)*.5;
+            if(climate.regional)ambient-=Math.max(0,climate.wind)*(1-clamp(climate.enclosure,0,1))*.35*Math.min(1,Math.max(0,20-ambient)/20);
             double heat=1+Math.min(1,Math.max(0,(ambient-26)/16))*1.5;
             thirst=clamp(thirst-rules.number("thirstPerDay")*step/DAY*(sleeping?.5:activity.water)*heat,0,100);
             if(recreating&&!sleeping)recreationTicks=Math.min(quotaTicks,recreationTicks+step);
@@ -145,7 +149,7 @@ public final class SurvivalState {
     public byte[] encode(){
         try{
             ByteArrayOutputStream bytes=new ByteArrayOutputStream();DataOutputStream out=new DataOutputStream(bytes);
-            out.writeInt(5);
+            out.writeInt(6);
             for(double value:new double[]{hunger,thirst,recreation,temperature,bleeding})out.writeDouble(value);
             for(long value:new long[]{livedTicks,dayElapsed,recreationTicks,quotaTicks,poisonTicks,painkillerTicks,
                 mildTicks,severeTicks,mildImmunity,severeImmunity,thermalTicks})out.writeLong(value);
@@ -162,7 +166,7 @@ public final class SurvivalState {
     public static SurvivalState decode(byte[] data){
         SurvivalState s=new SurvivalState();if(data.length==0||data.length>8192)return s;
         try{
-            DataInputStream in=new DataInputStream(new ByteArrayInputStream(data));int version=in.readInt();if(version<1||version>5)return s;
+            DataInputStream in=new DataInputStream(new ByteArrayInputStream(data));int version=in.readInt();if(version<1||version>6)return s;
             s.hunger=bounded(in.readDouble(),0,100);s.thirst=bounded(in.readDouble(),0,100);
             s.recreation=bounded(in.readDouble(),0,100);s.temperature=bounded(in.readDouble(),25,45);s.bleeding=bounded(in.readDouble(),0,10);
             s.livedTicks=Math.max(0,in.readLong());s.dayElapsed=Math.floorMod(in.readLong(),DAY);
@@ -175,7 +179,8 @@ public final class SurvivalState {
             if(version>=2)s.dailyQuotaTicks=Math.max(4000,Math.min(5000,in.readLong()));
             if(version>=3){s.thermalRecoveryTicks=Math.max(0,in.readLong());for(int i=0;i<4;i++)s.clothingColors[i]=in.readInt();}
             if(version>=4)s.rules=SimulationRules.read(in);
-            if(version>=5)s.skills.read(in);
+            if(version>=6)s.skills.read(in);else if(version==5)s.skills.readLegacy(in);
+            if(version<6)s.skills.alignDay(s.dayElapsed);
             return s;
         }catch(IOException|IllegalArgumentException invalid){return new SurvivalState();}
     }

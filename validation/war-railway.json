@@ -1,0 +1,98 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 22
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "fill -7 -60 0 7 -60 0 spawn_9b5fbb9:rail_track[axis=x,part=center]",
+    "fill -7 -60 -1 7 -60 -1 spawn_9b5fbb9:rail_track[axis=x,part=neg]",
+    "fill -7 -60 1 7 -60 1 spawn_9b5fbb9:rail_track[axis=x,part=pos]",
+    "fill -5 -60 4 -5 -60 7 spawn_9b5fbb9:rail_track[axis=z,part=center]",
+    "fill -6 -60 4 -6 -60 7 spawn_9b5fbb9:rail_track[axis=z,part=neg]",
+    "fill -4 -60 4 -4 -60 7 spawn_9b5fbb9:rail_track[axis=z,part=pos]",
+    "fill 2 -60 4 6 -60 4 minecraft:rail",
+    "execute positioned 4.5 -60 0.5 rotated -90 0 run survival deploy locomotive",
+    "execute positioned 0.5 -60 0.5 rotated -90 0 run survival deploy rail_wagon",
+    "execute positioned -3.5 -60 0.5 rotated -90 0 run survival deploy rail_carriage"
+   ]
+  },
+  {
+   "step": 5
+  },
+  {
+   "camera": {
+    "pos": [
+     7,
+     -56,
+     9
+    ],
+    "look_at": [
+     0,
+     -59,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "train_front_quarter"
+  },
+  {
+   "camera": {
+    "pos": [
+     -8,
+     -53,
+     -7
+    ],
+    "look_at": [
+     0,
+     -60,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "train_rear_high"
+  },
+  {
+   "camera": {
+    "pos": [
+     -1,
+     -58.6,
+     7.5
+    ],
+    "look_at": [
+     -4,
+     -60,
+     5
+    ]
+   }
+  },
+  {
+   "shot": "track_three_wide_vs_vanilla_rail"
+  }
+ ]
+}

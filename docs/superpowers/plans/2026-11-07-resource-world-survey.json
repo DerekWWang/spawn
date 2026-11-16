@@ -1,0 +1,253 @@
+[
+  {
+    "world": "run\\qube\\realism-surveys\\42\\run\\world",
+    "seedVerifiedViaRcon": 42,
+    "fullChunks": 406,
+    "resourceBlocks": {
+      "minecraft:clay": 45873,
+      "minecraft:coal_ore": 6,
+      "minecraft:granite": 428,
+      "minecraft:sandstone": 16011,
+      "spawn_9b5fbb9:cassiterite_ore": 123,
+      "spawn_9b5fbb9:fallen_sticks": 330,
+      "spawn_9b5fbb9:hematite_ore": 33,
+      "spawn_9b5fbb9:limestone": 35490,
+      "spawn_9b5fbb9:loose_stones": 190,
+      "spawn_9b5fbb9:malachite_ore": 796,
+      "spawn_9b5fbb9:wild_bramble": 11,
+      "spawn_9b5fbb9:wild_carrot": 9,
+      "spawn_9b5fbb9:wild_flax": 7,
+      "spawn_9b5fbb9:wild_maize": 8,
+      "spawn_9b5fbb9:wild_melon": 16,
+      "spawn_9b5fbb9:wild_wheat": 15,
+      "spawn_9b5fbb9:wild_yarrow": 29
+    },
+    "plantBlocks": 95,
+    "unsupportedPlantBlocks": 0,
+    "plantCoverageFraction": 0.0009140240147783251,
+    "oreBounds": {
+      "spawn_9b5fbb9:cassiterite_ore": [
+        [
+          -436,
+          35,
+          -336
+        ],
+        [
+          -411,
+          41,
+          -313
+        ]
+      ],
+      "spawn_9b5fbb9:malachite_ore": [
+        [
+          -335,
+          54,
+          -187
+        ],
+        [
+          -306,
+          59,
+          -144
+        ]
+      ],
+      "minecraft:coal_ore": [
+        [
+          -406,
+          44,
+          102
+        ],
+        [
+          -316,
+          54,
+          154
+        ]
+      ],
+      "spawn_9b5fbb9:hematite_ore": [
+        [
+          -339,
+          53,
+          462
+        ],
+        [
+          -320,
+          54,
+          469
+        ]
+      ]
+    },
+    "biomePaletteOccurrences": {
+      "minecraft:ocean": 2749,
+      "minecraft:birch_forest": 1881,
+      "minecraft:swamp": 1845,
+      "minecraft:windswept_hills": 1146,
+      "minecraft:beach": 1117,
+      "minecraft:forest": 915,
+      "minecraft:sulfur_caves": 799,
+      "minecraft:dark_forest": 724,
+      "minecraft:windswept_forest": 713,
+      "minecraft:plains": 439
+    }
+  },
+  {
+    "world": "run\\qube\\realism-surveys\\918273\\run\\world",
+    "seedVerifiedViaRcon": 918273,
+    "fullChunks": 406,
+    "resourceBlocks": {
+      "minecraft:clay": 147039,
+      "minecraft:coal_ore": 462,
+      "minecraft:granite": 1455,
+      "minecraft:sandstone": 18494,
+      "spawn_9b5fbb9:cassiterite_ore": 437,
+      "spawn_9b5fbb9:fallen_sticks": 561,
+      "spawn_9b5fbb9:hematite_ore": 591,
+      "spawn_9b5fbb9:limestone": 2499,
+      "spawn_9b5fbb9:loose_stones": 61,
+      "spawn_9b5fbb9:malachite_ore": 381,
+      "spawn_9b5fbb9:wild_bramble": 18,
+      "spawn_9b5fbb9:wild_flax": 6,
+      "spawn_9b5fbb9:wild_maize": 17,
+      "spawn_9b5fbb9:wild_melon": 1,
+      "spawn_9b5fbb9:wild_potato": 5,
+      "spawn_9b5fbb9:wild_pumpkin": 10,
+      "spawn_9b5fbb9:wild_rice": 1,
+      "spawn_9b5fbb9:wild_wheat": 9,
+      "spawn_9b5fbb9:wild_yarrow": 16
+    },
+    "plantBlocks": 83,
+    "unsupportedPlantBlocks": 0,
+    "plantCoverageFraction": 0.0007985683497536946,
+    "oreBounds": {
+      "spawn_9b5fbb9:cassiterite_ore": [
+        [
+          -104,
+          37,
+          -408
+        ],
+        [
+          -79,
+          58,
+          -386
+        ]
+      ],
+      "spawn_9b5fbb9:hematite_ore": [
+        [
+          -321,
+          32,
+          -357
+        ],
+        [
+          -305,
+          53,
+          -322
+        ]
+      ],
+      "minecraft:coal_ore": [
+        [
+          -384,
+          40,
+          -163
+        ],
+        [
+          -182,
+          51,
+          596
+        ]
+      ],
+      "spawn_9b5fbb9:malachite_ore": [
+        [
+          -375,
+          34,
+          -136
+        ],
+        [
+          -350,
+          54,
+          -110
+        ]
+      ]
+    },
+    "biomePaletteOccurrences": {
+      "minecraft:swamp": 2826,
+      "minecraft:forest": 1944,
+      "minecraft:dark_forest": 1793,
+      "minecraft:old_growth_birch_forest": 1243,
+      "minecraft:beach": 1071,
+      "minecraft:taiga": 1026,
+      "minecraft:lush_caves": 824,
+      "minecraft:ocean": 673,
+      "minecraft:birch_forest": 552,
+      "minecraft:cold_ocean": 552
+    }
+  },
+  {
+    "world": "run\\qube\\realism-surveys\\20261107\\run\\world",
+    "seedVerifiedViaRcon": 20261107,
+    "fullChunks": 406,
+    "resourceBlocks": {
+      "minecraft:clay": 2064,
+      "minecraft:granite": 4130,
+      "minecraft:sandstone": 26842,
+      "spawn_9b5fbb9:cassiterite_ore": 508,
+      "spawn_9b5fbb9:fallen_sticks": 36,
+      "spawn_9b5fbb9:hematite_ore": 345,
+      "spawn_9b5fbb9:limestone": 4419,
+      "spawn_9b5fbb9:loose_stones": 13,
+      "spawn_9b5fbb9:malachite_ore": 1106,
+      "spawn_9b5fbb9:wild_maize": 6,
+      "spawn_9b5fbb9:wild_rice": 3,
+      "spawn_9b5fbb9:wild_yarrow": 5
+    },
+    "plantBlocks": 14,
+    "unsupportedPlantBlocks": 0,
+    "plantCoverageFraction": 0.00013469827586206896,
+    "oreBounds": {
+      "spawn_9b5fbb9:malachite_ore": [
+        [
+          -402,
+          39,
+          -368
+        ],
+        [
+          -359,
+          49,
+          -336
+        ]
+      ],
+      "spawn_9b5fbb9:hematite_ore": [
+        [
+          -432,
+          45,
+          145
+        ],
+        [
+          -412,
+          56,
+          180
+        ]
+      ],
+      "spawn_9b5fbb9:cassiterite_ore": [
+        [
+          -342,
+          28,
+          445
+        ],
+        [
+          -304,
+          48,
+          479
+        ]
+      ]
+    },
+    "biomePaletteOccurrences": {
+      "minecraft:ocean": 7613,
+      "minecraft:beach": 1776,
+      "minecraft:river": 720,
+      "minecraft:plains": 696,
+      "minecraft:flower_forest": 601,
+      "minecraft:sulfur_caves": 292,
+      "minecraft:cold_ocean": 240,
+      "minecraft:deep_ocean": 216,
+      "minecraft:sunflower_plains": 24
+    }
+  }
+]

@@ -1,0 +1,92 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 22
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "execute positioned -5.5 -60 0.5 rotated 0 0 run survival deploy cannon",
+    "execute positioned -2 -60 0.5 rotated 0 0 run survival deploy field_gun",
+    "execute positioned 1.5 -60 0.5 rotated 0 0 run survival deploy bombard",
+    "execute positioned 5 -60 -1.5 rotated 0 0 run survival deploy trebuchet"
+   ]
+  },
+  {
+   "step": 5
+  },
+  {
+   "camera": {
+    "pos": [
+     8,
+     -57,
+     8
+    ],
+    "look_at": [
+     0,
+     -59,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "artillery_front"
+  },
+  {
+   "camera": {
+    "pos": [
+     -9,
+     -55,
+     -6
+    ],
+    "look_at": [
+     0,
+     -59.5,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "artillery_rear_high"
+  },
+  {
+   "camera": {
+    "pos": [
+     9,
+     -58.5,
+     -1.5
+    ],
+    "look_at": [
+     5,
+     -58.5,
+     -1.5
+    ]
+   }
+  },
+  {
+   "shot": "trebuchet_side"
+  }
+ ]
+}

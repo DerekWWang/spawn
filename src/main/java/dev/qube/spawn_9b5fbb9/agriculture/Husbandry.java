@@ -84,11 +84,29 @@ public final class Husbandry {
         if(event.getEntity() instanceof ItemEntity item&&item.getItem().is(SurvivalContent.item("fertilized_egg"))){incubate(item,level);return;}
         if(!(event.getEntity() instanceof Animal animal)||!managed(animal))return;
         long now=SurvivalApi.calendar(level);CompoundTag data=state(animal,now);long last=data.getLongOr("husbandryLast",now);long elapsed=Math.max(0,now-last);boolean drinking=water(level,animal.blockPosition());
-        long watered=naturalWater(level,animal.blockPosition())?elapsed:consumeProvision(level,animal.blockPosition(),elapsed,"water",1);
-        long fed=graze(level,animal)?elapsed:consumeProvision(level,animal.blockPosition(),elapsed,"feed",2);
+        boolean naturalDrinking=naturalWater(level,animal.blockPosition());
+        long watered=naturalDrinking?elapsed:consumeProvision(level,animal.blockPosition(),elapsed,"water",1);
+        long grazing=graze(level,animal)?elapsed:0;
+        double comfort=1;
+        if(dev.qube.spawn_9b5fbb9.environment.WorldEnvironment.active(level)){
+            var exposure=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.exposure(level,animal.blockPosition());
+            double pasture=data.getDoubleOr("pastureWater",.45);long usable=0,comfortable=0;
+            long start=Math.max(last,now-4L*dev.qube.spawn_9b5fbb9.environment.WorldEnvironment.settings(level).seasonDays()*DAY);
+            for(long cursor=start;cursor<now;){long bucket=Math.floorDiv(cursor,600),end=Math.min(now,(bucket+1)*600);var weather=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.at(level,animal.blockPosition(),bucket*600+300);
+                pasture=dev.qube.spawn_9b5fbb9.environment.EnvironmentModel.soilWater(pasture,exposure.roof()||weather.snow()?0:weather.rain(),weather.temperature(),weather.wind(),naturalDrinking,end-cursor);
+                if(weather.temperature()>2&&weather.temperature()<34&&pasture>.25)usable+=end-cursor;
+                double chill=weather.temperature()-weather.wind()*(1-exposure.enclosure())*.35;
+                if(exposure.fire()||chill>(animal instanceof Sheep?-18:-8)&&weather.temperature()<38)comfortable+=end-cursor;
+                cursor=end;
+            }
+            if(!level.getBlockState(animal.blockPosition().below()).is(Blocks.HAY_BLOCK))grazing=Math.min(grazing,usable);
+            comfort=elapsed<=0?1:comfortable/(double)elapsed;data.putDouble("pastureWater",pasture);
+        }
+        long fed=grazing+consumeProvision(level,animal.blockPosition(),elapsed-grazing,"feed",2);
         long supplied=Math.min(watered,fed);double initial=Math.clamp(data.getDoubleOr("nutrition",75),0,100);
         double fedNutrition=Math.min(100,initial+supplied*20d/DAY);double nutrition=Math.max(0,fedNutrition-(elapsed-supplied)*20d/DAY);
         long growth=qualifiedTicks(elapsed,watered,supplied,initial,fedNutrition,10),products=qualifiedTicks(elapsed,watered,supplied,initial,fedNutrition,50);
+        growth=(long)(growth*comfort);products=(long)(products*comfort);
         data.putDouble("nutrition",nutrition);data.putLong("husbandryLast",now);
         boolean wasJuvenile=last-data.getLongOr("husbandryBorn",now)<maturity(animal)*DAY;
         if(wasJuvenile)data.putLong("husbandryBorn",data.getLongOr("husbandryBorn",now)+elapsed-growth);
@@ -120,7 +138,7 @@ public final class Husbandry {
     public static String action(LivingEntity actor,Animal animal){
         if(!(actor.level() instanceof ServerLevel level)||animal.level()!=level||!actor.isAlive()||!animal.isAlive()||!managed(animal)||!SurvivalApi.isHumanoid(actor)||actor.distanceToSqr(animal)>16)return "Stand within four blocks of a living farm animal.";
         if(SurvivalApi.state(actor).manipulation()<=.05)return "Your body cannot handle livestock supplies.";
-        ItemStack held=actor.getMainHandItem();long now=SurvivalApi.calendar(level);CompoundTag data=state(animal,now);String message="";
+        ItemStack held=actor.getMainHandItem();long now=SurvivalApi.calendar(level);CompoundTag data=state(animal,now);String message="";int initialCount=held.getCount(),initialDamage=held.getDamageValue();double initialNutrition=data.getDoubleOr("nutrition",75);boolean feeding=animal.isFood(held);long previousPregnancy=data.getLongOr("pregnantUntil",0),previousBreeding=data.getLongOr("breedAt",0);
         if(held.is(Items.BUCKET)&&animal instanceof Cow){
             if(data.getLongOr("calvedAt",0)>0&&data.getLongOr("milkRecovery",0)==0&&data.getDoubleOr("nutrition",0)>=50&&water(level,animal.blockPosition())){held.shrink(1);SurvivalApi.give(actor,new ItemStack(Items.MILK_BUCKET));long duration=definition(animal).productRecoveryDays*DAY;data.putLong("milkAt",now+duration);data.putLong("milkRecovery",duration);data.putLong("milkRecoveryLast",now);data.putDouble("nutrition",data.getDoubleOr("nutrition",0)-5);message="Milk collected; recovers in "+definition(animal).productRecoveryDays+" supplied days.";}else message="Milk requires calving, nutrition, water, and product recovery.";
         }else if(held.is(Items.SHEARS)&&animal instanceof Sheep sheep){if(mature(animal,now)&&woolRecovery(sheep,now)==0&&!sheep.isSheared()&&data.getDoubleOr("nutrition",0)>=50&&watered(animal)){Block.popResource(level,animal.blockPosition(),new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse("minecraft:white_wool")),2));sheep.setSheared(true);beginWoolRecovery(sheep,now);held.setDamageValue(held.getDamageValue()+1);if(held.getDamageValue()>=held.getMaxDamage()){held.setCount(0);Block.popResource(level,animal.blockPosition(),new ItemStack(SurvivalContent.item("metal_scrap")));}message="Sheared; wool needs "+definition(animal).productRecoveryDays+" well-fed days to regrow.";}else message="No mature, recovered, watered fleece available.";
@@ -138,6 +156,8 @@ public final class Husbandry {
                 }else message="Fed. Feed another mature adult nearby; provide water and space.";
             }
         }
+        boolean usefulFeed=initialNutrition<100||data.getLongOr("pregnantUntil",0)!=previousPregnancy||data.getLongOr("breedAt",0)!=previousBreeding;
+        if(held.getDamageValue()!=initialDamage||held.getCount()<initialCount&&(!feeding||usefulFeed))dev.qube.spawn_9b5fbb9.survival.SkillApi.award(actor,dev.qube.spawn_9b5fbb9.survival.SkillSet.Skill.ANIMALS,25);
         return message.isEmpty()?"Hold feed, a bucket, or shears.":message;
     }
     private static void nest(PlayerInteractEvent.RightClickBlock event){if(!(event.getLevel() instanceof ServerLevel)||!event.getItemStack().is(SurvivalContent.item("fertilized_egg")))return;event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal(nest(event.getEntity(),event.getPos())));}

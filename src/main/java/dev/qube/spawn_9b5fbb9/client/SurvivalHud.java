@@ -27,6 +27,7 @@ public final class SurvivalHud {
             bar(graphics,10,69,"Temperature",state.temperature-28,15,state.temperature<state.rules.number("coldThreshold")?0xFF85ADD9:state.temperature>state.rules.number("hotThreshold")?0xFFE27560:0xFF90BF96,String.format(Locale.ROOT,"%.1f C",state.temperature));
             bar(graphics,10,84,"Health",SurvivalNetwork.clientHealth,SurvivalNetwork.clientMaxHealth,0xFFD97F7F,String.format(Locale.ROOT,"%.0f / %.0f",SurvivalNetwork.clientHealth,SurvivalNetwork.clientMaxHealth));
             graphics.text(mc.font,SurvivalCommands.calendarText(SurvivalNetwork.clientCalendar,SurvivalNetwork.clientSeasonDays),10,111,0xFFF0E5CD);
+            var weather=LocalWeather.current();if(weather!=null)graphics.text(mc.font,String.format(Locale.ROOT,"Air %.1f C | Wind %.0f m/s | %s",weather.temperature(),weather.wind(),weather.rain()>.15?weather.snow()?"Snow":"Rain":"Dry"),10,137,0xFFD0E6E9);
             if(!state.conditions().equals("Stable"))graphics.text(mc.font,state.conditions(),10,124,0xFFFFAC92);
         });
     }
@@ -38,9 +39,11 @@ public final class SurvivalHud {
     public static void tick(ClientTickEvent.Post event){
         while(HEALTH.consumeClick())if(Minecraft.getInstance().getConnection()!=null)Minecraft.getInstance().getConnection().sendCommand("survival health");
         if(SurvivalNetwork.openHealth&&Minecraft.getInstance().player!=null){SurvivalNetwork.openHealth=false;var mc=Minecraft.getInstance();mc.setScreenAndShow(mc.gui.screen() instanceof HealthScreen?null:new HealthScreen());}
+        if(SurvivalNetwork.openSkills&&Minecraft.getInstance().player!=null){SurvivalNetwork.openSkills=false;Minecraft.getInstance().setScreenAndShow(new SkillsScreen());}
     }
     public static final class HealthScreen extends Screen {
         public HealthScreen(){super(Component.literal("Health, Clothing & Skills"));}
+        @Override protected void init(){addRenderableWidget(net.minecraft.client.gui.components.Button.builder(Component.literal("Skills and interests"),b->Minecraft.getInstance().setScreenAndShow(new SkillsScreen())).bounds(width/2-80,height-25,160,20).build());}
         @Override public boolean isPauseScreen(){return false;}
         @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float partial){
             g.fill(0,0,width,height,0xF0121C22);var font=Minecraft.getInstance().font;var s=SurvivalNetwork.clientState;
@@ -75,14 +78,10 @@ public final class SurvivalHud {
             g.text(font,"Health effects",left,top+211,0xFFF1D5A0);
             g.text(font,s.conditions(),left,top+227,0xFFFFBE9D);
             g.text(font,"Practiced skills",left,top+247,0xFFF1D5A0);
-            for(var skill:SkillSet.Skill.values()){
-                int index=skill.ordinal(),x=left+(index%3)*150,y=top+264+(index/3)*20,level=s.skills.level(skill);
-                g.text(font,skill.label()+" "+level+"/100",x,y,0xFFD7E3DE);
-                g.text(font,level==100?"Mastered":String.format(Locale.ROOT,"Next: %.1f XP",s.skills.untilNext(skill)),x,y+10,0xFFB8CCC7);
-            }
-            g.text(font,"Completed work develops each skill. /survival skills shows progress.",left,top+308,0xFFB8CCC7);
-            g.text(font,"Water: /survival act drink   |   Recreation: /survival act read or play",left,top+321,0xFFB8CCC7);
-            g.text(font,"Esc to return. Time continues while inspecting health.",left,top+337,0xFFB8CCC7);
+            g.text(font,"Eleven independent trades. Levels 0–20, interests and daily practice.",left,top+266,0xFFB8CCC7);
+            g.text(font,"Open Skills and interests below for progress and learning details.",left,top+282,0xFFB8CCC7);
+            g.text(font,"Water: /survival act drink   |   Recreation: /survival act read or play",left,top+305,0xFFB8CCC7);
+            g.text(font,"Esc to return. Time continues while inspecting.",left,top+321,0xFFB8CCC7);
             g.pose().popMatrix();super.extractRenderState(g,mouseX,mouseY,partial);
         }
         private static int partColor(double condition){return condition<30?0xFFE78F80:condition<70?0xFFE2C27A:0xFF9FC2A5;}

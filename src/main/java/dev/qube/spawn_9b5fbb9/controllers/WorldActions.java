@@ -57,6 +57,8 @@ public final class WorldActions {
     private static final Set<LivingEntity> COMPLETING=Collections.newSetFromMap(new IdentityHashMap<>());
     private static final DeferredRegister<Consumer<GameTestHelper>> TESTS=DeferredRegister.create(Registries.TEST_FUNCTION,SurvivalContent.MODID);
     static {
+        TESTS.register("environment_irrigation",()->IrrigationGameTests::conservation);
+        TESTS.register("environment_winter_harvest",()->IrrigationGameTests::winterHarvest);
         TESTS.register("skill_native_left_gather",()->NativeForageGameTests::leftGather);
         TESTS.register("skill_native_fruit_paths",()->NativeForageGameTests::fruitHarvestAndDismantle);
         TESTS.register("skill_native_berry_timing",()->SkillActionGameTests::nativeBerryTiming);
@@ -89,21 +91,24 @@ public final class WorldActions {
     public static void register(IEventBus bus){TESTS.register(bus);bus.addListener(WorldActions::tests);}
     private static void tests(RegisterGameTestsEvent event){
         var env=event.registerEnvironment(Identifier.fromNamespaceAndPath(SurvivalContent.MODID,"controller_actions"),new TestEnvironmentDefinition.AllOf(List.of()));
-        var data=new TestData<Holder<TestEnvironmentDefinition<?>>>(env,Identifier.withDefaultNamespace("empty"),100,0,true,Rotation.NONE);
+        var data=new TestData<Holder<TestEnvironmentDefinition<?>>>(env,net.minecraft.world.level.Level.OVERWORLD,Identifier.fromNamespaceAndPath("spawn_9b5fbb9","test_arena"),100,0,true,Rotation.NONE,false,1,1,true,8);
         TESTS.getEntries().forEach(t->event.registerTest(t.getId(),new FunctionGameTestInstance(t.getKey(),data)));
     }
     public static void init(){
         NeoForge.EVENT_BUS.addListener(WorldActions::onTick);NeoForge.EVENT_BUS.addListener(WorldActions::death);NeoForge.EVENT_BUS.addListener(WorldActions::commands);NeoForge.EVENT_BUS.addListener(WorldActions::nativeResource);NeoForge.EVENT_BUS.addListener(WorldActions::resourceSpeed);
     }
     private static void nativeResource(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickBlock event){
-        if(!(event.getLevel() instanceof ServerLevel)||SurvivalApi.exempt(event.getEntity()))return;var state=event.getLevel().getBlockState(event.getPos());if(!(state.getBlock() instanceof GroundResourceBlock)&&!(state.getBlock() instanceof FruitTreeBlock))return;
+        if(!(event.getLevel() instanceof ServerLevel)||SurvivalApi.exempt(event.getEntity()))return;var state=event.getLevel().getBlockState(event.getPos());if(!(state.getBlock() instanceof GroundResourceBlock)&&!(state.getBlock() instanceof FruitTreeBlock)&&!miningMaterial(state))return;
         event.setCanceled(true);if(event.getAction()!=net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.LeftClickBlock.Action.START)return;
         var actor=event.getEntity();if(state.getBlock() instanceof GroundResourceBlock)actor.sendOverlayMessage(Component.literal(start(actor,"gather",event.getPos()).message()));
+        else if(miningMaterial(state))actor.sendOverlayMessage(Component.literal(start(actor,"mine",event.getPos()).message()));
         else if(actor.isShiftKeyDown())actor.sendOverlayMessage(Component.literal(start(actor,"mine",event.getPos()).message()));
         else if(((FruitTreeBlock)state.getBlock()).harvestable(actor,event.getPos()))actor.sendOverlayMessage(Component.literal(start(actor,"harvest",event.getPos()).message()));
         else actor.sendOverlayMessage(Component.literal("No ripe fruit available. Sneak-left-click to dismantle the tree with timed work."));
     }
-    private static void resourceSpeed(net.neoforged.neoforge.event.entity.player.PlayerEvent.BreakSpeed event){if(event.getEntity().level() instanceof ServerLevel&&!SurvivalApi.exempt(event.getEntity())&&(event.getState().getBlock() instanceof GroundResourceBlock||event.getState().getBlock() instanceof FruitTreeBlock))event.setNewSpeed(0);}
+    public static boolean miningMaterial(BlockState state){return !state.hasBlockEntity()&&state.is(net.minecraft.tags.BlockTags.MINEABLE_WITH_PICKAXE);}
+    private static boolean fieldPlant(BlockState state){return state.getBlock() instanceof CropBlock||state.getBlock() instanceof StemBlock||SeasonalCrops.berries(state);}
+    private static void resourceSpeed(net.neoforged.neoforge.event.entity.player.PlayerEvent.BreakSpeed event){if(event.getEntity().level() instanceof ServerLevel&&!SurvivalApi.exempt(event.getEntity())&&(event.getState().getBlock() instanceof GroundResourceBlock||event.getState().getBlock() instanceof FruitTreeBlock||miningMaterial(event.getState())||fieldPlant(event.getState())))event.setNewSpeed(0);}
     private static SurvivalApi.ActionResult result(boolean ok,String text){return new SurvivalApi.ActionResult(ok,text);}
     private static String actorError(LivingEntity actor){
         if(!(actor.level() instanceof ServerLevel)||!actor.isAlive()||!SurvivalApi.isHumanoid(actor))return "Living server humanoid required";
@@ -113,20 +118,21 @@ public final class WorldActions {
     private static double capacity(LivingEntity actor){var s=SurvivalApi.state(actor);return Math.min(s.manipulation(),s.mental());}
     private static Skill jobSkill(CompoundTag job){try{return Skill.valueOf(job.getStringOr("skill",""));}catch(IllegalArgumentException absent){return null;}}
     private static InteractionHand jobHand(CompoundTag job){try{return InteractionHand.valueOf(job.getStringOr("hand",InteractionHand.MAIN_HAND.name()));}catch(IllegalArgumentException invalid){return InteractionHand.MAIN_HAND;}}
-    private static double jobRate(LivingEntity actor,CompoundTag job){Skill skill=jobSkill(job);return capacity(actor)*(skill==null?1:SkillApi.workRate(actor,skill));}
+    private static double jobRate(LivingEntity actor,CompoundTag job){return SkillApi.manualRate(SurvivalApi.state(actor),jobSkill(job));}
     private static String blockId(BlockState state){return BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();}
     private static boolean reachable(LivingEntity actor,BlockPos pos){return actor.level().hasChunkAt(pos)&&actor.distanceToSqr(Vec3.atCenterOf(pos))<=RANGE_SQUARED;}
     private static boolean hoe(ItemStack tool){return tool.is(net.minecraft.tags.ItemTags.HOES);}
     private static String validate(LivingEntity actor,String operation,BlockPos pos,ItemStack seed,InteractionHand hand){
         var level=(ServerLevel)actor.level();if(!reachable(actor,pos))return "Work must remain within four blocks in a loaded chunk";
         if(!level.mayInteract(actor,pos)||!level.getWorldBorder().isWithinBounds(pos))return "World protection prevents this action";
-        var state=level.getBlockState(pos);var held=actor.getItemInHand(hand);
+        var state=level.getBlockState(pos);var held=operation.equals("irrigate")?seed:actor.getItemInHand(hand);
         if(actor instanceof Player player&&!player.mayBuild()&&!operation.equals("sow")){
             boolean denied=operation.equals("till")?!held.canPlaceOnBlockInAdventureMode(new net.minecraft.world.level.block.state.pattern.BlockInWorld(level,pos,false)):hand==InteractionHand.MAIN_HAND?player.blockActionRestricted(level,pos,net.minecraft.world.level.GameType.ADVENTURE):!held.canBreakBlockInAdventureMode(new net.minecraft.world.level.block.state.pattern.BlockInWorld(level,pos,false));
             if(denied)return "Adventure mode requires an item authorized for this block action";
         }
         switch(operation){
-            case "gather":return state.getBlock() instanceof GroundResourceBlock?"":"Target is not a hand-gatherable patch";
+            case "irrigate":return SeasonalCrops.irrigable(level,pos)&&Pottery.waterUnits(seed)>0&&!ItemAging.data(seed).getBooleanOr("sealed",false)?"":"Target prepared farmland while holding an open water pot";
+            case "gather":return state.getBlock() instanceof GroundResourceBlock source?source.harvestable(actor)?"":"This plant is outside its harvest season":"Target is not a hand-gatherable patch";
             case "harvest":{
                 if(state.getBlock() instanceof FruitTreeBlock)return ((FruitTreeBlock)state.getBlock()).harvestable(actor,pos)?"":"Tree is juvenile, out of season, or already harvested";
                 if(!SeasonalCrops.requiresCalendarTick(state)&&!state.is(Blocks.MELON)&&!state.is(Blocks.PUMPKIN))return "Target has no declared crop harvest";
@@ -151,7 +157,8 @@ public final class WorldActions {
                 if(actor instanceof Player player&&!player.mayBuild()&&!seed.canPlaceOnBlockInAdventureMode(new net.minecraft.world.level.block.state.pattern.BlockInWorld(level,plantingSupport(pos,planted),false)))return "Adventure mode requires CAN_PLACE_ON permission for the planting support";
                 return "";
             }
-            default:return "Use gather, harvest, mine, till, or sow";
+            case "lay_track":return dev.qube.spawn_9b5fbb9.transport.Railway.validateLay(actor,pos);
+            default:return "Use gather, harvest, mine, till, sow, or lay_track";
         }
     }
     private static Block plant(ItemStack seed){
@@ -191,12 +198,15 @@ public final class WorldActions {
         if(LaborGuard.forgeBusy(actor)||LaborGuard.gridBusy(actor))return result(false,"Finish or leave the current manual forge or crafting grid before starting another job");
         if(actor.getPersistentData().contains(KEY))return result(false,"Already working; inspect jobs or cancel first");
         if(capacity(actor)<=.05)return result(false,"Manipulation or mental capacity prevents manual work");
-        var level=(ServerLevel)actor.level();var seed=actor.getItemInHand(hand);invalid=validate(actor,operation,target,seed,hand);if(!invalid.isEmpty())return result(false,invalid);
-        var state=level.getBlockState(target);double ticks=switch(operation){case "gather"->40;case "harvest"->60;case "till"->100;case "sow"->60;default->Math.max(30,Math.ceil(state.getDestroySpeed(level,target)*30/Math.max(1,seed.getDestroySpeed(state))));};
+        var level=(ServerLevel)actor.level();var seed=actor.getItemInHand(hand);
+        if(operation.equals("lay_track"))actor.getPersistentData().putString("survivalRailAxis",actor.getDirection().getAxis()==Direction.Axis.X?"x":"z");
+        invalid=validate(actor,operation,target,seed,hand);if(!invalid.isEmpty())return result(false,invalid);
+        var state=level.getBlockState(target);double ticks=switch(operation){case "gather"->40;case "harvest","irrigate"->60;case "till"->100;case "sow"->60;case "lay_track"->dev.qube.spawn_9b5fbb9.transport.Railway.LAY_TICKS;default->Math.max(30,Math.ceil(state.getDestroySpeed(level,target)*30/Math.max(1,seed.getDestroySpeed(state))));};
         var job=baseJob(actor,operation,target,ticks);job.putString("block",blockId(state));job.putString("hand",hand.name());
-        Skill skill=operation.equals("gather")?Skill.FORAGING:operation.equals("till")||operation.equals("sow")?Skill.FARMING:operation.equals("harvest")?SeasonalCrops.harvestSkill(level,target,state):null;if(skill!=null)job.putString("skill",skill.name());
+        Skill skill=operation.equals("gather")?Skill.FORAGING:operation.equals("till")||operation.equals("sow")||operation.equals("irrigate")?Skill.FARMING:operation.equals("harvest")?SeasonalCrops.harvestSkill(level,target,state):operation.equals("mine")&&miningMaterial(state)?Skill.MINING:operation.equals("lay_track")?Skill.CONSTRUCTION:null;if(skill!=null)job.putString("skill",skill.name());
         if(operation.equals("mine")||operation.equals("till")){job.putString("tool",BuiltInRegistries.ITEM.getKey(seed.getItem()).toString());job.putInt("damage",seed.getDamageValue());}
         if(operation.equals("sow"))putStack(actor,job,"seed",seed.split(1));
+        if(operation.equals("irrigate"))putStack(actor,job,"vessel",seed.split(1));
         actor.getPersistentData().put(KEY,job);return result(true,"Started "+operation+"; "+(long)ticks+" base loaded work ticks");
     }
     private static CompoundTag baseJob(LivingEntity actor,String operation,BlockPos target,double ticks){
@@ -218,12 +228,13 @@ public final class WorldActions {
         if(operation.equals("craft")&&job.getBooleanOr("table",false)&&!level.getBlockState(pos).is(Blocks.CRAFTING_TABLE))invalid="Crafting table changed";
         if(!operation.equals("craft")){
             if(!job.getStringOr("block","").equals(blockId(level.getBlockState(pos))))invalid="Target block changed";
-            else invalid=validate(actor,operation,pos,operation.equals("sow")?stack(actor,job,"seed"):actor.getItemInHand(jobHand(job)),jobHand(job));
+            else invalid=validate(actor,operation,pos,operation.equals("sow")?stack(actor,job,"seed"):operation.equals("irrigate")?stack(actor,job,"vessel"):actor.getItemInHand(jobHand(job)),jobHand(job));
             if(job.contains("tool")&&(!job.getStringOr("tool","").equals(BuiltInRegistries.ITEM.getKey(actor.getItemInHand(jobHand(job)).getItem()).toString())||job.getIntOr("damage",0)!=actor.getItemInHand(jobHand(job)).getDamageValue()))invalid="Tool changed";
         }
         if(!invalid.isEmpty()){cancel(actor,invalid);return;}
         double capacity=capacity(actor);if(capacity<=.05){job.putString("status","paused: physiological capacity");actor.getPersistentData().put(KEY,job);return;}
         job.putString("status","working");double worked=Math.min(jobRate(actor,job),job.getDoubleOr("required",1)-job.getDoubleOr("progress",0));job.putDouble("progress",job.getDoubleOr("progress",0)+worked);
+        if(worked>0)job.putLong("activeTicks",Math.min(1000000,job.getLongOr("activeTicks",0)+1));
         LaborGuard.worked(actor);
         var body=SurvivalApi.state(actor);body.hunger=Math.max(0,body.hunger-.0005);SurvivalApi.save(actor,body);SurvivalApi.syncFood(actor,body);
         actor.getPersistentData().put(KEY,job);
@@ -270,6 +281,11 @@ public final class WorldActions {
         COMPLETING.add(actor);
         try{
             switch(operation){
+                case "irrigate":{
+                    var vessel=stack(actor,job,"vessel");if(Pottery.waterUnits(vessel)<=0||ItemAging.data(vessel).getBooleanOr("sealed",false))break;
+                    useful=SeasonalCrops.irrigate(level,pos,.35);if(useful)Pottery.consumeWater(vessel);
+                    job.remove("vessel");SurvivalApi.give(actor,vessel);completed=true;break;
+                }
                 case "gather":completed=((GroundResourceBlock)level.getBlockState(pos).getBlock()).completeGather(actor,pos);break;
                 case "harvest":{
                     var before=level.getBlockState(pos);if(before.getBlock() instanceof FruitTreeBlock tree){completed=tree.completeHarvest(actor,pos);break;}
@@ -282,7 +298,7 @@ public final class WorldActions {
                 case "mine":{
                     var state=level.getBlockState(pos);var tool=actor.getMainHandItem();
                     completed=level.destroyBlock(pos,false,actor);
-                    if(completed){Block.dropResources(state,level,pos,null,actor,tool);tool.getItem().mineBlock(tool,level,state,pos,actor);SurvivalApi.syncFood(actor,SurvivalApi.state(actor));}break;
+                    if(completed){useful=dev.qube.spawn_9b5fbb9.world.ExtractionHistory.claim(level,pos,state);Block.dropResources(state,level,pos,null,actor,tool);tool.getItem().mineBlock(tool,level,state,pos,actor);SurvivalApi.syncFood(actor,SurvivalApi.state(actor));}break;
                 }
                 case "till":completed=level.setBlock(pos,Blocks.FARMLAND.defaultBlockState(),3);if(completed)wear(actor,1,jobHand(job));break;
                 case "sow":{
@@ -292,9 +308,10 @@ public final class WorldActions {
                     break;
                 }
                 case "craft":completed=finishCraft(actor,job);break;
+                case "lay_track":completed=dev.qube.spawn_9b5fbb9.transport.Railway.completeLay(actor,pos);break;
             }
         }finally{COMPLETING.remove(actor);}
-        if(completed){actor.getPersistentData().remove(KEY);actor.getPersistentData().putString("survivalLastJob","Completed "+operation);Skill skill=jobSkill(job);if(skill!=null&&useful)SkillApi.award(actor,skill,operation.equals("harvest")?6:operation.equals("sow")?3:operation.equals("till")?2:4);}
+        if(completed){actor.getPersistentData().remove(KEY);actor.getPersistentData().putString("survivalLastJob","Completed "+operation);Skill skill=jobSkill(job);if(skill!=null&&useful)SkillApi.awardWork(actor,skill,job.getLongOr("activeTicks",0),1);}
         else cancel(actor,"Work target or recipe changed before completion");
     }
     public static boolean completing(LivingEntity actor){return COMPLETING.contains(actor);}
@@ -304,7 +321,7 @@ public final class WorldActions {
         if(!actor.getPersistentData().contains(KEY))return actor.isAlive()?SurvivalApi.work(actor,"cancel",""):result(false,"No active job");
         var job=actor.getPersistentData().getCompoundOrEmpty(KEY);actor.getPersistentData().remove(KEY);
         if(job.getStringOr("operation","").equals("hunt")&&actor instanceof Mob mob)mob.getNavigation().stop();
-        var reserved=new ArrayList<ItemStack>();reserved.add(stack(actor,job,"seed"));for(int i=0;i<job.getIntOr("slots",0);i++)reserved.add(stack(actor,job,"input"+i));
+        var reserved=new ArrayList<ItemStack>();reserved.add(stack(actor,job,"seed"));reserved.add(stack(actor,job,"vessel"));for(int i=0;i<job.getIntOr("slots",0);i++)reserved.add(stack(actor,job,"input"+i));
         for(var item:reserved)if(!item.isEmpty()){ItemAging.update(item,(ServerLevel)actor.level(),1);if(actor instanceof Player||actor.isAlive())SurvivalApi.give(actor,item);else actor.spawnAtLocation((ServerLevel)actor.level(),item);}
         actor.getPersistentData().putString("survivalLastJob","Cancelled: "+reason);return result(true,"Cancelled; reserved supplies returned. "+reason);
     }
@@ -350,6 +367,7 @@ public final class WorldActions {
         ItemStack output=recipe.assemble(input);if(output.isEmpty()||NaturalWorldRules.prohibited(output))return result(false,"Recipe output is unavailable under the natural-world rules");
         if(Production.requiresStation(output))return result(false,"This output requires its practiced production station; use produce instead of a grid recipe");
         var job=baseJob(actor,"craft",table==null?actor.blockPosition():table,craftTicks(recipe));job.putBoolean("table",needsTable);job.putString("recipe",recipeId);job.putInt("width",input.width());job.putInt("height",input.height());job.putInt("slots",input.size());
+        var learned=SkillApi.craftingSkill(output);if(learned!=null)job.putString("skill",learned.name());
         // Commit only after every match/output check; keep exact real components in the reservation.
         for(int i=0;i<ingredients.size();i++){var source=supplies.get(choices[i]);var live=source.get.get();live.shrink(1);source.set.accept(live);}
         for(int i=0;i<input.size();i++)putStack(actor,job,"input"+i,input.getItem(i));
@@ -373,7 +391,7 @@ public final class WorldActions {
     public static JsonObject planning(LivingEntity actor,int offset){return planning(actor,offset,0);}
     public static JsonObject planning(LivingEntity actor,int offset,int cropOffset){
         var json=new JsonObject();if(!(actor.level() instanceof ServerLevel level)||!SurvivalApi.isHumanoid(actor)){json.addProperty("error","Server humanoid required");return json;}
-        long now=SurvivalApi.calendar(level);var body=SurvivalApi.state(actor);json.addProperty("calendar",now);json.addProperty("season",SeasonalCrops.season(now));json.addProperty("seasonDay",SeasonalCrops.seasonDay(now));json.addProperty("movement",body.movement());json.addProperty("manipulation",body.manipulation());json.addProperty("mental",body.mental());json.addProperty("manualCapacity",capacity(actor));json.addProperty("conditions",body.conditions());json.addProperty("workRange",4);json.addProperty("supplyRange",3);json.addProperty("hungerPerLoadedWorkTick",.0005);json.addProperty("unloadedLabor",false);json.add("job",inspectJob(actor));
+        long now=SurvivalApi.calendar(level);var body=SurvivalApi.state(actor);json.addProperty("schemaVersion",6);json.addProperty("calendar",now);json.addProperty("season",SeasonalCrops.season(now));json.addProperty("seasonDay",SeasonalCrops.seasonDay(now));json.addProperty("movement",body.movement());json.addProperty("manipulation",body.manipulation());json.addProperty("mental",body.mental());json.addProperty("manualCapacity",capacity(actor));json.addProperty("conditions",body.conditions());json.addProperty("workRange",4);json.addProperty("supplyRange",3);json.addProperty("hungerPerLoadedWorkTick",.0005);json.addProperty("unloadedLabor",false);json.add("job",inspectJob(actor));
         json.add("skills",SkillApi.inspect(body));var hunting=new JsonObject();hunting.addProperty("weaponAvailable",weapon(actor.getMainHandItem()));hunting.addProperty("loadedPursuitRadius",HUNT_RADIUS);hunting.addProperty("weaponReach",actor.getAttackRangeWith(actor.getMainHandItem()).effectiveMaxRange(actor));hunting.addProperty("lineOfSightRequired",true);hunting.addProperty("npcNavigation",actor instanceof Mob);hunting.addProperty("baseStrikeWorkTicks",20);hunting.addProperty("practiceOnActualKill",true);json.add("hunting",hunting);
         var crops=new JsonArray();for(var entry:new TreeMap<>(SeasonalCrops.schedules()).entrySet()){
             String id=entry.getKey();var rule=entry.getValue();var crop=new JsonObject();crop.addProperty("crop",id);crop.addProperty("sowingSeasonMask",rule.mask());crop.addProperty("sowableNow",SeasonalCrops.sowable(id,now));long next=now;for(int i=0;i<=4*dev.qube.spawn_9b5fbb9.Config.SEASON_DAYS.get();i++){if(SeasonalCrops.sowable(id,next))break;next=(Math.floorDiv(next,24000)+1)*24000;}crop.addProperty("nextSowingCalendar",next);crop.addProperty("moistureRequired",true);crop.addProperty("floodedPaddy",rule.flooded());crop.addProperty("warmClimateRequired",rule.warm());crop.addProperty("frostSensitive",rule.frost());crop.addProperty("growthDays",rule.days());crop.addProperty("lateSpringOrEarlySummerWindow",id.endsWith(":maize_crop")||id.contains("melon"));crops.add(crop);
@@ -398,10 +416,10 @@ public final class WorldActions {
         var info=new JsonObject();info.addProperty("recipe",id);info.addProperty("kind","craft");info.addProperty("craftingTableRequired",width(recipe)>2||height(recipe)>2);info.addProperty("baseWorkTicks",craftTicks(recipe));double currentCapacity=capacity(actor);info.addProperty("loadedTicksAtCurrentCapacity",currentCapacity<=.05?-1:Math.ceil(craftTicks(recipe)/currentCapacity));var ingredients=new JsonArray();boolean more=false;alternativeOffset=Math.max(0,alternativeOffset);
         for(var ingredient:recipe.placementInfo().ingredients()){var slot=new JsonObject();var choices=ingredient.items().toList();var alternatives=new JsonArray();choices.stream().skip(alternativeOffset).limit(8).forEach(i->alternatives.add(BuiltInRegistries.ITEM.getKey(i.value()).toString()));slot.add("alternatives",alternatives);slot.addProperty("totalAlternatives",choices.size());slot.addProperty("truncated",choices.size()>(long)alternativeOffset+8);more|=choices.size()>(long)alternativeOffset+8;ingredients.add(slot);}info.add("ingredientSlots",ingredients);info.addProperty("alternativeOffset",alternativeOffset);info.addProperty("nextAlternativeOffset",more?alternativeOffset+8:-1);
         List<ItemStack> sample=new ArrayList<>();for(int index:recipe.placementInfo().slotsToIngredientIndex())sample.add(index<0?ItemStack.EMPTY:recipe.placementInfo().ingredients().get(index).items().findFirst().map(i->new ItemStack(i.value())).orElse(ItemStack.EMPTY));while(sample.size()<width(recipe)*height(recipe))sample.add(ItemStack.EMPTY);
-        var output=recipe.assemble(CraftingInput.of(width(recipe),height(recipe),sample));info.addProperty("output",BuiltInRegistries.ITEM.getKey(output.getItem()).toString());info.addProperty("outputCount",output.getCount());info.addProperty("permitted",!output.isEmpty()&&!NaturalWorldRules.prohibited(output)&&!Production.requiresStation(output));return info;
+        var output=recipe.assemble(CraftingInput.of(width(recipe),height(recipe),sample));var craftSkill=SkillApi.craftingSkill(output);double rate=SkillApi.manualRate(SurvivalApi.state(actor),craftSkill);info.addProperty("schemaVersion",6);info.addProperty("skill",craftSkill==null?"none":craftSkill.name().toLowerCase(Locale.ROOT));info.addProperty("loadedTicksAtCurrentCapacity",rate<=.05?-1:Math.ceil(craftTicks(recipe)/rate));info.addProperty("output",BuiltInRegistries.ITEM.getKey(output.getItem()).toString());info.addProperty("outputCount",output.getCount());info.addProperty("permitted",!output.isEmpty()&&!NaturalWorldRules.prohibited(output)&&!Production.requiresStation(output));return info;
     }
     private static JsonObject processInfo(LivingEntity actor,String id,Production.Recipe recipe){
-        var info=new JsonObject();info.addProperty("recipe",id);info.addProperty("kind","process");info.addProperty("input",recipe.input());info.addProperty("inputCount",recipe.count());info.addProperty("secondInput",recipe.second());info.addProperty("secondCount",recipe.secondCount());info.addProperty("output",recipe.output());info.addProperty("outputCount",recipe.amount());info.addProperty("baseWorkTicks",recipe.ticks());info.addProperty("forgeRequired",recipe.station().equals("forge"));info.addProperty("stationRequired",recipe.station());info.addProperty("manual",recipe.manual());info.addProperty("heated",recipe.heated());info.addProperty("minimumManipulation",recipe.minimumManipulation());info.addProperty("minimumSkill",recipe.minimumSkill());info.addProperty("practiceOnCompletion",recipe.practice());
+        var info=new JsonObject();info.addProperty("recipe",id);info.addProperty("kind","process");info.addProperty("input",recipe.input());info.addProperty("inputCount",recipe.count());info.addProperty("secondInput",recipe.second());info.addProperty("secondCount",recipe.secondCount());info.addProperty("output",recipe.output());info.addProperty("outputCount",recipe.amount());info.addProperty("baseWorkTicks",recipe.ticks());info.addProperty("forgeRequired",recipe.station().equals("forge"));info.addProperty("stationRequired",recipe.station());info.addProperty("manual",recipe.manual());info.addProperty("heated",recipe.heated());info.addProperty("minimumManipulation",recipe.minimumManipulation());info.addProperty("minimumSkill",recipe.minimumSkill());info.addProperty("learningWeight",recipe.practice()/25d);info.addProperty("baseExperiencePerActiveTick",.25*recipe.practice()/25d);info.addProperty("schemaVersion",6);
         double cap=recipe.manual()?capacity(actor):1;boolean skilled=recipe.skill()==null||SkillApi.level(actor,recipe.skill())>=recipe.minimumSkill();if(recipe.skill()!=null){info.addProperty("skill",recipe.skill().name().toLowerCase(Locale.ROOT));info.addProperty("skillLevel",SkillApi.level(actor,recipe.skill()));info.addProperty("effectiveSkill",SkillApi.effective(actor,recipe.skill()));if(recipe.manual())cap*=SkillApi.workRate(actor,recipe.skill());}info.addProperty("skillAndCapacityPermit",skilled&&capacity(actor)>.05&&SurvivalApi.state(actor).manipulation()>=recipe.minimumManipulation());info.addProperty("loadedTicksAtCurrentCapacity",cap<=.05?-1:Math.ceil(recipe.ticks()/cap));info.addProperty("heatTicks",!recipe.heated()?0:cap<=.05?-1:(long)Math.ceil(recipe.ticks()/cap));info.addProperty("safeWaterRequired",recipe.second().equals("@safe_water"));return info;
     }
     public static JsonObject recipeInfo(LivingEntity actor,String id,int alternativeOffset){
@@ -419,12 +437,12 @@ public final class WorldActions {
     private static void commands(RegisterCommandsEvent event){
         var root=literal("survival");addActions(root);var control=literal("control").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS));var actor=argument("actor",EntityArgument.entity());
         // Actions are literal children, allowing the existing generic controller action adapter to coexist.
-        for(String op:new String[]{"gather","forage","harvest","mine","till","sow"})actor.then(literal(op).then(argument("pos",BlockPosArgument.blockPos()).executes(c->reply(c.getSource(),start(living(EntityArgument.getEntity(c,"actor")),op,BlockPosArgument.getLoadedBlockPos(c,"pos"))))));
+        for(String op:new String[]{"gather","forage","harvest","mine","till","sow","irrigate","lay_track"})actor.then(literal(op).then(argument("pos",BlockPosArgument.blockPos()).executes(c->reply(c.getSource(),start(living(EntityArgument.getEntity(c,"actor")),op,BlockPosArgument.getLoadedBlockPos(c,"pos"))))));
         actor.then(literal("craft").then(argument("recipe",StringArgumentType.word()).executes(c->reply(c.getSource(),craft(living(EntityArgument.getEntity(c,"actor")),StringArgumentType.getString(c,"recipe"))))));
         actor.then(literal("jobs").executes(c->json(c.getSource(),inspectJob(living(EntityArgument.getEntity(c,"actor"))))));actor.then(literal("cancel").executes(c->reply(c.getSource(),cancel(living(EntityArgument.getEntity(c,"actor")),"Requested"))));addPlannerAndFarmCommands(actor,c->living(EntityArgument.getEntity(c,"actor")));root.then(control.then(actor));event.getDispatcher().register(root);
     }
     private static void addActions(LiteralArgumentBuilder<CommandSourceStack> root){
-        for(String op:new String[]{"gather","forage","harvest","mine","till","sow"})root.then(literal(op).then(argument("pos",BlockPosArgument.blockPos()).executes(c->reply(c.getSource(),start(c.getSource().getPlayerOrException(),op,BlockPosArgument.getLoadedBlockPos(c,"pos"))))));
+        for(String op:new String[]{"gather","forage","harvest","mine","till","sow","irrigate","lay_track"})root.then(literal(op).then(argument("pos",BlockPosArgument.blockPos()).executes(c->reply(c.getSource(),start(c.getSource().getPlayerOrException(),op,BlockPosArgument.getLoadedBlockPos(c,"pos"))))));
         root.then(literal("craft").then(argument("recipe",StringArgumentType.word()).executes(c->reply(c.getSource(),craft(c.getSource().getPlayerOrException(),StringArgumentType.getString(c,"recipe"))))));root.then(literal("jobs").executes(c->json(c.getSource(),inspectJob(c.getSource().getPlayerOrException()))));root.then(literal("cancel").executes(c->reply(c.getSource(),cancel(c.getSource().getPlayerOrException(),"Requested"))));addPlannerAndFarmCommands(root,c->c.getSource().getPlayerOrException());
     }
     @FunctionalInterface private interface ActorLookup{LivingEntity get(com.mojang.brigadier.context.CommandContext<CommandSourceStack> context)throws com.mojang.brigadier.exceptions.CommandSyntaxException;}

@@ -1,0 +1,199 @@
+{
+  "evidence": "proof",
+  "shots": [
+    {
+      "name": "natural-flax-stand-a",
+      "path": "run/qube/shots/proof/natural-flax-stand-a.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        -480.0,
+        95.0,
+        -291.0,
+        139.4,
+        35.7
+      ],
+      "settled": true,
+      "segment": "segment 0",
+      "game_tick": 20,
+      "warnings": []
+    },
+    {
+      "name": "natural-flax-stand-b",
+      "path": "run/qube/shots/proof/natural-flax-stand-b.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        -492.0,
+        94.0,
+        -294.0,
+        -123.7,
+        37.9
+      ],
+      "settled": true,
+      "segment": "segment 0",
+      "game_tick": 20,
+      "warnings": []
+    },
+    {
+      "name": "natural-quarry-extraction-a",
+      "path": "run/qube/shots/proof/natural-quarry-extraction-a.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        -305.0,
+        67.0,
+        -151.0,
+        135.0,
+        28.7
+      ],
+      "settled": true,
+      "segment": "segment 0",
+      "game_tick": 320,
+      "warnings": []
+    },
+    {
+      "name": "natural-quarry-extraction-b",
+      "path": "run/qube/shots/proof/natural-quarry-extraction-b.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        -326.0,
+        63.0,
+        -160.0,
+        -139.4,
+        39.6
+      ],
+      "settled": true,
+      "segment": "segment 0",
+      "game_tick": 320,
+      "warnings": []
+    }
+  ],
+  "timing_warnings": [
+    "segment 0 step 5: kill in a frozen world leaves the bodies in the shots (red, falling over) until 20 ticks pass; follow it with {\"step\": 20}"
+  ],
+  "entities_gone": [],
+  "desyncs": [],
+  "sync": [],
+  "command_output": [
+    {
+      "run": "tick freeze",
+      "output": [
+        "The game is frozen"
+      ]
+    },
+    {
+      "run": "tp @s -480.00 95.00 -291.00 -220.6 35.7",
+      "output": [
+        "Teleported Dev to -480.000000, 95.000000, -291.000000"
+      ]
+    },
+    {
+      "run": "tick step 20",
+      "output": [
+        "Stepping 20 tick(s)"
+      ]
+    },
+    {
+      "run": "tp @s -492.00 94.00 -294.00 -123.7 37.9",
+      "output": [
+        "Teleported Dev to -492.000000, 94.000000, -294.000000"
+      ]
+    },
+    {
+      "run": "fill -330 58 -176 -310 100 -156 minecraft:air",
+      "output": [
+        "Successfully filled 2503 block(s)"
+      ]
+    },
+    {
+      "run": "kill @e[type=minecraft:item,x=-330,y=58,z=-176,dx=20,dy=43,dz=20]",
+      "output": [
+        "Killed 60 entities"
+      ]
+    },
+    {
+      "run": "summon minecraft:villager -321.5 58 -166.5 {Tags:[\"quarry_worker\"],NoAI:1b}",
+      "output": [
+        "Summoned new Villager"
+      ]
+    },
+    {
+      "run": "survival debug_skill @e[tag=quarry_worker,limit=1] mining 12",
+      "output": [
+        "Villager \u2014 practiced skills",
+        "Pottery 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Smithing 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Weaving 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Farming 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Foraging 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Hunting 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Mining 12/20 | none | 16000 XP to next | learning 35% | today 0/4000 | decay 120/day",
+        "Construction 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Cooking 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Animals 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Medicine 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day"
+      ]
+    },
+    {
+      "run": "item replace entity @e[tag=quarry_worker,limit=1] weapon.mainhand with spawn_9b5fbb9:knapped_stone_pickaxe",
+      "output": [
+        "Replaced 1 slot(s) on Villager with [Knapped Stone Pickaxe]"
+      ]
+    },
+    {
+      "run": "survival control @e[tag=quarry_worker,limit=1] mine -320 57 -167",
+      "output": [
+        "Started mine; 30 base loaded work ticks"
+      ]
+    },
+    {
+      "run": "tp @s -305.00 67.00 -151.00 -225.0 28.7",
+      "output": [
+        "Teleported Dev to -305.000000, 67.000000, -151.000000"
+      ]
+    },
+    {
+      "run": "tick step 300",
+      "output": [
+        "Stepping 300 tick(s)"
+      ]
+    },
+    {
+      "run": "tp @s -326.00 63.00 -160.00 -139.4 39.6",
+      "output": [
+        "Teleported Dev to -326.000000, 63.000000, -160.000000"
+      ]
+    },
+    {
+      "run": "survival query @e[tag=quarry_worker,limit=1]",
+      "output": [
+        "{\"entity\":\"0ed87f73-e8a4-405e-b71e-79c7b4bdcaf9\",\"recreation\":100.0,\"recreationHours\":0.0,\"requiredHours\":3.814,\"hunger\":99.40099999999994,\"thirst\":99.37499999999993,\"temperature\":37.0,\"health\":20.0,\"movement\":1.0,\"manipulation\":1.0,\"mental\":1.0,\"conditions\":\"Stable\",\"calendar\":3959,\"schemaVersion\":6,\"skills\":{\"pottery\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"smithing\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"weaving\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"farming\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"foraging\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"hunting\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"mining\":{\"level\":12,\"maxLevel\":20,\"experience\":81001.825,\"experienceToNext\":15998.175,\"workRate\":0.8,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":1.8249999999999984,\"dailySoftCap\":4000.0,\"decayPerDay\":120.0,\"effectiveLevel\":12.0,\"levelExperience\":1.8249999999999984,\"levelCost\":16000.0},\"construction\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"cooking\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"animals\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"medicine\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0}},\"anatomy\":{\"LEFT_ARM\":100.0,\"RIGHT_ARM\":100.0,\"LEFT_LEG\":100.0,\"RIGHT_LEG\":100.0,\"BRAIN\":100.0,\"LEFT_EYE\":100.0,\"RIGHT_EYE\":100.0,\"HEARING\":100.0,\"LEFT_THUMB\":100.0,\"LEFT_INDEX\":100.0,\"LEFT_MIDDLE\":100.0,\"LEFT_RING\":100.0,\"LEFT_LITTLE\":100.0,\"RIGHT_THUMB\":100.0,\"RIGHT_INDEX\":100.0,\"RIGHT_MIDDLE\":100.0,\"RIGHT_RING\":100.0,\"RIGHT_LITTLE\":100.0,\"LEFT_TOE_1\":100.0,\"LEFT_TOE_2\":100.0,\"LEFT_TOE_3\":100.0,\"LEFT_TOE_4\":100.0,\"LEFT_TOE_5\":100.0,\"RIGHT_TOE_1\":100.0,\"RIGHT_TOE_2\":100.0,\"RIGHT_TOE_3\":100.0,\"RIGHT_TOE_4\":100.0,\"RIGHT_TOE_5\":100.0},\"clothing\":[\"\",\"\",\"\",\"\"]}"
+      ]
+    }
+  ],
+  "sheets": [
+    "run/qube/shots/proof/segment-0.sheet.png"
+  ],
+  "session_segments": 1,
+  "client": {
+    "running": true,
+    "pid": 12304,
+    "world": null,
+    "dedicated": true,
+    "uptime_sec": 41,
+    "size": [
+      1280,
+      720
+    ]
+  }
+}

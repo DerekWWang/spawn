@@ -82,20 +82,23 @@ public final class SimulationTests {
         check(rejected,"invalid nonfinite tuning must be rejected");
         SkillSet learner=new SkillSet();
         learner.practice(SkillSet.Skill.POTTERY,25);
-        check(learner.level(SkillSet.Skill.POTTERY)==10,"completed pottery practice must raise pottery skill");
+        check(learner.level(SkillSet.Skill.POTTERY)==0,"a little practice must not instantly create a skilled professional");
         check(learner.level(SkillSet.Skill.SMITHING)==0,"pottery practice must not train an unrelated profession");
         learner.practice(SkillSet.Skill.POTTERY,75);
-        check(learner.level(SkillSet.Skill.POTTERY)==20,"later levels must require more accumulated practice");
+        check(learner.level(SkillSet.Skill.POTTERY)==0,"small work awards stay below the first 1000-XP threshold");
         learner.practice(SkillSet.Skill.POTTERY,-100);learner.practice(SkillSet.Skill.POTTERY,Double.NaN);learner.practice(SkillSet.Skill.POTTERY,Double.POSITIVE_INFINITY);
-        close(learner.experience(SkillSet.Skill.POTTERY),100,"invalid practice must not remove or create progress");
+        close(learner.experience(SkillSet.Skill.POTTERY),35,"no passion learns at 35 percent and invalid practice creates no progress");
         learner.practice(SkillSet.Skill.WEAVING,100000);
-        check(learner.level(SkillSet.Skill.WEAVING)==100,"practice is bounded to mastery");
+        check(learner.level(SkillSet.Skill.WEAVING)<=20,"practice is bounded to twenty skill levels");
         SurvivalState trained=new SurvivalState();trained.skills.copyFrom(learner);trained.injure(SurvivalState.Part.LEFT_ARM,90,false);
         var returned=SurvivalState.decode(trained.encode());
-        check(returned.skills.level(SkillSet.Skill.POTTERY)==20&&returned.skills.level(SkillSet.Skill.WEAVING)==100,"saved bodies and client snapshots retain independent skills");
+        check(returned.skills.level(SkillSet.Skill.POTTERY)==0&&returned.skills.level(SkillSet.Skill.WEAVING)==learner.level(SkillSet.Skill.WEAVING),"saved bodies and client snapshots retain independent skills");
         check(migrated.skills.level(SkillSet.Skill.POTTERY)==0&&migrated.blind(),"old injured bodies migrate with novice skills without losing health");
         byte[] versionFour=SimulationTests.class.getResourceAsStream("/survival-v4.bin").readAllBytes();var previousBody=SurvivalState.decode(versionFour);
         check(previousBody.anatomy[0]==10&&previousBody.hunger==38.125&&previousBody.clothing[2].endsWith("wool_jacket")&&previousBody.skills.level(SkillSet.Skill.POTTERY)==0,"archived version four bodies remain readable after adding practice data");
+        assertions+=LearningTests.run();
+        assertions+=ResourceFieldTests.run();
+        assertions+=EnvironmentModelTests.run();
         System.out.println("PASS: "+assertions+" survival behavior assertions");
     }
     private static void check(boolean ok,String message){assertions++;if(!ok)throw new AssertionError(message);}

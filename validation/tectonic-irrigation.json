@@ -1,0 +1,89 @@
+{
+  "steps": [
+    {
+      "camera": {
+        "pos": [
+          116,
+          150.8,
+          117
+        ],
+        "look_at": [
+          113.8,
+          150.4,
+          114
+        ]
+      }
+    },
+    {
+      "step": 20
+    },
+    {
+      "run": [
+        "setblock 114 150 114 minecraft:stone",
+        "fill 110 150 110 118 156 118 minecraft:air",
+        "setblock 114 149 114 minecraft:stone",
+        "fill 110 149 110 118 149 118 minecraft:dirt",
+        "setblock 114 153 114 minecraft:stone",
+        "fill 112 153 112 116 153 116 minecraft:glass",
+        "setblock 114 149 114 minecraft:farmland[moisture=0]",
+        "setblock 115 149 114 minecraft:farmland[moisture=0]",
+        "setblock 114 150 114 minecraft:wheat[age=0]",
+        "data modify storage spawn_9b5fbb9:crops/minecraft/overworld \"soil/31336081858709\" set value {water:0.1d}",
+        "summon minecraft:villager 112.5 150 114.5 {Tags:[\"environment_worker\"],NoAI:1b}",
+        "item replace entity @e[tag=environment_worker,limit=1] weapon.mainhand with spawn_9b5fbb9:fired_pot[minecraft:custom_data={water:1,waterSafe:1b}]"
+      ]
+    },
+    {
+      "shot": "real-pot-before-irrigation"
+    },
+    {
+      "run": "survival control @e[tag=environment_worker,limit=1] irrigate 114 149 114"
+    },
+    {
+      "step": 180
+    },
+    {
+      "run": [
+        "survival control @e[tag=environment_worker,limit=1] jobs",
+        "survival control @e[tag=environment_worker,limit=1] climate",
+        "execute if block 114 149 114 minecraft:farmland run say irrigated_plot_accepted_water",
+        "data get storage spawn_9b5fbb9:crops/minecraft/overworld \"soil/31336081858709\"",
+        "data get entity @e[type=minecraft:item,nbt={Item:{id:\"spawn_9b5fbb9:fired_pot\"}},x=110,y=149,z=110,dx=8,dy=7,dz=8,limit=1] Item"
+      ]
+    },
+    {
+      "camera": {
+        "pos": [
+          116,
+          150.8,
+          116
+        ],
+        "look_at": [
+          114,
+          150.4,
+          114
+        ]
+      }
+    },
+    {
+      "shot": "irrigated-plot-and-returned-pot-a"
+    },
+    {
+      "camera": {
+        "pos": [
+          112,
+          150.8,
+          117
+        ],
+        "look_at": [
+          114,
+          150.4,
+          114
+        ]
+      }
+    },
+    {
+      "shot": "irrigated-plot-and-returned-pot-b"
+    }
+  ]
+}

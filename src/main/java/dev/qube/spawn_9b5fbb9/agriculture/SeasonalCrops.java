@@ -9,6 +9,7 @@ import dev.qube.spawn_9b5fbb9.survival.SkillApi;
 import dev.qube.spawn_9b5fbb9.survival.SkillSet.Skill;
 import dev.qube.spawn_9b5fbb9.survival.LaborGuard;
 import dev.qube.spawn_9b5fbb9.controllers.WorldActions;
+import dev.qube.spawn_9b5fbb9.environment.*;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -39,6 +40,7 @@ public final class SeasonalCrops {
     static {
         rule("wheat",8,5,false,false,false);rule("carrots",8,3,false,false,false);rule("potatoes",10,1,false,true,false);rule("beetroots",6,5,false,false,false);
         rule("rice_crop",12,1,true,true,true);rule("maize_crop",10,3,true,true,false);rule("fiber_crop",6,3,false,false,false);rule("medicinal_crop",8,1,false,false,false);
+        rule("flax_crop",8,3,false,false,false);rule("yarrow_crop",8,1,false,false,false);rule("bramble_crop",8,3,false,false,false);
         rule("sweet_berry_bush",8,5,false,false,false);rule("cave_vines",8,5,false,false,false);rule("cave_vines_plant",8,5,false,false,false);
         rule("melon_stem",10,3,true,true,false);rule("attached_melon_stem",3,3,true,true,false);rule("pumpkin_stem",12,3,false,false,false);rule("attached_pumpkin_stem",4,3,false,false,false);
         rule("cocoa",12,3,true,true,false);rule("sugar_cane",6,3,true,true,false);rule("brown_mushroom",4,15,false,false,false);rule("red_mushroom",4,15,false,false,false);
@@ -113,17 +115,17 @@ public final class SeasonalCrops {
             long required=(id.equals("sugar_cane")?6:4)*DAY;
             if(old.getLongOr("growth",0)<required)event.getDrops().clear();
         }
-        Schedule definition=schedule(BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).toString());boolean frost=definition!=null&&definition.frost&&season(now)==3;
+        Schedule definition=schedule(BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).toString());boolean frost=!WorldEnvironment.active(level)&&definition!=null&&definition.frost&&season(now)==3;
         if(frost&&(id.equals("rice_crop")||old.getLongOr("growth",0)<definition.days*DAY))event.getDrops().clear();
         boolean practice=harvestReady(level,event.getPos(),event.getState());Skill practiced=harvestSkill(level,event.getPos(),event.getState());
         all.remove(key);save(level,all);
-        if(practice&&event.getBreaker() instanceof LivingEntity actor&&actor.level()==level&&actor.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(event.getPos()))<=16&&!WorldActions.completing(actor))SkillApi.award(actor,practiced,6);
+        // Practice belongs to the timed work transaction; a raw block-destruction event carries no labor credit.
         if(!id.endsWith("_crop")||!event.getState().hasProperty(CropBlock.AGE))return;
         if(frost)return;
         String crop=id.substring(0,id.length()-5);int age=event.getState().getValue(CropBlock.AGE);
         if(definition==null||old.getLongOr("growth",0)<definition.days*DAY)age=0;
         Block.popResource(level,event.getPos(),new ItemStack(SurvivalContent.item(crop+"_seeds"),age==7?3:1));
-        if(age==7){String out=switch(crop){case "rice"->"rice_grain";case "fiber"->"plant_fiber";case "medicinal"->"medicinal_leaves";default->"maize";};Block.popResource(level,event.getPos(),new ItemStack(SurvivalContent.item(out),3));}
+        if(age==7){String out=switch(crop){case "rice"->"rice_grain";case "fiber"->"plant_fiber";case "medicinal"->"medicinal_leaves";case "flax"->"flax_fiber";case "yarrow"->"yarrow_leaves";case "bramble"->"blackberries";default->"maize";};Block.popResource(level,event.getPos(),new ItemStack(SurvivalContent.item(out),3));}
     }
     public static boolean berries(BlockState state){String id=BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();return id.equals("sweet_berry_bush")||id.equals("cave_vines")||id.equals("cave_vines_plant");}
     public static Skill harvestSkill(ServerLevel level,BlockPos pos,BlockState state){if(state.getBlock() instanceof dev.qube.spawn_9b5fbb9.content.FruitTreeBlock)return Skill.FORAGING;return state.getBlock() instanceof CropBlock||state.getBlock() instanceof StemBlock||state.is(Blocks.MELON)||state.is(Blocks.PUMPKIN)||records(level).getCompoundOrEmpty(Long.toString(pos.asLong())).getBooleanOr("sown",false)?Skill.FARMING:Skill.FORAGING;}
@@ -132,7 +134,7 @@ public final class SeasonalCrops {
         if(state.is(Blocks.MELON)||state.is(Blocks.PUMPKIN))return record.getBooleanOr("grownFruit",false);
         Schedule rule=schedule(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());if(rule==null)return false;
         if(berries(state)){initializeWildBerry(state,record,now);long days=(record.getBooleanOr("established",false)?2:8)*DAY;return (season(now)==1||season(now)==2)&&record.getLongOr("growth",0)>=days;}
-        long growth=record.getLongOr("growth",0),required=rule.days*DAY;if(rule.frost&&season(now)==3&&(id.equals("rice_crop")||growth<required))return false;
+        long growth=record.getLongOr("growth",0),required=rule.days*DAY;if(!WorldEnvironment.active(level)&&rule.frost&&season(now)==3&&(id.equals("rice_crop")||growth<required))return false;
         if(id.equals("sugar_cane"))return growth>=required||record.getBooleanOr("harvestableStage",false)||level.getBlockState(pos.above()).is(Blocks.SUGAR_CANE)&&records(level).getCompoundOrEmpty(Long.toString(pos.above().asLong())).getBooleanOr("harvestableStage",false);
         if(growth<required)return false;
         for(var property:state.getProperties())if(property instanceof IntegerProperty age&&age.getName().equals("age"))return state.getValue(age).equals(Collections.max(age.getPossibleValues()));
@@ -159,10 +161,40 @@ public final class SeasonalCrops {
         if(!(event.getEntity() instanceof LivingEntity actor)||!(actor.level() instanceof ServerLevel level))return;var list=PENDING.remove(actor);if(list==null)return;
         for(var pending:list){if(level!=pending.level||!actor.isAlive()||level.getGameTime()-pending.time>2||!level.hasChunkAt(pending.pos)||!BuiltInRegistries.BLOCK.getKey(level.getBlockState(pending.pos).getBlock()).toString().equals(pending.block))continue;
             boolean complete=spent(actor.getMainHandItem(),pending.main,pending.mainCount,pending.mainDamage,pending.tool)||spent(actor.getOffhandItem(),pending.off,pending.offCount,pending.offDamage,pending.tool);
-            if(complete){SkillApi.award(actor,pending.skill,pending.xp);LaborGuard.worked(actor);}
+            if(complete)LaborGuard.worked(actor); // Learning is committed by the actual timed job, never raw placement.
         }
     }
     public static boolean flooded(ServerLevel level,BlockPos pos){for(Direction d:Direction.Plane.HORIZONTAL)if(level.getFluidState(pos.relative(d)).is(FluidTags.WATER)||level.getFluidState(pos.below().relative(d)).is(FluidTags.WATER))return true;return false;}
+    private static BlockPos plot(ServerLevel level,BlockPos pos){return level.getBlockState(pos).is(Blocks.FARMLAND)?pos:pos.below();}
+    public static boolean irrigable(ServerLevel level,BlockPos pos){return WorldEnvironment.active(level)&&level.hasChunkAt(pos)&&level.getBlockState(plot(level,pos)).is(Blocks.FARMLAND);}
+    private static String soilKey(BlockPos pos){return "soil/"+pos.asLong();}
+    /** Called only at successful work completion. Water changes moisture, never growth directly. */
+    public static boolean irrigate(ServerLevel level,BlockPos pos,double amount){
+        if(!irrigable(level,pos)||!Double.isFinite(amount)||amount<=0)return false;
+        var ground=plot(level,pos);var crop=ground.above();var state=level.getBlockState(crop);
+        if(requiresCalendarTick(state))randomTick(state,level,crop,level.getRandom());
+        var all=records(level);var soil=all.getCompoundOrEmpty(soilKey(ground));advanceSoil(level,ground,soil,SurvivalApi.calendar(level),null,false);
+        double before=soil.getDoubleOr("water",.25);if(before>=.95){all.put(soilKey(ground),soil);save(level,all);return false;}
+        soil.putDouble("water",Math.min(1,before+amount));all.put(soilKey(ground),soil);save(level,all);
+        level.setBlock(ground,level.getBlockState(ground).setValue(FarmlandBlock.MOISTURE,7),2);return true;
+    }
+    /** Fixed weather buckets make historical weather independent of random-tick frequency. */
+    private static double[] advanceSoil(ServerLevel level,BlockPos ground,CompoundTag soil,long now,Schedule rule,boolean mushroom){
+        return advanceSoil(level,ground,soil,now,rule,mushroom,0,Long.MAX_VALUE,false);
+    }
+    private static double[] advanceSoil(ServerLevel level,BlockPos ground,CompoundTag soil,long now,Schedule rule,boolean mushroom,double initialGrowth,long duration,boolean alwaysFrost){
+        long last=soil.getLongOr("last",now);double water=soil.getDoubleOr("water",level.getBlockState(ground).is(Blocks.FARMLAND)&&level.getBlockState(ground).getValue(FarmlandBlock.MOISTURE)>0?.45:.25),growth=0;boolean frost=false;
+        long start=Math.max(last,now-4L*WorldEnvironment.settings(level).seasonDays()*DAY);boolean adjacent=flooded(level,ground.above()),roof=EnvironmentApi.roofed(level,ground.above());
+        for(long cursor=start;cursor<now;){long bucket=Math.floorDiv(cursor,600),end=Math.min(now,(bucket+1)*600);var weather=EnvironmentApi.at(level,ground.above(),bucket*600+300);
+            double rain=roof||weather.snow()?0:weather.rain();double after=EnvironmentModel.soilWater(water,rain,weather.temperature(),weather.wind(),adjacent,end-cursor);
+            if(rule!=null){frost|=rule.frost&&weather.temperature()<-2&&(initialGrowth+growth<duration||alwaysFrost);
+                boolean temperature=weather.temperature()>=(rule.warm?12:2)&&weather.temperature()<36;
+                if(!frost&&temperature&&(!rule.flooded||adjacent)&&(!mushroom||level.getRawBrightness(ground.above(),0)<13))growth+=EnvironmentModel.moistTicks(water,rain,weather.temperature(),weather.wind(),adjacent,end-cursor,.25);
+            }
+            water=after;cursor=end;
+        }
+        soil.putDouble("water",water);soil.putLong("last",now);return new double[]{growth,frost?1:0};
+    }
     public static boolean randomTick(BlockState state,ServerLevel level,BlockPos pos,RandomSource random){
         String id=BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();Schedule rule=schedule(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
         if(rule==null){if(state.getBlock() instanceof CropBlock){if(WARNED.add(id))System.getLogger("Survival crops").log(System.Logger.Level.WARNING,"Undeclared crop growth disabled: "+id);return true;}return false;}
@@ -179,7 +211,14 @@ public final class SeasonalCrops {
         boolean suitable=moist&&(!rule.flooded||flooded(level,pos))&&(!rule.warm||temperature>=0.5f);
         if(id.contains("mushroom"))suitable=temperature>0.1f&&level.getRawBrightness(pos,0)<13&&(!level.canSeeSky(pos)||flooded(level,pos));
         long elapsed=Math.max(0,now-last);long remaining=Math.min(elapsed,DAY*Config.SEASON_DAYS.get()*4L);
-        for(long cursor=now-remaining;cursor<now;){long end=Math.min(now,(Math.floorDiv(cursor,DAY)+1)*DAY);int season=season(cursor);boolean warmSeason=season!=3;
+        if(WorldEnvironment.active(level)){
+            var ground=plot(level,pos);String soilId=soilKey(ground);var soil=all.getCompoundOrEmpty(soilId);if(!soil.contains("last"))soil.putLong("last",last);
+            if(soil.getLongOr("last",now)<last)advanceSoil(level,ground,soil,Math.min(now,last),null,false);
+            var result=advanceSoil(level,ground,soil,now,rule,id.contains("mushroom"),growth+data.getDoubleOr("growthFraction",0),duration,id.equals("rice_crop"));all.put(soilId,soil);
+            if(result[1]>0){level.destroyBlock(pos,false);all.remove(key);save(level,all);return true;}
+            double earned=result[0]+data.getDoubleOr("growthFraction",0);growth+=(long)earned;data.putDouble("growthFraction",earned-(long)earned);
+            if(level.getBlockState(ground).is(Blocks.FARMLAND))level.setBlock(ground,level.getBlockState(ground).setValue(FarmlandBlock.MOISTURE,soil.getDoubleOr("water",0)>.25?7:0),2);
+        }else for(long cursor=now-remaining;cursor<now;){long end=Math.min(now,(Math.floorDiv(cursor,DAY)+1)*DAY);int season=season(cursor);boolean warmSeason=season!=3;
             if(rule.frost&&season==3&&(growth<duration||id.equals("rice_crop"))){level.destroyBlock(pos,false);all.remove(key);save(level,all);return true;}
             if(suitable&&(warmSeason||id.contains("mushroom"))){growth+=end-cursor;}cursor=end;
         }

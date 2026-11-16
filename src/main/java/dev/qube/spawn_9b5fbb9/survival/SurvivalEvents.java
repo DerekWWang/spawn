@@ -82,6 +82,15 @@ public final class SurvivalEvents {
         SurvivalNetwork.tracking(actor,s);
     }
     public static SurvivalState.Climate climate(LivingEntity actor,ServerLevel level){
+        return climate(actor,level,SurvivalApi.calendar(level));
+    }
+    public static SurvivalState.Climate climate(LivingEntity actor,ServerLevel level,long tick){
+        if(dev.qube.spawn_9b5fbb9.environment.WorldEnvironment.active(level)){
+            var weather=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.at(level,actor.blockPosition(),tick);
+            var exposure=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.exposure(level,actor.blockPosition());var body=SurvivalApi.state(actor);double insulation=0;
+            for(String garment:body.clothing)insulation+=garment.contains("wool_jacket")?body.rules.number("woolJacketInsulation"):garment.contains("wool_")?body.rules.number("woolPieceInsulation"):garment.contains("fiber_")?body.rules.number("fiberPieceInsulation"):0;
+            return new SurvivalState.Climate(weather.temperature(),insulation,actor.isInWater()||!exposure.roof()&&!weather.snow()&&weather.rain()>.15,exposure.roof(),exposure.fire(),weather.wind(),exposure.enclosure());
+        }
         float biome=level.getBiome(actor.blockPosition()).value().getBaseTemperature();
         double ambient=biome<=0?-15:biome<.5?5:biome>1.5?42:biome>1?32:18;
         int season=(int)(SurvivalApi.calendar(level)/24000/Config.SEASON_DAYS.get()%4);
@@ -175,6 +184,7 @@ public final class SurvivalEvents {
     private static boolean usefulTreatment(String name,SurvivalState state){return switch(name){case "bandage"->state.bleeding>0;case "antitoxin"->state.poisonTicks>0;case "antiseptic"->state.woundInfection;case "antibiotic"->state.mildTicks>0||state.severeTicks>0;case "painkiller"->state.bleeding>0&&state.painkillerTicks==0;default->false;};}
     public static boolean brainTick(LivingEntity actor){
         if(!SurvivalApi.isHumanoid(actor)||SurvivalApi.exempt(actor))return true;
+        if(dev.qube.spawn_9b5fbb9.warfare.Military.underOrders(actor))return false;
         double mental=SurvivalApi.state(actor).mental();if(mental>=.999)return true;
         double budget=actor.getPersistentData().getDoubleOr("survivalBrainBudget",0)+mental;
         boolean allowed=budget>=1-1e-9;if(allowed)budget=Math.max(0,budget-1);actor.getPersistentData().putDouble("survivalBrainBudget",budget);return allowed;
@@ -277,7 +287,10 @@ public final class SurvivalEvents {
         calendar.putLong("sleepOffset",calendar.getLongOr("sleepOffset",0)+skipped);e.getServer().getCommandStorage().set(SurvivalApi.CALENDAR,calendar);
         for(ServerLevel world:e.getServer().getAllLevels())for(Entity entity:world.getAllEntities())if(entity instanceof LivingEntity actor&&SurvivalApi.isHumanoid(actor)&&!SurvivalApi.exempt(actor)){
             var state=SurvivalApi.state(actor);long elapsed=Math.round(skipped*Config.NEEDS_RATE.get());double damage=0;boolean dry=false;
-            while(elapsed>0){long batch=Math.min(elapsed,7*SurvivalState.DAY);var partial=state.advance(batch,SurvivalState.Activity.IDLE,climate(actor,world),false,sleepStates.getOrDefault(actor.getUUID(),false));damage+=partial.damage();dry|=partial.dehydrated();elapsed-=batch;}
+            if(dev.qube.spawn_9b5fbb9.environment.WorldEnvironment.active(world)){
+                long end=SurvivalApi.calendar(world),start=end-skipped;
+                for(long cursor=start;cursor<end;){long bucket=Math.floorDiv(cursor,600),next=Math.min(end,(bucket+1)*600);long batch=Math.max(0,Math.round((next-cursor)*Config.NEEDS_RATE.get()));while(batch>0){long part=Math.min(batch,7*SurvivalState.DAY);var partial=state.advance(part,SurvivalState.Activity.IDLE,climate(actor,world,bucket*600+300),false,sleepStates.getOrDefault(actor.getUUID(),false));damage+=partial.damage();dry|=partial.dehydrated();batch-=part;}cursor=next;}
+            }else while(elapsed>0){long batch=Math.min(elapsed,7*SurvivalState.DAY);var partial=state.advance(batch,SurvivalState.Activity.IDLE,climate(actor,world),false,sleepStates.getOrDefault(actor.getUUID(),false));damage+=partial.damage();dry|=partial.dehydrated();elapsed-=batch;}
             SurvivalApi.save(actor,state);SurvivalApi.syncFood(actor,state);
             if(dry)actor.hurtServer(world,actor.damageSources().genericKill(),Float.MAX_VALUE);
             else if(damage>0)actor.hurtServer(world,actor.damageSources().starve(),(float)damage);

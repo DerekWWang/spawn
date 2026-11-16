@@ -33,7 +33,7 @@ public final class Production {
             if(!Set.of("kiln","bloomery","forge","anvil","loom").contains(station))throw new IllegalArgumentException("Unknown production station: "+station);
             if(ContentDefinitions.bool(object,"forge",station.equals("forge"))!=station.equals("forge"))throw new IllegalArgumentException("forge flag must agree with the explicit station");
             String skillName=ContentDefinitions.string(object,"skill",base.skill==null?"":base.skill.name());Skill skill=null;if(!skillName.isBlank()&&!skillName.equalsIgnoreCase("none")){try{skill=Skill.valueOf(skillName.toUpperCase(Locale.ROOT));}catch(IllegalArgumentException invalid){throw new IllegalArgumentException("Unknown production skill: "+skillName);}}
-            Recipe configured=new Recipe(ContentDefinitions.id(input).toString(),(int)ContentDefinitions.integer(object,"count",base.count,1,new ItemStack(inputItem).getMaxStackSize()),ContentDefinitions.id(output).toString(),(int)ContentDefinitions.integer(object,"amount",base.amount,1,new ItemStack(outputItem).getMaxStackSize()),ContentDefinitions.integer(object,"ticks",base.ticks,1,64000),station.equals("forge"),second.startsWith("@")?second:second.isEmpty()?"":ContentDefinitions.id(second).toString(),(int)ContentDefinitions.integer(object,"secondCount",secondDefault,second.isEmpty()?0:1,secondMax),station,skill,(int)ContentDefinitions.integer(object,"minimumSkill",base.minimumSkill,0,100),ContentDefinitions.bool(object,"manual",base.manual),ContentDefinitions.bool(object,"heated",base.heated),ContentDefinitions.number(object,"practice",base.practice,0,2500),ContentDefinitions.number(object,"minimumManipulation",base.minimumManipulation,.05,1));
+            Recipe configured=new Recipe(ContentDefinitions.id(input).toString(),(int)ContentDefinitions.integer(object,"count",base.count,1,new ItemStack(inputItem).getMaxStackSize()),ContentDefinitions.id(output).toString(),(int)ContentDefinitions.integer(object,"amount",base.amount,1,new ItemStack(outputItem).getMaxStackSize()),ContentDefinitions.integer(object,"ticks",base.ticks,1,64000),station.equals("forge"),second.startsWith("@")?second:second.isEmpty()?"":ContentDefinitions.id(second).toString(),(int)ContentDefinitions.integer(object,"secondCount",secondDefault,second.isEmpty()?0:1,secondMax),station,skill,(int)ContentDefinitions.integer(object,"minimumSkill",base.minimumSkill,0,20),ContentDefinitions.bool(object,"manual",base.manual),ContentDefinitions.bool(object,"heated",base.heated),ContentDefinitions.number(object,"practice",base.practice,0,2500),ContentDefinitions.number(object,"minimumManipulation",base.minimumManipulation,.05,1));
             validateRequirements(configured);replacement.put(key,configured);
         }
         RECIPES=Collections.unmodifiableMap(replacement);
@@ -41,6 +41,9 @@ public final class Production {
     static {
         skilled("fire_pot","minecraft:clay",1,"spawn_9b5fbb9:fired_pot",1,2000,"kiln",Skill.POTTERY,0,true,true,25,.25,"",0);
         recipe("fire_brick","minecraft:clay_ball",1,"minecraft:brick",1,1500,false,"",0);
+        for(var mineral:Map.of("malachite","copper","cassiterite","tin","hematite","iron").entrySet())skilled("crush_"+mineral.getKey(),"spawn_9b5fbb9:"+mineral.getKey(),1,"spawn_9b5fbb9:crushed_"+mineral.getValue(),1,1000,"anvil",Skill.MINING,0,true,false,10,.1,"",0);
+        skilled("prepare_flax_fiber","spawn_9b5fbb9:flax_fiber",1,"spawn_9b5fbb9:plant_fiber",1,400,"loom",Skill.WEAVING,0,true,false,10,.1,"",0);
+        skilled("prepare_yarrow_leaves","spawn_9b5fbb9:yarrow_leaves",1,"spawn_9b5fbb9:medicinal_leaves",1,400,"loom",Skill.MEDICINE,0,true,false,10,.1,"",0);
         for(String metal:new String[]{"copper","tin","iron"}){
             recipe("crush_"+metal,metal.equals("tin")?"spawn_9b5fbb9:tin_ore":"minecraft:raw_"+metal,1,"spawn_9b5fbb9:crushed_"+metal,1,1000,false,"",0);
             recipe("roast_"+metal,"spawn_9b5fbb9:crushed_"+metal,1,"spawn_9b5fbb9:roasted_"+metal,1,2000,false,"",0);
@@ -54,7 +57,7 @@ public final class Production {
         recipe("charcoal","minecraft:oak_log",1,"minecraft:charcoal",2,2000,false,"",0);
         recipe("sterilize_cloth","spawn_9b5fbb9:fiber_cloth",1,"spawn_9b5fbb9:clean_cloth",2,1000,false,"@safe_water",1);
         for(String metal:new String[]{"copper","bronze","forged_iron"}){
-            String ingot=metal.equals("forged_iron")?"minecraft:iron_ingot":metal.equals("bronze")?"spawn_9b5fbb9:bronze_ingot":"minecraft:copper_ingot";int minimum=metal.equals("copper")?20:metal.equals("bronze")?40:60;
+            String ingot=metal.equals("forged_iron")?"minecraft:iron_ingot":metal.equals("bronze")?"spawn_9b5fbb9:bronze_ingot":"minecraft:copper_ingot";int minimum=metal.equals("copper")?4:metal.equals("bronze")?8:12;
             for(String type:new String[]{"pickaxe","axe","hoe","sword","shovel"}){
                 String blank="spawn_9b5fbb9:"+metal+"_"+type+"_blank";
                 int ingots=type.equals("shovel")?1:type.equals("hoe")||type.equals("sword")?2:3;String tool=(type.equals("sword")||type.equals("shovel"))&&!metal.equals("bronze")?"minecraft:"+(metal.equals("forged_iron")?"iron":metal)+"_"+type:"spawn_9b5fbb9:"+metal+"_"+type;
@@ -64,34 +67,53 @@ public final class Production {
             for(String piece:new String[]{"helmet","chestplate","leggings","boots"}){
                 int ingots=switch(piece){case "helmet"->5;case "chestplate"->8;case "leggings"->7;default->4;};String blank="spawn_9b5fbb9:"+metal+"_"+piece+"_blank";String out=metal.equals("bronze")?"spawn_9b5fbb9:bronze_"+piece:"minecraft:"+(metal.equals("forged_iron")?"iron":metal)+"_"+piece;
                 skilled("forge_"+metal+"_"+piece+"_blank",ingot,ingots,blank,1,1600,"forge",Skill.SMITHING,0,true,true,20,.15,"",0);
-                skilled(metal+"_"+piece,blank,1,out,1,2000,"anvil",Skill.SMITHING,metal.equals("forged_iron")?70:60,true,false,35,.15,"spawn_9b5fbb9:metal_rivet",2);
+                skilled(metal+"_"+piece,blank,1,out,1,2000,"anvil",Skill.SMITHING,metal.equals("forged_iron")?14:12,true,false,35,.15,"spawn_9b5fbb9:metal_rivet",2);
             }
         }
-        for(String metal:new String[]{"copper","iron"}){String blank="spawn_9b5fbb9:"+metal+"_spear_blank";skilled("forge_"+metal+"_spear_blank","minecraft:"+metal+"_ingot",3,blank,1,1200,"forge",Skill.SMITHING,0,true,true,15,.15,"",0);skilled("forge_"+metal+"_spear",blank,1,"minecraft:"+metal+"_spear",1,1600,"anvil",Skill.SMITHING,metal.equals("copper")?20:60,true,false,25,.15,"spawn_9b5fbb9:cordage",1);}
+        for(String metal:new String[]{"copper","iron"}){String blank="spawn_9b5fbb9:"+metal+"_spear_blank";skilled("forge_"+metal+"_spear_blank","minecraft:"+metal+"_ingot",3,blank,1,1200,"forge",Skill.SMITHING,0,true,true,15,.15,"",0);skilled("forge_"+metal+"_spear",blank,1,"minecraft:"+metal+"_spear",1,1600,"anvil",Skill.SMITHING,metal.equals("copper")?4:12,true,false,25,.15,"spawn_9b5fbb9:cordage",1);}
         skilled("forge_shield_blank","minecraft:iron_ingot",1,"spawn_9b5fbb9:shield_blank",1,1000,"forge",Skill.SMITHING,0,true,true,15,.15,"",0);
         skilled("forge_crossbow_blank","minecraft:iron_ingot",1,"spawn_9b5fbb9:crossbow_blank",1,1200,"forge",Skill.SMITHING,0,true,true,15,.15,"",0);
         for(String plank:new String[]{"oak_planks","acacia_planks","bamboo_planks","birch_planks","cherry_planks","crimson_planks","dark_oak_planks","jungle_planks","mangrove_planks","pale_oak_planks","poplar_planks","spruce_planks","warped_planks"}){
-            skilled(plank.equals("oak_planks")?"shield":"shield_with_"+plank,"spawn_9b5fbb9:shield_blank",1,"minecraft:shield",1,1600,"anvil",Skill.SMITHING,60,true,false,25,.15,"minecraft:"+plank,6);
-            skilled(plank.equals("oak_planks")?"crossbow_stock":"crossbow_stock_from_"+plank,"minecraft:"+plank,3,"spawn_9b5fbb9:crossbow_stock",1,1200,"loom",Skill.WEAVING,10,true,false,15,.1,"spawn_9b5fbb9:cordage",2);
+            skilled(plank.equals("oak_planks")?"shield":"shield_with_"+plank,"spawn_9b5fbb9:shield_blank",1,"minecraft:shield",1,1600,"anvil",Skill.SMITHING,12,true,false,25,.15,"minecraft:"+plank,6);
+            skilled(plank.equals("oak_planks")?"crossbow_stock":"crossbow_stock_from_"+plank,"minecraft:"+plank,3,"spawn_9b5fbb9:crossbow_stock",1,1200,"loom",Skill.CONSTRUCTION,2,true,false,15,.1,"spawn_9b5fbb9:cordage",2);
         }
-        skilled("crossbow","spawn_9b5fbb9:crossbow_blank",1,"minecraft:crossbow",1,2000,"anvil",Skill.SMITHING,60,true,false,30,.15,"spawn_9b5fbb9:crossbow_stock",1);
+        skilled("crossbow","spawn_9b5fbb9:crossbow_blank",1,"minecraft:crossbow",1,2000,"anvil",Skill.SMITHING,12,true,false,30,.15,"spawn_9b5fbb9:crossbow_stock",1);
         for(String utility:new String[]{"shears","bucket","flint_and_steel","spyglass","brush"}){
             boolean copper=utility.equals("spyglass")||utility.equals("brush");int ingots=utility.equals("bucket")?3:utility.equals("shears")||utility.equals("spyglass")?2:1;String blank="spawn_9b5fbb9:"+utility+"_blank";
             skilled("forge_"+utility+"_blank","minecraft:"+(copper?"copper":"iron")+"_ingot",ingots,blank,1,1000,"forge",Skill.SMITHING,0,true,true,15,.15,"",0);
             String second=utility.equals("flint_and_steel")?"minecraft:flint":utility.equals("spyglass")?"minecraft:amethyst_shard":utility.equals("brush")?"spawn_9b5fbb9:brush_bundle":"spawn_9b5fbb9:metal_rivet";
-            skilled(utility,blank,1,"minecraft:"+utility,1,1400,"anvil",Skill.SMITHING,copper?20:60,true,false,25,.15,second,utility.equals("bucket")?2:1);
+            skilled(utility,blank,1,"minecraft:"+utility,1,1400,"anvil",Skill.SMITHING,copper?4:12,true,false,25,.15,second,utility.equals("bucket")?2:1);
         }
         for(String color:new String[]{"white","orange","magenta","light_blue","yellow","lime","pink","gray","light_gray","cyan","purple","blue","brown","green","red","black"})skilled(color.equals("white")?"spin_wool":"spin_"+color+"_wool","minecraft:"+color+"_wool",1,"spawn_9b5fbb9:yarn",4,800,"loom",Skill.WEAVING,0,true,false,10,.1,"",0);
         skilled("weave_wool_cloth","spawn_9b5fbb9:yarn",4,"spawn_9b5fbb9:wool_cloth",1,1000,"loom",Skill.WEAVING,0,true,false,12,.1,"",0);
         skilled("weave_fiber_cloth","spawn_9b5fbb9:cordage",3,"spawn_9b5fbb9:fiber_cloth",1,1000,"loom",Skill.WEAVING,0,true,false,12,.1,"",0);
-        for(String fabric:new String[]{"fiber","wool"})for(String piece:new String[]{"shirt","pants","jacket","shoes"}){int cloth=piece.equals("jacket")?6:piece.equals("shoes")?2:4;int minimum=piece.equals("jacket")?20:piece.equals("pants")?10:0;skilled("weave_"+fabric+"_"+piece,"spawn_9b5fbb9:"+fabric+"_cloth",cloth,"spawn_9b5fbb9:"+fabric+"_"+piece,1,piece.equals("jacket")?1600:1000,"loom",Skill.WEAVING,minimum,true,false,20,.1,"spawn_9b5fbb9:cordage",1);}
+        for(String fabric:new String[]{"fiber","wool"})for(String piece:new String[]{"shirt","pants","jacket","shoes"}){int cloth=piece.equals("jacket")?6:piece.equals("shoes")?2:4;int minimum=piece.equals("jacket")?4:piece.equals("pants")?2:0;skilled("weave_"+fabric+"_"+piece,"spawn_9b5fbb9:"+fabric+"_cloth",cloth,"spawn_9b5fbb9:"+fabric+"_"+piece,1,piece.equals("jacket")?1600:1000,"loom",Skill.WEAVING,minimum,true,false,20,.1,"spawn_9b5fbb9:cordage",1);}
+        // Pre-industrial routes into gunpowder weapons, wire and the first machine parts. Mechanised
+        // equivalents live in Industry; these hand processes are what makes the first works possible.
+        skilled("smelt_galena","spawn_9b5fbb9:galena",2,"spawn_9b5fbb9:lead_ingot",1,2000,"bloomery",null,0,false,true,0,.05,"",0);
+        recipe("burn_lime","spawn_9b5fbb9:limestone",1,"spawn_9b5fbb9:quicklime",1,2000,false,"",0);
+        recipe("melt_glass","minecraft:sand",1,"minecraft:glass",1,2000,false,"",0);
+        recipe("fire_chip_package","minecraft:clay_ball",1,"spawn_9b5fbb9:chip_package",4,1500,false,"",0);
+        recipe("burn_ash","minecraft:birch_log",1,"spawn_9b5fbb9:wood_ash",3,1000,false,"",0);
+        recipe("ash_from_charcoal","minecraft:charcoal",2,"spawn_9b5fbb9:wood_ash",1,600,false,"",0);
+        skilled("draw_copper_wire","minecraft:copper_ingot",1,"spawn_9b5fbb9:copper_wire",16,1200,"anvil",Skill.SMITHING,6,true,false,20,.2,"",0);
+        skilled("forge_musket_barrel_blank","minecraft:iron_ingot",3,"spawn_9b5fbb9:musket_barrel_blank",1,1600,"forge",Skill.SMITHING,0,true,true,20,.15,"",0);
+        skilled("musket_barrel","spawn_9b5fbb9:musket_barrel_blank",1,"spawn_9b5fbb9:musket_barrel",1,2400,"anvil",Skill.SMITHING,14,true,false,35,.2,"",0);
+        skilled("forge_musket_lock_blank","minecraft:iron_ingot",1,"spawn_9b5fbb9:musket_lock_blank",1,1000,"forge",Skill.SMITHING,0,true,true,15,.15,"",0);
+        skilled("musket_lock","spawn_9b5fbb9:musket_lock_blank",1,"spawn_9b5fbb9:musket_lock",1,2000,"anvil",Skill.SMITHING,14,true,false,35,.2,"minecraft:flint",1);
+        skilled("forge_machine_parts_blank","minecraft:iron_ingot",2,"spawn_9b5fbb9:machine_parts_blank",1,1600,"forge",Skill.SMITHING,0,true,true,20,.15,"",0);
+        skilled("machine_parts","spawn_9b5fbb9:machine_parts_blank",1,"spawn_9b5fbb9:machine_parts",1,3000,"anvil",Skill.SMITHING,14,true,false,40,.2,"spawn_9b5fbb9:metal_rivet",2);
+        skilled("cast_musket_balls","spawn_9b5fbb9:lead_ingot",1,"spawn_9b5fbb9:musket_ball",12,600,"forge",Skill.SMITHING,0,true,true,10,.1,"",0);
+        skilled("forge_round_shot","minecraft:iron_ingot",2,"spawn_9b5fbb9:round_shot",1,1200,"forge",Skill.SMITHING,4,true,true,15,.15,"",0);
+        skilled("dress_stone_shot","minecraft:cobblestone",4,"spawn_9b5fbb9:stone_shot",1,1200,"anvil",Skill.MINING,2,true,false,15,.15,"",0);
+        skilled("solder","spawn_9b5fbb9:tin_ingot",3,"spawn_9b5fbb9:solder",16,800,"forge",Skill.SMITHING,2,true,true,10,.1,"spawn_9b5fbb9:lead_ingot",2);
         DEFAULT_RECIPES=Collections.unmodifiableMap(new LinkedHashMap<>(RECIPES));RECIPES=DEFAULT_RECIPES;
     }
     private static void recipe(String key,String input,int count,String output,int amount,long ticks,boolean forge,String second,int secondCount){RECIPES.put(key,new Recipe(input,count,output,amount,ticks,forge,second,secondCount));}
     private static void skilled(String key,String input,int count,String output,int amount,long ticks,String station,Skill skill,int minimum,boolean manual,boolean heated,double xp,double manipulation,String second,int secondCount){RECIPES.put(key,new Recipe(input,count,output,amount,ticks,station.equals("forge"),second,secondCount,station,skill,minimum,manual,heated,xp,manipulation));}
     public static boolean requiresStation(ItemStack stack){String id=BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();return id.equals("spawn_9b5fbb9:fired_pot")||id.equals("spawn_9b5fbb9:unfired_pot")||id.equals("spawn_9b5fbb9:metal_rivet")||id.equals("spawn_9b5fbb9:crossbow_stock")||id.endsWith("_blank")||textile(id)||smithMinimum(id)>0;}
     private static boolean textile(String id){return id.equals("spawn_9b5fbb9:yarn")||id.equals("spawn_9b5fbb9:wool_cloth")||id.equals("spawn_9b5fbb9:fiber_cloth")||id.startsWith("spawn_9b5fbb9:wool_")||id.startsWith("spawn_9b5fbb9:fiber_")&&Set.of("shirt","pants","jacket","shoes").stream().anyMatch(id::endsWith);}
-    private static int smithMinimum(String id){String path=Identifier.parse(id).getPath();if(Set.of("shield","crossbow","shears","bucket","flint_and_steel").contains(path))return 60;if(path.equals("spyglass")||path.equals("brush"))return 20;boolean armor=Set.of("helmet","chestplate","leggings","boots","horse_armor","nautilus_armor").stream().anyMatch(piece->path.endsWith("_"+piece));boolean tool=Set.of("pickaxe","axe","hoe","shovel","sword","spear").stream().anyMatch(piece->path.endsWith("_"+piece));if(!armor&&!tool)return 0;int level=path.startsWith("copper_")?20:path.startsWith("bronze_")?40:path.startsWith("iron_")||path.startsWith("forged_iron_")?60:path.startsWith("golden_")||path.startsWith("diamond_")||path.startsWith("chainmail_")?60:0;return armor&&level>0?path.startsWith("iron_")||path.startsWith("forged_iron_")?70:60:level;}
+    private static int smithMinimum(String id){String path=Identifier.parse(id).getPath();if(Set.of("shield","crossbow","shears","bucket","flint_and_steel").contains(path))return 12;if(path.equals("spyglass")||path.equals("brush"))return 4;boolean armor=Set.of("helmet","chestplate","leggings","boots","horse_armor","nautilus_armor").stream().anyMatch(piece->path.endsWith("_"+piece));boolean tool=Set.of("pickaxe","axe","hoe","shovel","sword","spear").stream().anyMatch(piece->path.endsWith("_"+piece));if(!armor&&!tool)return 0;int level=path.startsWith("copper_")?4:path.startsWith("bronze_")?8:path.startsWith("iron_")||path.startsWith("forged_iron_")?12:path.startsWith("golden_")||path.startsWith("diamond_")||path.startsWith("chainmail_")?12:0;return armor&&level>0?path.startsWith("iron_")||path.startsWith("forged_iron_")?14:12:level;}
     private static void validateRequirements(Recipe r){
         if((r.station.equals("loom")||r.station.equals("anvil"))&&(!r.manual||r.heated))throw new IllegalArgumentException("Loom/anvil require unheated manual work");
         if(r.practice>0&&(!r.manual||r.skill==null))throw new IllegalArgumentException("Practice requires actual manual skilled work");
@@ -104,9 +126,9 @@ public final class Production {
         if(r.output.equals("spawn_9b5fbb9:fired_pot")&&(!r.input.equals("minecraft:clay")||r.count<1||!r.station.equals("kiln")||!r.manual||!r.heated||r.skill!=Skill.POTTERY||r.minimumManipulation<.25))throw new IllegalArgumentException("Pottery needs a clay block, tended fueled kiln and25% manipulation");
         int minimum=smithMinimum(r.output);String outPath=Identifier.parse(r.output).getPath();String expectedBlank="spawn_9b5fbb9:"+(outPath.startsWith("iron_")&&!outPath.equals("iron_spear")?"forged_"+outPath:outPath)+"_blank";
         if(minimum>0&&(!r.station.equals("anvil")||!r.manual||r.skill!=Skill.SMITHING||r.minimumSkill<minimum||!r.input.equals(expectedBlank)))throw new IllegalArgumentException("Finished metal equipment needs a practiced smith, matching blank and anvil");
-        int weavingMinimum=r.output.endsWith("_jacket")?20:r.output.endsWith("_pants")?10:0;
+        int weavingMinimum=r.output.endsWith("_jacket")?4:r.output.endsWith("_pants")?2:0;
         if(textile(r.output)&&(!r.station.equals("loom")||!r.manual||r.heated||r.skill!=Skill.WEAVING||r.minimumSkill<weavingMinimum))throw new IllegalArgumentException("Textiles require practiced manual loom work");
-        if(r.output.equals("spawn_9b5fbb9:crossbow_stock")&&(!r.station.equals("loom")||!r.manual||r.heated||r.skill!=Skill.WEAVING||r.minimumSkill<10))throw new IllegalArgumentException("Crossbow stock binding needs weaving10 at a loom");
+        if(r.output.equals("spawn_9b5fbb9:crossbow_stock")&&(!r.station.equals("loom")||!r.manual||r.heated||r.skill!=Skill.CONSTRUCTION||r.minimumSkill<2))throw new IllegalArgumentException("Crossbow stock assembly needs construction2 at a loom");
     }
     private static String id(ItemStack stack){return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();}
     public static void init(){NeoForge.EVENT_BUS.addListener(Production::interact);NeoForge.EVENT_BUS.addListener(Production::stationDrops);}

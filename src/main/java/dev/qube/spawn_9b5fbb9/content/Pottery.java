@@ -70,6 +70,9 @@ public final class Pottery {
             event.setCanceled(true);String operation=player.getOffhandItem().is(SurvivalContent.item("pot_lid"))?"seal":player.getOffhandItem().isEmpty()?"retrieve":"store";player.sendOverlayMessage(Component.literal(action(player,operation)));return;
         }
         if(!pot.getOrDefault(DataComponents.CONTAINER,ItemContainerContents.EMPTY).itemCopies().allMatch(ItemStack::isEmpty))return;
+        if(dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.irrigable(level,event.getPos())&&waterUnits(pot)>0){
+            event.setCanceled(true);player.sendOverlayMessage(Component.literal(dev.qube.spawn_9b5fbb9.controllers.WorldActions.start(player,"irrigate",event.getPos()).message()));return;
+        }
         if(level.getFluidState(event.getPos()).is(FluidTags.WATER)||level.getFluidState(event.getPos().relative(event.getFace()==null?net.minecraft.core.Direction.UP:event.getFace())).is(FluidTags.WATER)){
             event.setCanceled(true);player.sendOverlayMessage(Component.literal(action(player,"fill")));
         }else if(heat(level,event.getPos())&&waterUnits(pot)>0&&!tag.getBooleanOr("sealed",false)){

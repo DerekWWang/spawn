@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "minecraft": "26.3",
+  "neoforgeMinimum": "26.3.0.77",
+  "profile": "tectonic",
+  "artifacts": [
+    {
+      "name": "tectonic",
+      "version": "3.0.32",
+      "filename": "tectonic-3.0.32-neoforge-26.3.jar",
+      "url": "https://cdn.modrinth.com/data/lWDHr9jE/versions/tzhzB8SC/tectonic-3.0.32-neoforge-26.3.jar",
+      "sha512": "26f42f0e093371a731a86da96bf5ac693f0c563684b0542c9b83799519782ce86513df15bbe2bcce0e58802e1f146347f7b354ea0f1ebad8254e239a6333e866",
+      "license": "MIT",
+      "bundled": "Apollib 1.2.5"
+    },
+    {
+      "name": "lithostitched",
+      "version": "2.0.6",
+      "filename": "lithostitched-2.0.6-neoforge-26.3.jar",
+      "url": "https://cdn.modrinth.com/data/XaDC71GB/versions/sQznZoKs/lithostitched-2.0.6-neoforge-26.3.jar",
+      "sha512": "0d085656fae32b09c2ef338f351eff3819349e7ad8ff895d34e9f763619fee7ca2bcb99d5443dc077db014088873dbdb661edeee45d8b0034ef39e86a877972c",
+      "license": "MIT"
+    }
+  ]
+}

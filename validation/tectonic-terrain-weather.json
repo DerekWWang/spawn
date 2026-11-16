@@ -1,0 +1,132 @@
+{
+  "steps": [
+    {
+      "camera": {
+        "pos": [
+          4120,
+          160,
+          2080
+        ],
+        "look_at": [
+          4096,
+          125,
+          2048
+        ]
+      }
+    },
+    {
+      "step": 40
+    },
+    {
+      "run": "survival climate"
+    },
+    {
+      "as": "p2",
+      "run": "gamemode spectator @s"
+    },
+    {
+      "as": "p2",
+      "camera": {
+        "pos": [
+          4096,
+          90,
+          0
+        ],
+        "look_at": [
+          4096,
+          62,
+          0
+        ]
+      }
+    },
+    {
+      "step": 20
+    },
+    {
+      "as": "p2",
+      "run": "survival climate"
+    },
+    {
+      "run": "survival climate"
+    },
+    {
+      "sync": {
+        "entities": "@a[name=Dev]",
+        "fields": [
+          "getSpawnSurvivalForaging",
+          "getSpawnSurvivalMining"
+        ]
+      }
+    },
+    {
+      "shot": "tectonic-highland-a",
+      "hud": true
+    },
+    {
+      "camera": {
+        "pos": [
+          4074,
+          155,
+          2070
+        ],
+        "look_at": [
+          4096,
+          125,
+          2048
+        ]
+      }
+    },
+    {
+      "step": 40
+    },
+    {
+      "shot": "tectonic-highland-b",
+      "hud": true
+    },
+    {
+      "camera": {
+        "pos": [
+          4120,
+          90,
+          24
+        ],
+        "look_at": [
+          4096,
+          62,
+          0
+        ]
+      }
+    },
+    {
+      "step": 40
+    },
+    {
+      "run": "survival climate"
+    },
+    {
+      "shot": "tectonic-regional-rain-a",
+      "hud": true
+    },
+    {
+      "camera": {
+        "pos": [
+          4072,
+          80,
+          12
+        ],
+        "look_at": [
+          4096,
+          62,
+          0
+        ]
+      }
+    },
+    {
+      "step": 40
+    },
+    {
+      "shot": "tectonic-regional-rain-b",
+      "hud": true
+    }
+  ]
+}

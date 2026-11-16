@@ -12,4 +12,10 @@ public interface SurvivalView {
     double getSpawnSurvivalFarming();
     double getSpawnSurvivalForaging();
     double getSpawnSurvivalHunting();
+
+    double getSpawnSurvivalMining();
+    double getSpawnSurvivalConstruction();
+    double getSpawnSurvivalCooking();
+    double getSpawnSurvivalAnimals();
+    double getSpawnSurvivalMedicine();
 }

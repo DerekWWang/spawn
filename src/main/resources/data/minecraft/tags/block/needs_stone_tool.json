@@ -1,5 +1,11 @@
 {
+  "replace": false,
   "values": [
-    "spawn_9b5fbb9:tin_ore"
+    "spawn_9b5fbb9:tin_ore",
+    "spawn_9b5fbb9:malachite_ore",
+    "spawn_9b5fbb9:cassiterite_ore",
+    "spawn_9b5fbb9:hematite_ore",
+    "spawn_9b5fbb9:galena_ore",
+    "spawn_9b5fbb9:pyrite_ore"
   ]
 }

@@ -1,0 +1,68 @@
+{
+  "steps": [
+    {
+      "run": [
+        "gamemode survival @s",
+        "survival debug_passion @s foraging interested"
+      ]
+    },
+    {
+      "camera": {
+        "pos": [
+          -4.5,
+          -60,
+          -1.5
+        ],
+        "look_at": [
+          -5,
+          -60,
+          -3
+        ]
+      }
+    },
+    {
+      "run": "survival forage -5 -60 -3"
+    },
+    {
+      "step": 160
+    },
+    {
+      "run": [
+        "survival query @s",
+        "gamemode spectator @s"
+      ]
+    },
+    {
+      "sync": {
+        "entities": "@a[name=Dev]",
+        "fields": [
+          "getSpawnSurvivalMining",
+          "getSpawnSurvivalConstruction",
+          "getSpawnSurvivalForaging"
+        ]
+      }
+    },
+    {
+      "run": "survival skills"
+    },
+    {
+      "wait": 5
+    },
+    {
+      "shot": "earned-skills-before-reconnect",
+      "hud": true
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 3
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 3
+    }
+  ]
+}

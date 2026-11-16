@@ -3,3 +3,6 @@ run/
 .gradle/
 .qube/worktrees/
 reference/
+/.agents/skills/qube/
+/.claude/skills/qube/
+.gstack/

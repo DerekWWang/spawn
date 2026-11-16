@@ -119,6 +119,18 @@ configurations {
 }
 
 dependencies {
+    // Explicit development profile. Production servers install these pinned mods
+    // separately; ordinary builds do not change an existing world's generator.
+    if (providers.gradleProperty('tectonicProfile').orElse('false').get().toBoolean()) {
+        def manifest = new groovy.json.JsonSlurper().parse(file('config/tectonic-runtime.json'))
+        manifest.artifacts.each { artifact ->
+            def runtimeJar = file("build/tectonic-runtime/${artifact.filename}")
+            if (!runtimeJar.exists()) throw new GradleException('Run tools/prepare-tectonic-runtime.ps1 before enabling tectonicProfile.')
+            def digest = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance('SHA-512').digest(runtimeJar.bytes))
+            if (digest != artifact.sha512) throw new GradleException("Tectonic runtime checksum mismatch: ${artifact.filename}")
+            localRuntime files(runtimeJar)
+        }
+    }
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

@@ -47,6 +47,8 @@ public final class SurvivalApi {
         entity.getPersistentData().putByteArray(KEY,state.encode());
     }
     public static void enroll(LivingEntity entity){entity.getPersistentData().putBoolean("survivalHumanoid",true);state(entity);}
+    public static com.google.gson.JsonObject resources(LivingEntity actor,int radius){return dev.qube.spawn_9b5fbb9.controllers.ResourceActions.discover(actor,radius);}
+    public static ActionResult prospect(LivingEntity actor,net.minecraft.core.BlockPos pos){return dev.qube.spawn_9b5fbb9.controllers.ResourceActions.prospect(actor,pos);}
     public static String inspect(LivingEntity entity){
         SurvivalState s=state(entity);
         return String.format(Locale.ROOT,"%s | Recreation %.0f (%.1f/%.1fh) | Hunger %.1f | Thirst %.1f | Temperature %.1f C | Health %.1f/%.1f | Move %.0f%% Manipulation %.0f%% Mental %.0f%% | %s",
@@ -119,7 +121,7 @@ public final class SurvivalApi {
                 SurvivalState illness=state(patient);
                 if(state.manipulation()<.15)return fail("Hands cannot apply treatment");
                 if(!BuiltInRegistries.ITEM.getKey(held.getItem()).getNamespace().equals("spawn_9b5fbb9")||!illness.treat(id))return fail("Hold a suitable treatment; condition or dose does not permit this item");
-                held.shrink(1);save(patient,illness);return new ActionResult(true,"Treatment applied to "+patient.getName().getString());
+                    held.shrink(1);save(patient,illness);SkillApi.award(actor,SkillSet.Skill.MEDICINE,100);return new ActionResult(true,"Treatment applied to "+patient.getName().getString());
             }
             case "clothe" -> {
                 LivingEntity wearer=target==null?actor:target;

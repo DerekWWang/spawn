@@ -1,0 +1,178 @@
+{
+  "seeds": [
+    {
+      "seed": 42,
+      "districts": 4096,
+      "distribution": {
+        "NONE": 801,
+        "COPPER": 1152,
+        "IRON": 1013,
+        "TIN": 454,
+        "COAL": 676
+      },
+      "samples": [
+        {
+          "mineral": "NONE",
+          "x": -366,
+          "y": 38,
+          "z": 85,
+          "hostVolume": 0,
+          "oreCandidates": 0,
+          "grade": 0.27484655545335646
+        },
+        {
+          "mineral": "COPPER",
+          "x": -320,
+          "y": 57,
+          "z": -166,
+          "hostVolume": 4717,
+          "oreCandidates": 1255,
+          "grade": 0.28224013953302873
+        },
+        {
+          "mineral": "IRON",
+          "x": -325,
+          "y": 52,
+          "z": 454,
+          "hostVolume": 2014,
+          "oreCandidates": 436,
+          "grade": 0.202780160971145
+        },
+        {
+          "mineral": "TIN",
+          "x": -422,
+          "y": 38,
+          "z": -320,
+          "hostVolume": 3838,
+          "oreCandidates": 774,
+          "grade": 0.19795663592052015
+        },
+        {
+          "mineral": "COAL",
+          "x": 150,
+          "y": 57,
+          "z": 694,
+          "hostVolume": 2299,
+          "oreCandidates": 436,
+          "grade": 0.18976440647958068
+        }
+      ]
+    },
+    {
+      "seed": 918273,
+      "districts": 4096,
+      "distribution": {
+        "NONE": 843,
+        "COPPER": 1148,
+        "IRON": 999,
+        "TIN": 483,
+        "COAL": 623
+      },
+      "samples": [
+        {
+          "mineral": "NONE",
+          "x": -411,
+          "y": 22,
+          "z": 129,
+          "hostVolume": 0,
+          "oreCandidates": 0,
+          "grade": 0.17924241136567556
+        },
+        {
+          "mineral": "COPPER",
+          "x": -363,
+          "y": 36,
+          "z": -123,
+          "hostVolume": 1572,
+          "oreCandidates": 429,
+          "grade": 0.2783213571708101
+        },
+        {
+          "mineral": "IRON",
+          "x": -313,
+          "y": 36,
+          "z": -339,
+          "hostVolume": 2799,
+          "oreCandidates": 603,
+          "grade": 0.22489212155227944
+        },
+        {
+          "mineral": "TIN",
+          "x": -91,
+          "y": 40,
+          "z": -397,
+          "hostVolume": 2844,
+          "oreCandidates": 639,
+          "grade": 0.23111871173815146
+        },
+        {
+          "mineral": "COAL",
+          "x": -194,
+          "y": 48,
+          "z": 588,
+          "hostVolume": 1693,
+          "oreCandidates": 514,
+          "grade": 0.291216499613134
+        }
+      ]
+    },
+    {
+      "seed": 20261107,
+      "districts": 4096,
+      "distribution": {
+        "NONE": 847,
+        "COPPER": 1193,
+        "IRON": 920,
+        "TIN": 476,
+        "COAL": 660
+      },
+      "samples": [
+        {
+          "mineral": "NONE",
+          "x": -402,
+          "y": 17,
+          "z": 601,
+          "hostVolume": 0,
+          "oreCandidates": 0,
+          "grade": 0.26468711442361204
+        },
+        {
+          "mineral": "COPPER",
+          "x": -381,
+          "y": 42,
+          "z": -352,
+          "hostVolume": 4626,
+          "oreCandidates": 1222,
+          "grade": 0.25981441081939033
+        },
+        {
+          "mineral": "IRON",
+          "x": -422,
+          "y": 47,
+          "z": 164,
+          "hostVolume": 2027,
+          "oreCandidates": 442,
+          "grade": 0.22382777580901958
+        },
+        {
+          "mineral": "TIN",
+          "x": -323,
+          "y": 31,
+          "z": 462,
+          "hostVolume": 3755,
+          "oreCandidates": 568,
+          "grade": 0.1581434257481101
+        },
+        {
+          "mineral": "COAL",
+          "x": 119,
+          "y": 68,
+          "z": -152,
+          "hostVolume": 2331,
+          "oreCandidates": 629,
+          "grade": 0.26923970596226066
+        }
+      ]
+    }
+  ]
+}

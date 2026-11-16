@@ -17,8 +17,11 @@ import net.minecraft.world.phys.shapes.*;
 public class GroundResourceBlock extends Block {
     private final String resource;
     public GroundResourceBlock(Properties properties,String resource){super(properties);this.resource=resource;}
-    @Override protected VoxelShape getShape(BlockState state,BlockGetter level,BlockPos pos,CollisionContext context){return Block.box(3,0,3,13,4,13);}
-    @Override protected boolean canSurvive(BlockState state,LevelReader level,BlockPos pos){return level.getBlockState(pos.below()).isFaceSturdy(level,pos.below(),net.minecraft.core.Direction.UP);}
+    @Override protected VoxelShape getShape(BlockState state,BlockGetter level,BlockPos pos,CollisionContext context){int height=resource.equals("fallen_sticks")?1:resource.equals("loose_stone")?3:resource.equals("wild_maize")?16:resource.equals("wild_wheat")||resource.equals("wild_rice")?14:12;return Block.box(2,0,2,14,height,14);}
+    public String resource(){return resource;}
+    public boolean harvestable(LivingEntity actor){int season=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.season(SurvivalApi.calendar((ServerLevel)actor.level()));return switch(resource){case "wild_bramble","wild_rice","wild_maize","wild_pumpkin","wild_melon"->season==1||season==2;case "wild_flax","wild_yarrow"->season!=3;case "wild_wheat"->season==0||season==2;default->true;};}
+    @Override protected boolean canSurvive(BlockState state,LevelReader level,BlockPos pos){var support=level.getBlockState(pos.below());return resource.equals("loose_stone")||resource.equals("fallen_sticks")?support.isFaceSturdy(level,pos.below(),net.minecraft.core.Direction.UP):support.is(Blocks.GRASS_BLOCK)||support.is(net.minecraft.tags.BlockTags.DIRT)||support.is(Blocks.FARMLAND)||support.is(Blocks.MUD);}
+    @Override protected BlockState updateShape(BlockState state,LevelReader level,ScheduledTickAccess ticks,BlockPos pos,net.minecraft.core.Direction direction,BlockPos neighborPos,BlockState neighborState,net.minecraft.util.RandomSource random){return canSurvive(state,level,pos)?state:Blocks.AIR.defaultBlockState();}
     @Override protected InteractionResult useWithoutItem(BlockState state,Level level,BlockPos pos,Player player,BlockHitResult hit){
         if(!level.isClientSide())player.sendOverlayMessage(net.minecraft.network.chat.Component.literal(gather(player,pos).message()));
         return InteractionResult.SUCCESS;
@@ -26,15 +29,26 @@ public class GroundResourceBlock extends Block {
     public SurvivalApi.ActionResult gather(LivingEntity actor,BlockPos pos){return WorldActions.start(actor,"gather",pos);}
     /** Only the timed server job may commit; no caller-provided inventory or Player proxy. */
     public boolean completeGather(LivingEntity actor,BlockPos pos){
-        if(!WorldActions.completing(actor)||!(actor.level() instanceof ServerLevel level)||!actor.isAlive()||actor.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>16||!level.getBlockState(pos).is(this))return false;
-            if(resource.equals("wild")) {
-                for(String id:new String[]{"plant_fiber","rice_seeds","maize_seeds","fiber_seeds","medicinal_seeds"})Block.popResource(level,pos,new ItemStack(SurvivalContent.item(id),2));
-                int season=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.season(SurvivalApi.calendar(level));if(season==1||season==2)Block.popResource(level,pos,new ItemStack(SurvivalContent.item("wild_berries"),2));
-                for(Item crop:new Item[]{Items.CARROT,Items.POTATO,Items.BEETROOT_SEEDS,Items.MELON_SEEDS,Items.PUMPKIN_SEEDS})Block.popResource(level,pos,new ItemStack(crop,2));
-                Block.popResource(level,pos,new ItemStack(Items.WHEAT_SEEDS,2));
-                Block.popResource(level,pos,new ItemStack(Items.STICK,2));
-            }else{Block.popResource(level,pos,new ItemStack(SurvivalContent.item(resource),3));Block.popResource(level,pos,new ItemStack(Items.STICK));}
+        if(!WorldActions.completing(actor)||!(actor.level() instanceof ServerLevel level)||!actor.isAlive()||actor.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>16||!level.getBlockState(pos).is(this)||!harvestable(actor))return false;
+            switch(resource){
+                case "wild"->drop(level,pos,"plant_fiber",2);
+                case "loose_stone"->drop(level,pos,"loose_stone",3);
+                case "fallen_sticks"->Block.popResource(level,pos,new ItemStack(Items.STICK,2));
+                case "wild_flax"->{drop(level,pos,"flax_fiber",2);drop(level,pos,"flax_seeds",2);}
+                case "wild_yarrow"->{drop(level,pos,"yarrow_leaves",2);drop(level,pos,"yarrow_seeds",2);}
+                case "wild_bramble"->{drop(level,pos,"blackberries",3);drop(level,pos,"bramble_seeds",1);}
+                case "wild_rice"->{drop(level,pos,"rice_grain",2);drop(level,pos,"rice_seeds",2);}
+                case "wild_maize"->{drop(level,pos,"maize",1);drop(level,pos,"maize_seeds",2);}
+                case "wild_wheat"->{Block.popResource(level,pos,new ItemStack(Items.WHEAT));Block.popResource(level,pos,new ItemStack(Items.WHEAT_SEEDS,2));}
+                case "wild_carrot"->Block.popResource(level,pos,new ItemStack(Items.CARROT,2));
+                case "wild_potato"->Block.popResource(level,pos,new ItemStack(Items.POTATO,2));
+                case "wild_beetroot"->{Block.popResource(level,pos,new ItemStack(Items.BEETROOT));Block.popResource(level,pos,new ItemStack(Items.BEETROOT_SEEDS,2));}
+                case "wild_pumpkin"->Block.popResource(level,pos,new ItemStack(Items.PUMPKIN_SEEDS,2));
+                case "wild_melon"->{Block.popResource(level,pos,new ItemStack(Items.MELON_SLICE,2));Block.popResource(level,pos,new ItemStack(Items.MELON_SEEDS));}
+                default->{return false;}
+            }
             level.removeBlock(pos,false);
         return true;
     }
+    private static void drop(ServerLevel level,BlockPos pos,String id,int count){Block.popResource(level,pos,new ItemStack(SurvivalContent.item(id),count));}
 }

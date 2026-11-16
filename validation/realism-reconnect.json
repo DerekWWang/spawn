@@ -1,0 +1,39 @@
+{
+  "steps": [
+    {
+      "run": "survival query @s"
+    },
+    {
+      "sync": {
+        "entities": "@a[name=Dev]",
+        "fields": [
+          "getSpawnSurvivalMining",
+          "getSpawnSurvivalConstruction",
+          "getSpawnSurvivalForaging"
+        ]
+      }
+    },
+    {
+      "run": "survival skills"
+    },
+    {
+      "wait": 5
+    },
+    {
+      "shot": "earned-skills-after-reconnect",
+      "hud": true
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 3
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 3
+    }
+  ]
+}

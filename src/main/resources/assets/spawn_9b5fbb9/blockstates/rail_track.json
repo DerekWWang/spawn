@@ -1,0 +1,26 @@
+{
+  "variants": {
+    "axis=x,part=center": {
+      "model": "spawn_9b5fbb9:block/rail_track_center"
+    },
+    "axis=z,part=center": {
+      "model": "spawn_9b5fbb9:block/rail_track_center",
+      "y": 90
+    },
+    "axis=x,part=pos": {
+      "model": "spawn_9b5fbb9:block/rail_track_side"
+    },
+    "axis=x,part=neg": {
+      "model": "spawn_9b5fbb9:block/rail_track_side",
+      "y": 180
+    },
+    "axis=z,part=pos": {
+      "model": "spawn_9b5fbb9:block/rail_track_side",
+      "y": 270
+    },
+    "axis=z,part=neg": {
+      "model": "spawn_9b5fbb9:block/rail_track_side",
+      "y": 90
+    }
+  }
+}

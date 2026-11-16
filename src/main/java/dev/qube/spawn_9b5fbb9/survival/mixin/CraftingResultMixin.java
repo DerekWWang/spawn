@@ -9,5 +9,5 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ResultSlot.class)
 public abstract class CraftingResultMixin {
     @Inject(method="onTake",at=@At("TAIL"))
-    private void survival$nextJob(Player player,ItemStack output,CallbackInfo callback){CraftingGuard.completed(player);}
+    private void survival$nextJob(Player player,ItemStack output,CallbackInfo callback){CraftingGuard.completed(player,output);}
 }

@@ -16,13 +16,13 @@ public final class CraftingGuard {
         var meta=actor.getPersistentData();
         if(LaborGuard.worldBusy(actor)||LaborGuard.forgeBusy(actor)||actor.level().getGameTime()-meta.getLongOr("survivalManualWorkAt",Long.MIN_VALUE/2)<20)return;
         if(!(actor.containerMenu instanceof AbstractCraftingMenu menu)||menu.getResultSlot().getItem().isEmpty()){
-            meta.remove("survivalGridResult");meta.remove("survivalGridWork");return;
+            meta.remove("survivalGridResult");meta.remove("survivalGridWork");meta.remove("survivalGridExposure");return;
         }
         if(dev.qube.spawn_9b5fbb9.content.Production.requiresStation(menu.getResultSlot().getItem())){meta.remove("survivalGridResult");meta.remove("survivalGridWork");return;}
         var result=menu.getResultSlot().getItem();String key=BuiltInRegistries.ITEM.getKey(result.getItem())+"/"+result.getCount();
-        if(!key.equals(meta.getStringOr("survivalGridResult",""))){meta.putString("survivalGridResult",key);meta.putDouble("survivalGridWork",0);}
-        double work=meta.getDoubleOr("survivalGridWork",0),capacity=Math.min(state.mental(),state.manipulation());
-        if(work<REQUIRED&&capacity>.05){meta.putDouble("survivalGridWork",Math.min(REQUIRED,work+20*capacity));state.hunger=Math.max(0,state.hunger-.01);LaborGuard.worked(actor);}
+        if(!key.equals(meta.getStringOr("survivalGridResult",""))){meta.putString("survivalGridResult",key);meta.putDouble("survivalGridWork",0);meta.putLong("survivalGridExposure",0);}
+        double work=meta.getDoubleOr("survivalGridWork",0),capacity=SkillApi.manualRate(state,SkillApi.craftingSkill(result));
+        if(work<REQUIRED&&capacity>.05){long used=Math.min(20,(long)Math.ceil((REQUIRED-work)/capacity));meta.putDouble("survivalGridWork",Math.min(REQUIRED,work+used*capacity));meta.putLong("survivalGridExposure",Math.min(1000000,meta.getLongOr("survivalGridExposure",0)+used));state.hunger=Math.max(0,state.hunger-used*.0005);LaborGuard.worked(actor);}
     }
     public static boolean mayTake(Player player,Slot slot){
         if(!(player.level() instanceof ServerLevel)||SurvivalApi.exempt(player))return true;
@@ -37,6 +37,6 @@ public final class CraftingGuard {
         if(!ready)notice(player,"Handcrafting "+Math.round(player.getPersistentData().getDoubleOr("survivalGridWork",0))+"/100 — keep ingredients in place; work follows your capacities");
         return ready;
     }
-    public static void completed(Player player){if(player.level() instanceof ServerLevel){player.getPersistentData().putDouble("survivalGridWork",0);player.getPersistentData().remove("survivalGridResult");}}
+    public static void completed(Player player,net.minecraft.world.item.ItemStack output){if(player.level() instanceof ServerLevel){var meta=player.getPersistentData();long ticks=meta.getDoubleOr("survivalGridWork",0)>=REQUIRED?meta.getLongOr("survivalGridExposure",0):0;meta.putDouble("survivalGridWork",0);meta.remove("survivalGridResult");meta.remove("survivalGridExposure");var skill=SkillApi.craftingSkill(output);if(skill!=null)SkillApi.awardWork(player,skill,ticks,1);}}
     private static void notice(Player player,String text){if(player instanceof net.minecraft.server.level.ServerPlayer server&&server.connection!=null)player.sendOverlayMessage(Component.literal(text));}
 }

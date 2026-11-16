@@ -1,3 +1,6 @@
 {
-  "parent": "spawn_9b5fbb9:block/loose_stones"
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "spawn_9b5fbb9:item/loose_stones"
+  }
 }

@@ -1,0 +1,44 @@
+[
+  {
+    "world": "run\\qube\\tectonic-surveys-v2-h640-v2\\20261107\\run\\world",
+    "seedVerifiedViaRcon": 20261107,
+    "fullChunks": 90,
+    "resourceBlocks": {
+      "minecraft:clay": 6063,
+      "minecraft:granite": 1268,
+      "spawn_9b5fbb9:cassiterite_ore": 399,
+      "spawn_9b5fbb9:fallen_sticks": 44,
+      "spawn_9b5fbb9:limestone": 15191,
+      "spawn_9b5fbb9:loose_stones": 8
+    },
+    "plantBlocks": 0,
+    "unsupportedPlantBlocks": 0,
+    "plantCoverageFraction": 0.0,
+    "oreBounds": {
+      "spawn_9b5fbb9:cassiterite_ore": [
+        [
+          3927,
+          314,
+          2384
+        ],
+        [
+          3948,
+          335,
+          2406
+        ]
+      ]
+    },
+    "biomePaletteOccurrences": {
+      "minecraft:pale_garden": 2066,
+      "minecraft:deep_ocean": 1100,
+      "minecraft:meadow": 642,
+      "minecraft:deep_dark": 385,
+      "minecraft:lush_caves": 264,
+      "minecraft:dark_forest": 221,
+      "minecraft:birch_forest": 113,
+      "minecraft:river": 44,
+      "minecraft:plains": 44,
+      "minecraft:stony_shore": 44
+    }
+  }
+]

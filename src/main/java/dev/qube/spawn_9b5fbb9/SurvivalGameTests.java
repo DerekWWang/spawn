@@ -47,20 +47,20 @@ public final class SurvivalGameTests {
     private static void add(String name,Consumer<GameTestHelper> test){TESTS.put(name,FUNCTIONS.register(name,()->test));}
     private static void skillsRespawn(GameTestHelper h){
         var old=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);var fresh=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        var body=SurvivalApi.state(old);body.skills.practice(SkillSet.Skill.SMITHING,900);body.skills.practice(SkillSet.Skill.FARMING,100);body.injure(SurvivalState.Part.LEFT_ARM,90,false);SurvivalApi.save(old,body);
+        var body=SurvivalApi.state(old);body.skills.setLevel(SkillSet.Skill.SMITHING,12);body.skills.setLevel(SkillSet.Skill.FARMING,4);body.injure(SurvivalState.Part.LEFT_ARM,90,false);SurvivalApi.save(old,body);
         SurvivalEvents.clone(new net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone(fresh,old,true));
-        var returned=SurvivalApi.state(fresh);h.assertTrue(returned.skills.level(SkillSet.Skill.SMITHING)==60&&returned.skills.level(SkillSet.Skill.FARMING)==20,"respawn must retain independent learned skills");
+        var returned=SurvivalApi.state(fresh);h.assertTrue(returned.skills.level(SkillSet.Skill.SMITHING)==12&&returned.skills.level(SkillSet.Skill.FARMING)==4,"respawn must retain independent learned skills");
         h.assertTrue(returned.anatomy[0]==100,"respawn must reset injuries without resetting learned competence");h.succeed();
     }
     private static void skillsNativeHunt(GameTestHelper h){
         var hunter=h.spawn(EntityTypes.VILLAGER,1,2,1);hunter.setNoAi(true);var quarry=h.spawn(EntityTypes.COW,2,2,1);
         quarry.hurtServer(h.getLevel(),hunter.damageSources().mobAttack(hunter),100);
-        h.assertTrue(SurvivalApi.state(hunter).skills.level(SkillSet.Skill.HUNTING)==10,"a real supplied humanoid kill must train hunting once");
+        h.assertTrue(SurvivalApi.state(hunter).skills.experience(SkillSet.Skill.HUNTING)==8.75,"a real supplied humanoid kill must train hunting once");
         h.assertTrue(SurvivalApi.state(hunter).skills.level(SkillSet.Skill.FARMING)==0,"hunting must not grant another profession");h.succeed();
     }
     private static void skillsNoGridBypass(GameTestHelper h){
         var actor=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);actor.getPersistentData().putDouble("survivalGridWork",100);
-        var body=SurvivalApi.state(actor);for(var skill:SkillSet.Skill.values())body.skills.setLevel(skill,100);SurvivalApi.save(actor,body);
+        var body=SurvivalApi.state(actor);for(var skill:SkillSet.Skill.values())body.skills.setLevel(skill,20);SurvivalApi.save(actor,body);
         for(Item item:List.of(dev.qube.spawn_9b5fbb9.content.SurvivalContent.item("fired_pot"),dev.qube.spawn_9b5fbb9.content.SurvivalContent.item("wool_jacket"),Items.IRON_CHESTPLATE)){
             var output=new net.minecraft.world.inventory.ResultContainer();output.setItem(0,new ItemStack(item));
             var slot=new net.minecraft.world.inventory.ResultSlot(actor,actor.inventoryMenu.getCraftSlots(),output,0,0,0);
@@ -97,7 +97,7 @@ public final class SurvivalGameTests {
     }
     private static void instances(RegisterGameTestsEvent event){
         Holder<TestEnvironmentDefinition<?>> env=event.registerEnvironment(Identifier.fromNamespaceAndPath(NS,"survival"),new TestEnvironmentDefinition.AllOf(List.of()));
-        var data=new TestData<Holder<TestEnvironmentDefinition<?>>>(env,Identifier.withDefaultNamespace("empty"),120,0,true,Rotation.NONE);
+        var data=new TestData<Holder<TestEnvironmentDefinition<?>>>(env,net.minecraft.world.level.Level.OVERWORLD,Identifier.fromNamespaceAndPath("spawn_9b5fbb9","test_arena"),120,0,true,Rotation.NONE,false,1,1,true,8);
         TESTS.forEach((name,function)->event.registerTest(Identifier.fromNamespaceAndPath(NS,name),new FunctionGameTestInstance(net.minecraft.resources.ResourceKey.create(Registries.TEST_FUNCTION,Identifier.fromNamespaceAndPath(NS,name)),data)));
     }
     private static LivingEntity humanoid(GameTestHelper h){h.setBlock(1,1,1,Blocks.STONE);var entity=h.spawn(EntityTypes.VILLAGER,1,2,1);entity.setNoAi(true);return entity;}

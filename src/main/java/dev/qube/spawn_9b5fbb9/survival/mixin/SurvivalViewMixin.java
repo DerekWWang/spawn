@@ -19,4 +19,10 @@ public abstract class SurvivalViewMixin implements SurvivalView {
     public double getSpawnSurvivalFarming(){var s=spawn$body();return s==null?Double.NaN:s.skills.level(SkillSet.Skill.FARMING);}
     public double getSpawnSurvivalForaging(){var s=spawn$body();return s==null?Double.NaN:s.skills.level(SkillSet.Skill.FORAGING);}
     public double getSpawnSurvivalHunting(){var s=spawn$body();return s==null?Double.NaN:s.skills.level(SkillSet.Skill.HUNTING);}
+
+    public double getSpawnSurvivalMining(){var s=spawn$body();return s==null?Double.NaN:s.skills.level(SkillSet.Skill.MINING);}
+    public double getSpawnSurvivalConstruction(){var s=spawn$body();return s==null?Double.NaN:s.skills.level(SkillSet.Skill.CONSTRUCTION);}
+    public double getSpawnSurvivalCooking(){var s=spawn$body();return s==null?Double.NaN:s.skills.level(SkillSet.Skill.COOKING);}
+    public double getSpawnSurvivalAnimals(){var s=spawn$body();return s==null?Double.NaN:s.skills.level(SkillSet.Skill.ANIMALS);}
+    public double getSpawnSurvivalMedicine(){var s=spawn$body();return s==null?Double.NaN:s.skills.level(SkillSet.Skill.MEDICINE);}
 }

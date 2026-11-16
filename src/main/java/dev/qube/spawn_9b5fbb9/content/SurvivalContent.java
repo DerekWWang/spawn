@@ -43,19 +43,28 @@ public final class SurvivalContent {
     public static final DeferredBlock<Block> WILD_PLANTS = BLOCKS.registerBlock("wild_plants",p->new GroundResourceBlock(p,"wild"),p->p.noCollision().instabreak());
     public static final DeferredBlock<Block> FRUIT_TREE = BLOCKS.registerBlock("fruit_tree",FruitTreeBlock::new,p->p.strength(0.4f).randomTicks().noOcclusion());
     public static final Map<String,DeferredBlock<CropBlock>> CROPS = new LinkedHashMap<>();
+    public static final Map<String,DeferredBlock<GroundResourceBlock>> FORAGE = new LinkedHashMap<>();
+    public static final DeferredBlock<Block> LIMESTONE=BLOCKS.registerSimpleBlock("limestone",p->p.strength(2.5f).requiresCorrectToolForDrops());
+    public static final DeferredBlock<Block> MALACHITE_ORE=BLOCKS.registerSimpleBlock("malachite_ore",p->p.strength(3).requiresCorrectToolForDrops());
+    public static final DeferredBlock<Block> CASSITERITE_ORE=BLOCKS.registerSimpleBlock("cassiterite_ore",p->p.strength(3).requiresCorrectToolForDrops());
+    public static final DeferredBlock<Block> HEMATITE_ORE=BLOCKS.registerSimpleBlock("hematite_ore",p->p.strength(3).requiresCorrectToolForDrops());
     public static final net.neoforged.neoforge.registries.DeferredHolder<BlockEntityType<?>,BlockEntityType<WorkstationEntity>> WORKSTATION_ENTITY = BLOCK_ENTITIES.register("workstation",()->new BlockEntityType<>(WorkstationEntity::new,Set.of(KILN.get(),FORGE.get(),TROUGH.get(),BLOOMERY.get(),ANVIL.get(),LOOM.get())));
     private static final DeferredRegister<Consumer<GameTestHelper>> TESTS = DeferredRegister.create(Registries.TEST_FUNCTION, MODID);
     static {
+        for(String source:new String[]{"fallen_sticks","wild_flax","wild_yarrow","wild_bramble","wild_rice","wild_maize","wild_wheat","wild_carrot","wild_potato","wild_beetroot","wild_pumpkin","wild_melon"}){
+            var block=BLOCKS.registerBlock(source,p->new GroundResourceBlock(p,source),p->p.noCollision().instabreak());FORAGE.put(source,block);MATERIALS.put(source,ITEMS.registerSimpleBlockItem(block));
+        }
+        for(String material:new String[]{"flax_fiber","yarrow_leaves","malachite","cassiterite","hematite"})MATERIALS.put(material,ITEMS.registerSimpleItem(material));
         for(String id:new String[]{"wooden_toy","loose_stone","stone_edge","obsidian_flake","plant_fiber","dried_fiber","cordage","yarn","wool_cloth","fiber_cloth","unfired_pot","pot_lid","crushed_copper","roasted_copper","crushed_tin","roasted_tin","crushed_iron","roasted_iron","tin_ingot","bronze_ingot","iron_bloom","medicinal_leaves","clean_cloth","bandage","painkiller","antitoxin","antiseptic","antibiotic","ceramic_shard","metal_scrap","fertilized_egg"}) MATERIALS.put(id,ITEMS.registerSimpleItem(id));
         MATERIALS.put("fired_pot",ITEMS.registerSimpleItem("fired_pot",p->p.stacksTo(1).durability(96)));
         for(String cloth:new String[]{"wool","fiber"}) for(String piece:new String[]{"shirt","pants","jacket","shoes"}) {
             String id=cloth+"_"+piece; MATERIALS.put(id,ITEMS.registerSimpleItem(id,p->p.durability(cloth.equals("wool")?384:192)));
         }
-        for(String crop:new String[]{"rice","maize","fiber","medicinal"}) {
+        for(String crop:new String[]{"rice","maize","fiber","medicinal","flax","yarrow","bramble"}) {
             var block=BLOCKS.registerBlock(crop+"_crop",CropBlock::new,p->p.noCollision().randomTicks().instabreak()); CROPS.put(crop,block);
             MATERIALS.put(crop+"_seeds",ITEMS.registerSimpleBlockItem(crop+"_seeds",block));
         }
-        for(String food:new String[]{"rice_grain","maize","wild_berries"}) MATERIALS.put(food,ITEMS.registerSimpleItem(food,p->p.food(new FoodProperties.Builder().nutrition(food.equals("wild_berries")?2:4).saturationModifier(0.2f).build())));
+        for(String food:new String[]{"rice_grain","maize","wild_berries","blackberries"}) MATERIALS.put(food,ITEMS.registerSimpleItem(food,p->p.food(new FoodProperties.Builder().nutrition(food.endsWith("berries")?2:4).saturationModifier(0.2f).build())));
         MATERIALS.put("spoiled_food",ITEMS.registerSimpleItem("spoiled_food",p->p.food(new FoodProperties.Builder().nutrition(1).saturationModifier(0).build())));
         ToolMaterial bronze=new ToolMaterial(BlockTags.INCORRECT_FOR_IRON_TOOL,420,6.5f,2,1,ItemTags.COPPER_TOOL_MATERIALS);
         ToolMaterial obsidian=new ToolMaterial(BlockTags.INCORRECT_FOR_STONE_TOOL,54,7,3,1,ItemTags.STONE_TOOL_MATERIALS);
@@ -74,7 +83,7 @@ public final class SurvivalContent {
         MATERIALS.put("bronze_shovel",ITEMS.registerSimpleItem("bronze_shovel",p->p.shovel(bronze,1.5f,-3)));
         var bronzeArmor=new net.minecraft.world.item.equipment.ArmorMaterial(18,java.util.Map.of(net.minecraft.world.item.equipment.ArmorType.HELMET,2,net.minecraft.world.item.equipment.ArmorType.CHESTPLATE,6,net.minecraft.world.item.equipment.ArmorType.LEGGINGS,5,net.minecraft.world.item.equipment.ArmorType.BOOTS,2),1,net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_COPPER,0,0,ItemTags.COPPER_TOOL_MATERIALS,net.minecraft.world.item.equipment.EquipmentAssets.COPPER);
         for(var type:new net.minecraft.world.item.equipment.ArmorType[]{net.minecraft.world.item.equipment.ArmorType.HELMET,net.minecraft.world.item.equipment.ArmorType.CHESTPLATE,net.minecraft.world.item.equipment.ArmorType.LEGGINGS,net.minecraft.world.item.equipment.ArmorType.BOOTS}){String id="bronze_"+type.getName();MATERIALS.put(id,ITEMS.registerSimpleItem(id,p->p.humanoidArmor(bronzeArmor,type)));}
-        for(var block:List.of(KILN,FORGE,BLOOMERY,ANVIL,LOOM,TROUGH,TIN_ORE,FRUIT_TREE)) MATERIALS.put(block.getId().getPath(),ITEMS.registerSimpleBlockItem(block));
+        for(var block:List.of(KILN,FORGE,BLOOMERY,ANVIL,LOOM,TROUGH,TIN_ORE,FRUIT_TREE,LIMESTONE,MALACHITE_ORE,CASSITERITE_ORE,HEMATITE_ORE)) MATERIALS.put(block.getId().getPath(),ITEMS.registerSimpleBlockItem(block));
         TESTS.register("world_prohibited_additions", () -> WorldGameTests::prohibitedAdditions);
         TESTS.register("world_container_prohibition",()->WorldGameTests::containerProhibition);
         TESTS.register("content_preservation",()->ContentGameTests::preservation);
@@ -105,6 +114,26 @@ public final class SurvivalContent {
         TESTS.register("content_forge_world_job",()->ContentGameTests::forgeWorldJob);
         TESTS.register("content_forge_legacy_budget",()->ContentGameTests::forgeLegacyBudget);
         TESTS.register("practiced_clay_pot_quality",()->PracticedContentGameTests::clayPotQuality);
+        TESTS.register("learning_mining_exposure",()->dev.qube.spawn_9b5fbb9.controllers.LearningWorkGameTests::miningExposure);
+        TESTS.register("ecology_single_source",()->dev.qube.spawn_9b5fbb9.controllers.EcologyGameTests::singleSource);
+        TESTS.register("ecology_rocks",()->dev.qube.spawn_9b5fbb9.controllers.EcologyGameTests::rocksAreRocks);
+        TESTS.register("geology_old_veins",()->dev.qube.spawn_9b5fbb9.world.GeologyGameTests::oldVeinsDisabled);
+        TESTS.register("resources_visible_evidence",()->dev.qube.spawn_9b5fbb9.controllers.ResourceActionGameTests::visibleEvidence);
+        TESTS.register("resources_two_actor_chain",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::twoActorMineralChain);
+        TESTS.register("reviewfix_flax_bootstrap",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::flaxBootstrap);
+        TESTS.register("reviewfix_native_kiln",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::nativeKiln);
+        TESTS.register("reviewfix_grid_parity",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::gridParity);
+        TESTS.register("reviewfix_repeated_extraction",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::repeatedExtraction);
+        TESTS.register("reviewfix_decoration_order",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::decorationOrder);
+        TESTS.register("reviewfix_covered_habitat",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::coveredHabitat);
+        TESTS.register("reviewfix_full_animal",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::fullAnimal);
+        TESTS.register("environment_profile",()->dev.qube.spawn_9b5fbb9.environment.EnvironmentGameTests::profile);
+        TESTS.register("environment_terrain",()->dev.qube.spawn_9b5fbb9.environment.EnvironmentGameTests::terrain);
+        TESTS.register("environment_packet",()->dev.qube.spawn_9b5fbb9.environment.EnvironmentGameTests::packet);
+        TESTS.register("environment_crop_history",()->dev.qube.spawn_9b5fbb9.environment.EnvironmentGameTests::cropHistory);
+        TESTS.register("environment_exposure",()->dev.qube.spawn_9b5fbb9.environment.EnvironmentGameTests::exposure);
+        TESTS.register("environment_frost_history",()->dev.qube.spawn_9b5fbb9.environment.EnvironmentGameTests::frostHistory);
+        TESTS.register("learning_passion_snapshot",()->dev.qube.spawn_9b5fbb9.controllers.LearningWorkGameTests::passionSnapshot);
         TESTS.register("practiced_pottery_physical_capacity",()->PracticedContentGameTests::potteryPhysicalCapacity);
         TESTS.register("practiced_smith_gate_conservation",()->PracticedContentGameTests::smithGateConservation);
         TESTS.register("practiced_loom_real_inputs",()->PracticedContentGameTests::loomUsesRealInputs);
@@ -119,17 +148,20 @@ public final class SurvivalContent {
         TESTS.register("practiced_reload_blank_stage",()->PracticedContentGameTests::reloadBlankStageInvariant);
     }
     public static void register(IEventBus bus) {
+        dev.qube.spawn_9b5fbb9.world.NaturalResourceGeneration.register(bus);
+        // Industry, transport and warfare add to the same registers before they are bound to the bus.
+        dev.qube.spawn_9b5fbb9.industry.IndustrialContent.register(bus);
         ITEMS.register(bus); BLOCKS.register(bus); BLOCK_ENTITIES.register(bus);
         TESTS.register(bus);
         bus.addListener(SurvivalContent::tests);
         bus.addListener(SurvivalContent::creative);
     }
-    public static void init() { NaturalWorldRules.init(); ItemAging.init(); Pottery.init(); SeasonalCrops.init(); Husbandry.init(); Production.init(); }
+    public static void init() { NaturalWorldRules.init(); ItemAging.init(); Pottery.init(); SeasonalCrops.init(); Husbandry.init(); Production.init(); dev.qube.spawn_9b5fbb9.controllers.ResourceActions.init(); dev.qube.spawn_9b5fbb9.world.ExtractionHistory.init(); dev.qube.spawn_9b5fbb9.industry.IndustrialContent.init(); }
     public static Item item(String id) { return MATERIALS.get(id).get(); }
     private static void creative(net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent event){event.removeIf(NaturalWorldRules::prohibited,CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);if(event.getTabKey()==CreativeModeTabs.INGREDIENTS)MATERIALS.values().forEach(event::accept);}
     private static void tests(RegisterGameTestsEvent event) {
         Holder<TestEnvironmentDefinition<?>> env = event.registerEnvironment(Identifier.fromNamespaceAndPath(MODID,"living_world"), new TestEnvironmentDefinition.AllOf(List.of()));
-        var data = new TestData<Holder<TestEnvironmentDefinition<?>>>(env, Identifier.fromNamespaceAndPath("minecraft","empty"), 100, 0, true, Rotation.NONE);
+        var data = new TestData<Holder<TestEnvironmentDefinition<?>>>(env,net.minecraft.world.level.Level.OVERWORLD,Identifier.fromNamespaceAndPath("spawn_9b5fbb9","test_arena"), 100,0,true,Rotation.NONE,false,1,1,true,8);
         TESTS.getEntries().forEach(test -> event.registerTest(test.getId(), new FunctionGameTestInstance(test.getKey(), data)));
     }
 }

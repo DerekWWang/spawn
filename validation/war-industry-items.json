@@ -1,0 +1,207 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 22
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "fill -9 -60 -2 9 -44 -2 minecraft:black_concrete",
+    "setblock -7 -60 2 spawn_9b5fbb9:workshop",
+    "setblock -4 -60 2 spawn_9b5fbb9:assembly_yard",
+    "setblock -2 -60 2 spawn_9b5fbb9:niter_bed",
+    "setblock 1 -60 2 spawn_9b5fbb9:powder_mill",
+    "setblock 3 -60 2 spawn_9b5fbb9:foundry",
+    "setblock 6 -60 2 spawn_9b5fbb9:chemical_works",
+    "setblock -7 -60 5 spawn_9b5fbb9:machine_shop",
+    "setblock -4 -60 5 spawn_9b5fbb9:electronics_works",
+    "setblock -2 -60 5 spawn_9b5fbb9:galena_ore",
+    "setblock 1 -60 5 spawn_9b5fbb9:pyrite_ore",
+    "setblock 3 -60 5 spawn_9b5fbb9:computer",
+    "setblock 6 -60 5 spawn_9b5fbb9:server",
+    "summon minecraft:item_display -7.00 -45.20 -0.85 {item:{id:\"spawn_9b5fbb9:galena\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -45.20 -0.85 {item:{id:\"spawn_9b5fbb9:pyrite\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -45.20 -0.85 {item:{id:\"spawn_9b5fbb9:lead_ingot\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -45.20 -0.85 {item:{id:\"spawn_9b5fbb9:steel_ingot\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -45.20 -0.85 {item:{id:\"spawn_9b5fbb9:quicklime\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -45.20 -0.85 {item:{id:\"spawn_9b5fbb9:wood_ash\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -45.20 -0.85 {item:{id:\"spawn_9b5fbb9:niter_earth\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -45.20 -0.85 {item:{id:\"spawn_9b5fbb9:saltpeter\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -47.10 -0.85 {item:{id:\"spawn_9b5fbb9:sulfur\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -47.10 -0.85 {item:{id:\"spawn_9b5fbb9:fermented_mash\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -47.10 -0.85 {item:{id:\"spawn_9b5fbb9:fuel_alcohol\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -47.10 -0.85 {item:{id:\"spawn_9b5fbb9:coke\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -47.10 -0.85 {item:{id:\"spawn_9b5fbb9:coal_tar\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -47.10 -0.85 {item:{id:\"spawn_9b5fbb9:sulfuric_acid\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -47.10 -0.85 {item:{id:\"spawn_9b5fbb9:phenolic_resin\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -47.10 -0.85 {item:{id:\"spawn_9b5fbb9:photoresist\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -49.00 -0.85 {item:{id:\"spawn_9b5fbb9:metallurgical_silicon\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -49.00 -0.85 {item:{id:\"spawn_9b5fbb9:polysilicon\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -49.00 -0.85 {item:{id:\"spawn_9b5fbb9:silicon_boule\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -49.00 -0.85 {item:{id:\"spawn_9b5fbb9:silicon_wafer\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -49.00 -0.85 {item:{id:\"spawn_9b5fbb9:patterned_wafer\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -49.00 -0.85 {item:{id:\"spawn_9b5fbb9:silicon_die\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -49.00 -0.85 {item:{id:\"spawn_9b5fbb9:chip_package\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -49.00 -0.85 {item:{id:\"spawn_9b5fbb9:chip\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -50.90 -0.85 {item:{id:\"spawn_9b5fbb9:copper_wire\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -50.90 -0.85 {item:{id:\"spawn_9b5fbb9:fine_wire\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -50.90 -0.85 {item:{id:\"spawn_9b5fbb9:circuit_board\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -50.90 -0.85 {item:{id:\"spawn_9b5fbb9:solder\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -50.90 -0.85 {item:{id:\"spawn_9b5fbb9:transformer\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -50.90 -0.85 {item:{id:\"spawn_9b5fbb9:steel_plate\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -50.90 -0.85 {item:{id:\"spawn_9b5fbb9:machine_parts_blank\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -50.90 -0.85 {item:{id:\"spawn_9b5fbb9:machine_parts\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -52.80 -0.85 {item:{id:\"spawn_9b5fbb9:boiler\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -52.80 -0.85 {item:{id:\"spawn_9b5fbb9:steam_engine\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -52.80 -0.85 {item:{id:\"spawn_9b5fbb9:dynamo\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -52.80 -0.85 {item:{id:\"spawn_9b5fbb9:combustion_engine\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -52.80 -0.85 {item:{id:\"spawn_9b5fbb9:steel_rail\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -52.80 -0.85 {item:{id:\"spawn_9b5fbb9:sleeper\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -52.80 -0.85 {item:{id:\"spawn_9b5fbb9:wooden_wheel\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -54.70 -0.85 {item:{id:\"spawn_9b5fbb9:harness\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -54.70 -0.85 {item:{id:\"spawn_9b5fbb9:gun_carriage\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -54.70 -0.85 {item:{id:\"spawn_9b5fbb9:musket_stock\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -54.70 -0.85 {item:{id:\"spawn_9b5fbb9:musket_barrel_blank\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -54.70 -0.85 {item:{id:\"spawn_9b5fbb9:musket_barrel\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -54.70 -0.85 {item:{id:\"spawn_9b5fbb9:musket_lock_blank\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -54.70 -0.85 {item:{id:\"spawn_9b5fbb9:musket_lock\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -54.70 -0.85 {item:{id:\"spawn_9b5fbb9:musket_ball\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -56.60 -0.85 {item:{id:\"spawn_9b5fbb9:paper_cartridge\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -56.60 -0.85 {item:{id:\"spawn_9b5fbb9:round_shot\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -56.60 -0.85 {item:{id:\"spawn_9b5fbb9:stone_shot\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -56.60 -0.85 {item:{id:\"spawn_9b5fbb9:powder_charge\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -56.60 -0.85 {item:{id:\"spawn_9b5fbb9:explosive_shell\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -56.60 -0.85 {item:{id:\"spawn_9b5fbb9:cannon_barrel\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -56.60 -0.85 {item:{id:\"spawn_9b5fbb9:bombard_barrel\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -56.60 -0.85 {item:{id:\"spawn_9b5fbb9:musket\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}"
+   ]
+  },
+  {
+   "step": 20
+  },
+  {
+   "camera": {
+    "pos": [
+     0,
+     -51.5,
+     11
+    ],
+    "look_at": [
+     0,
+     -52,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "industry_items_wall"
+  },
+  {
+   "camera": {
+    "pos": [
+     -3.5,
+     -48,
+     3
+    ],
+    "look_at": [
+     -3.5,
+     -48,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "industry_items_left"
+  },
+  {
+   "camera": {
+    "pos": [
+     3.5,
+     -48,
+     3
+    ],
+    "look_at": [
+     3.5,
+     -48,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "industry_items_right"
+  },
+  {
+   "camera": {
+    "pos": [
+     -3.5,
+     -54.5,
+     3
+    ],
+    "look_at": [
+     -3.5,
+     -54.5,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "industry_items_left_low"
+  },
+  {
+   "camera": {
+    "pos": [
+     3.5,
+     -54.5,
+     3
+    ],
+    "look_at": [
+     3.5,
+     -54.5,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "industry_items_right_low"
+  },
+  {
+   "camera": {
+    "pos": [
+     0,
+     -55.5,
+     10.5
+    ],
+    "look_at": [
+     0,
+     -60,
+     3.5
+    ]
+   }
+  },
+  {
+   "shot": "industry_blocks"
+  }
+ ]
+}
