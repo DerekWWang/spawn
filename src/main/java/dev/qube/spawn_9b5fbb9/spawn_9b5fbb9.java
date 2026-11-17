@@ -17,6 +17,7 @@ public final class spawn_9b5fbb9 {
         SurvivalContent.register(bus); SurvivalContent.init();
         dev.qube.spawn_9b5fbb9.controllers.WorldActions.register(bus);
         dev.qube.spawn_9b5fbb9.controllers.WorldActions.init();
+        dev.qube.spawn_9b5fbb9.wildlife.Predators.init();
         bus.addListener(SurvivalNetwork::register);
         bus.addListener(dev.qube.spawn_9b5fbb9.environment.WeatherNetwork::register);
         NeoForge.EVENT_BUS.addListener(dev.qube.spawn_9b5fbb9.environment.WeatherNetwork::tick);

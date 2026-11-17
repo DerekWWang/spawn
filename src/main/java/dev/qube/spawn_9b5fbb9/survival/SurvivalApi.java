@@ -65,6 +65,8 @@ public final class SurvivalApi {
         SurvivalState state=state(actor);ItemStack held=actor.getItemInHand(hand);
         if(!java.util.Set.of("eat","drink","social").contains(action)&&Math.min(state.mental(),state.manipulation())<=.05)return fail("Physiological incapacity prevents this action");
         String id=BuiltInRegistries.ITEM.getKey(held.getItem()).getPath();
+        if(action.equals("undress")||action.startsWith("undress_"))return undress(actor,state,target,action.length()>8?action.substring(8):"");
+        if(action.equals("mend"))return mend(actor,state,target,held,id);
         switch(action){
             case "social" -> {
                 if(target==null||target==actor||!target.isAlive()||target.level()!=actor.level()||actor.distanceToSqr(target)>16||
@@ -129,18 +131,62 @@ public final class SurvivalApi {
                 SurvivalState garments=wearer==actor?state:state(wearer);
                 int slot=id.endsWith("_shirt")?0:id.endsWith("_pants")?1:id.endsWith("_jacket")?2:id.endsWith("_shoes")?3:-1;
                 if(slot<0||!(id.startsWith("wool_")||id.startsWith("fiber_")))return fail("Hold a shirt, pants, jacket, or shoes");
-                if(wearer!=actor&&!garments.clothing[slot].isEmpty())return fail("Companions must change their existing garments themselves");
-                if(wearer instanceof Player&&wearer!=actor&&!wearer.isShiftKeyDown())return fail("The other player must crouch to accept clothing");
+                long offered=Math.max(0,dev.qube.spawn_9b5fbb9.content.ItemAging.data(held).getLongOr("garmentWear",0));
+                if(wearer!=actor&&!consents(wearer,garments)){
+                    // Someone awake and able keeps their own coat unless the one held out is the better garment.
+                    if(wearer instanceof Player)return fail("The other player must crouch to accept clothing");
+                    if(!garments.clothing[slot].isEmpty()&&worth(garments.rules,BuiltInRegistries.ITEM.getKey(held.getItem()).toString(),offered)<=worth(garments.rules,garments.clothing[slot],garments.clothingWear[slot]))
+                        return fail("Companion keeps the sounder garment already worn");
+                }
                 if(state.manipulation()<.15)return fail("Hands cannot manipulate clothing");
                 if(!garments.clothing[slot].isEmpty())give(actor,garment(garments,slot));
                 garments.clothing[slot]=BuiltInRegistries.ITEM.getKey(held.getItem()).toString();
                 var dyed=held.get(DataComponents.DYED_COLOR);garments.clothingColors[slot]=dyed==null?-1:dyed.rgb();
-                garments.clothingWear[slot]=Math.max(0,dev.qube.spawn_9b5fbb9.content.ItemAging.data(held).getLongOr("garmentWear",0));held.shrink(1);
+                garments.clothingWear[slot]=offered;held.shrink(1);
                 if(wearer!=actor){save(wearer,garments);return new ActionResult(true,"Companion clothed");}
             }
-            default -> {return fail("Use social, read, play, drink, eat, feed, treat, or clothe");}
+            default -> {return fail("Use social, read, play, drink, eat, feed, treat, clothe, undress, or mend");}
         }
         save(actor,state);syncFood(actor,state);return new ActionResult(true,"Action completed");
+    }
+    public static final String[] GARMENT_SLOTS={"shirt","pants","jacket","shoes"};
+    /** A crouching player agrees; someone unconscious or helpless cannot refuse. */
+    private static boolean consents(LivingEntity wearer,SurvivalState body){
+        return wearer instanceof Player player&&player.isShiftKeyDown()||Math.min(body.mental(),body.manipulation())<=.05;
+    }
+    /** Warmth a garment still gives: what a wearer weighs before trading one for another. */
+    private static double worth(SimulationRules rules,String garment,long wear){
+        double fresh=garment.contains("wool_jacket")?rules.number("woolJacketInsulation"):garment.contains("wool_")?rules.number("woolPieceInsulation"):rules.number("fiberPieceInsulation");
+        return fresh*(.5+.5*Math.max(0,1-(double)wear/rules.ticks("garmentLifetimeTicks")));
+    }
+    private static ActionResult undress(LivingEntity actor,SurvivalState state,LivingEntity target,String part){
+        LivingEntity wearer=target==null?actor:target;
+        if(wearer.level()!=actor.level()||!isHumanoid(wearer)||actor.distanceToSqr(wearer)>9)return fail("Undress a humanoid within three blocks");
+        SurvivalState garments=wearer==actor?state:state(wearer);
+        if(wearer!=actor&&!consents(wearer,garments))return fail(wearer instanceof Player?"The other player must crouch to hand over clothing":"Companion will not give up clothing");
+        if(state.manipulation()<.15)return fail("Hands cannot manipulate clothing");
+        int slot=-1;
+        if(part.isEmpty()){for(int outer:new int[]{2,3,0,1})if(!garments.clothing[outer].isEmpty()){slot=outer;break;}}
+        else slot=java.util.Arrays.asList(GARMENT_SLOTS).indexOf(part);
+        if(slot<0||garments.clothing[slot].isEmpty())return fail(part.isEmpty()?"Nothing is worn":"Name a worn shirt, pants, jacket, or shoes");
+        ItemStack taken=garment(garments,slot);garments.clothing[slot]="";garments.clothingWear[slot]=0;garments.clothingColors[slot]=-1;
+        // Named before it is handed over: a stack that has gone into an inventory is empty.
+        String name=taken.getHoverName().getString();
+        give(actor,taken);save(wearer,garments);
+        return new ActionResult(true,"Took off "+name);
+    }
+    private static ActionResult mend(LivingEntity actor,SurvivalState state,LivingEntity target,ItemStack held,String id){
+        LivingEntity wearer=target==null?actor:target;
+        if(wearer.level()!=actor.level()||!isHumanoid(wearer)||actor.distanceToSqr(wearer)>9)return fail("Mend the clothing of a humanoid within three blocks");
+        String cloth=id.equals("yarn")?"wool_":id.equals("cordage")?"fiber_":null;
+        if(cloth==null||!BuiltInRegistries.ITEM.getKey(held.getItem()).getNamespace().equals("spawn_9b5fbb9"))return fail("Hold yarn for wool or cordage for fibre clothing");
+        if(state.manipulation()<.3||state.blind())return fail("Sewing needs working hands and eyes");
+        SurvivalState garments=wearer==actor?state:state(wearer);int worst=-1;
+        for(int i=0;i<4;i++)if(garments.clothing[i].contains(cloth)&&(worst<0||garments.clothingWear[i]>garments.clothingWear[worst]))worst=i;
+        if(worst<0||!garments.mend(worst))return fail("No garment of that cloth is worn enough to patch");
+        held.shrink(1);save(wearer,garments);if(wearer!=actor)save(actor,state);
+        SkillApi.award(actor,SkillSet.Skill.WEAVING,60);
+        return new ActionResult(true,"Patched the "+GARMENT_SLOTS[worst]+": "+Math.round(garments.condition(worst)*100)+"% sound");
     }
     public static void syncFood(LivingEntity actor,SurvivalState state){
         if(actor instanceof Player p){p.getFoodData().setFoodLevel((int)Math.ceil(state.hunger/5));actor.getPersistentData().putInt("survivalFoodShown",p.getFoodData().getFoodLevel());}

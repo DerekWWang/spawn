@@ -10,6 +10,8 @@ import static dev.qube.spawn_9b5fbb9.environment.EnvironmentModel.*;
 /** Shared observations for bodies, agriculture, animals and client weather. */
 public final class EnvironmentApi {
     public record Exposure(boolean roof,double enclosure,boolean fire){}
+    /** Rain heavier than this puts out a campfire left open to the sky; a drizzle only hisses on it. */
+    public static final double DOUSING_RAIN=.5;
     private EnvironmentApi(){}
     public static Weather at(ServerLevel level,BlockPos pos){return at(level,pos,SurvivalApi.calendar(level));}
     public static Weather at(ServerLevel level,BlockPos pos,long tick){

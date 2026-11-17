@@ -34,6 +34,8 @@ public final class SurvivalState {
     public final String[] clothing={"","","",""};
     public final long[] clothingWear=new long[4];
     public final int[] clothingColors={-1,-1,-1,-1};
+    /** Garments that fell apart since the last report (bit per slot); never saved. */
+    public transient int wornOut;
     public SimulationRules rules=SimulationRules.DEFAULT;
     public final SkillSet skills=new SkillSet();
     public SurvivalState(){Arrays.fill(anatomy,100);}
@@ -55,6 +57,36 @@ public final class SurvivalState {
             (blind()?.4:1)*(.8+.2*anatomy[7]/100)*(mildSymptoms()?rules.number("mildMental"):1)*(severeSymptoms()?rules.number("severeMental"):1)*thermalCapacity());
     }
     public boolean blind(){return anatomy[5]<=0&&anatomy[6]<=0;}
+    /** A carrier sheds the infection through the symptoms and for the last quarter of the incubation before them. */
+    public boolean infectious(boolean severe){
+        long left=severe?severeTicks:mildTicks,symptoms=rules.ticks(severe?"severeSymptomsTicks":"mildSymptomsTicks"),incubation=rules.ticks(severe?"severeIncubationTicks":"mildIncubationTicks");
+        return left>0&&left<=symptoms+incubation/4;
+    }
+    /** One for a new garment, zero for one about to fall apart. */
+    public double condition(int slot){return clothing[slot].isEmpty()?0:clamp(1-(double)clothingWear[slot]/rules.ticks("garmentLifetimeTicks"),0,1);}
+    /** Threadbare cloth keeps half the warmth of new cloth. */
+    public double insulation(){
+        double total=0;
+        for(int i=0;i<4;i++){
+            String garment=clothing[i];if(garment.isEmpty())continue;
+            double fresh=garment.contains("wool_jacket")?rules.number("woolJacketInsulation"):garment.contains("wool_")?rules.number("woolPieceInsulation"):garment.contains("fiber_")?rules.number("fiberPieceInsulation"):0;
+            total+=fresh*(.5+.5*condition(i));
+        }
+        return total;
+    }
+    /** Cuts, bites and burns take life out of the cloth over the struck part. */
+    public void tear(int slot,long ticks){
+        if(slot<0||slot>=4||clothing[slot].isEmpty()||ticks<=0)return;
+        clothingWear[slot]+=ticks;if(clothingWear[slot]>=rules.ticks("garmentLifetimeTicks"))discard(slot);
+    }
+    /** Patching returns part of a garment's life, but a patched garment is never new again. */
+    public boolean mend(int slot){
+        if(slot<0||slot>=4||clothing[slot].isEmpty())return false;
+        long floor=Math.round(rules.number("garmentMendFloor")*rules.ticks("garmentLifetimeTicks"));
+        if(clothingWear[slot]<=floor)return false;
+        clothingWear[slot]=Math.max(floor,clothingWear[slot]-rules.ticks("garmentMendTicks"));return true;
+    }
+    private void discard(int slot){clothing[slot]="";clothingWear[slot]=0;clothingColors[slot]=-1;wornOut|=1<<slot;}
     public boolean severeSymptoms(){return severeTicks>0&&severeTicks<=rules.ticks("severeSymptomsTicks");}
     public boolean mildSymptoms(){return mildTicks>0&&mildTicks<=rules.ticks("mildSymptomsTicks");}
     private double average(int from,int to){double sum=0;for(int i=from;i<to;i++)sum+=anatomy[i];return sum/(to-from);}
@@ -124,9 +156,13 @@ public final class SurvivalState {
                 for(int i=0;i<anatomy.length;i++)if(!(i==5||i==6)||anatomy[i]>0)
                     anatomy[i]=Math.min(100,anatomy[i]+step*rules.number("anatomyRecoveryPerDay")/DAY);
             }
+            // Cloth wears with use, not with the calendar: hard work, wet and walking take it fastest.
+            double use=sleeping?.25:switch(activity){case IDLE->.5;case WALKING->1;case SPRINTING->2;case CLIMBING->3;case SWIMMING->2;};
+            if(climate.wet)use*=1.5;
+            boolean still=sleeping||activity==Activity.IDLE;
             for(int i=0;i<4;i++)if(!clothing[i].isEmpty()){
-                clothingWear[i]+=step;
-                if(clothingWear[i]>=rules.ticks("garmentLifetimeTicks")){clothing[i]="";clothingWear[i]=0;}
+                clothingWear[i]+=Math.round(step*(i==3?still?.05:use*1.5:use));
+                if(clothingWear[i]>=rules.ticks("garmentLifetimeTicks"))discard(i);
             }
             if(dayElapsed==DAY){
                 double missing=1-Math.min(1,(double)recreationTicks/Math.max(1,quotaTicks));
@@ -141,7 +177,7 @@ public final class SurvivalState {
     public String conditions(){
         StringBuilder s=new StringBuilder();
         if(bleeding>0)s.append("BLEEDING ");if(poisonTicks>0)s.append("POISONED ");
-        if(mildTicks>0)s.append("RESPIRATORY INFECTION ");if(severeTicks>0)s.append("SYSTEMIC INFECTION ");
+        if(mildSymptoms())s.append("RESPIRATORY INFECTION ");if(severeSymptoms())s.append("SYSTEMIC INFECTION ");
         if(woundInfection)s.append("WOUND INFECTION ");if(blind())s.append("PERMANENT BLINDNESS ");
         if(temperature<rules.number("coldThreshold"))s.append("HYPOTHERMIA ");if(temperature>rules.number("hotThreshold"))s.append("HEAT STROKE ");
         if(painkillerTicks>0)s.append("PAIN RELIEF ");return s.isEmpty()?"Stable":s.toString().trim();

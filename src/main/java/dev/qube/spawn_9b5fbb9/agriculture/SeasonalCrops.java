@@ -74,8 +74,17 @@ public final class SeasonalCrops {
     }
     public static void init(){NeoForge.EVENT_BUS.addListener(SeasonalCrops::bonemeal);NeoForge.EVENT_BUS.addListener(SeasonalCrops::plant);NeoForge.EVENT_BUS.addListener(SeasonalCrops::placed);NeoForge.EVENT_BUS.addListener(SeasonalCrops::broken);NeoForge.EVENT_BUS.addListener(SeasonalCrops::tooltip);NeoForge.EVENT_BUS.addListener(SeasonalCrops::nativeHarvest);NeoForge.EVENT_BUS.addListener(SeasonalCrops::nativeTill);NeoForge.EVENT_BUS.addListener(SeasonalCrops::practiceTick);}
     private static void bonemeal(BonemealEvent event){if(isPlant(event.getState()))event.setSuccessful(false);}
-    private static boolean isPlant(BlockState state){return RULES.containsKey(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString())||state.getBlock() instanceof CropBlock||state.getBlock() instanceof BonemealableBlock;}
-    public static boolean requiresCalendarTick(BlockState state){return RULES.containsKey(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());}
+    private static boolean isPlant(BlockState state){return requiresCalendarTick(state)||state.getBlock() instanceof CropBlock||state.getBlock() instanceof BonemealableBlock;}
+    /** Which blocks the current rules cover, remembered per block: the answer is asked for every random tick the world takes. */
+    private record CalendarBlocks(Map<String,Schedule> rules,Map<Block,Boolean> known){}
+    private static volatile CalendarBlocks CALENDAR_BLOCKS=new CalendarBlocks(null,Map.of());
+    public static boolean requiresCalendarTick(BlockState state){
+        var rules=RULES;var cache=CALENDAR_BLOCKS;
+        if(cache.rules()!=rules){cache=new CalendarBlocks(rules,new java.util.concurrent.ConcurrentHashMap<>());CALENDAR_BLOCKS=cache;}
+        Block block=state.getBlock();Boolean known=cache.known().get(block);if(known!=null)return known;
+        var key=BuiltInRegistries.BLOCK.getResourceKey(block);if(key.isEmpty())return false; // not registered yet: ask again later
+        boolean covered=rules.containsKey(key.get().identifier().toString());cache.known().put(block,covered);return covered;
+    }
     private static void initializeWildBerry(BlockState state,CompoundTag data,long now){
         if(!data.isEmpty())return;
         boolean ripe=state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.AGE_3)&&state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.AGE_3)==3;
@@ -196,6 +205,8 @@ public final class SeasonalCrops {
         soil.putDouble("water",water);soil.putLong("last",now);return new double[]{growth,frost?1:0};
     }
     public static boolean randomTick(BlockState state,ServerLevel level,BlockPos pos,RandomSource random){
+        // Nearly every random tick is grass, leaves or water: leave those to vanilla before doing any lookups by name.
+        if(!requiresCalendarTick(state)&&!(state.getBlock() instanceof CropBlock))return false;
         String id=BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();Schedule rule=schedule(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
         if(rule==null){if(state.getBlock() instanceof CropBlock){if(WARNED.add(id))System.getLogger("Survival crops").log(System.Logger.Level.WARNING,"Undeclared crop growth disabled: "+id);return true;}return false;}
         long now=SurvivalApi.calendar(level);var all=records(level);String key=Long.toString(pos.asLong());var data=all.getCompoundOrEmpty(key);

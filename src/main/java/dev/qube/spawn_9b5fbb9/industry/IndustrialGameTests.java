@@ -58,6 +58,21 @@ public final class IndustrialGameTests {
         TESTS.register("siege_cannon_masonry_and_earth",()->WarfareGameTests::cannonMasonryAndEarth);
         TESTS.register("siege_crew_loads_from_store",()->WarfareGameTests::crewLoadsFromStore);
         TESTS.register("siege_trebuchet_arc",()->WarfareGameTests::trebuchetArc);
+        TESTS.register("weather_rain_douses_fire",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::rainDousesFire);
+        TESTS.register("illness_onset_and_spread",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::illnessOnsetAndSpread);
+        TESTS.register("clothing_wears_with_use",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::clothWearsWithUse);
+        TESTS.register("clothing_mend_swap_undress",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::clothMendSwapUndress);
+        TESTS.register("wildlife_ranges_on_the_map",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::rangesOnTheMap);
+        TESTS.register("world_spawner_not_offered_forbidden",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::spawnerNotOfferedForbidden);
+        TESTS.register("crops_calendar_known_by_block",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::calendarCropsKnownByBlock);
+        TESTS.register("items_litter_rots_away",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::litterRotsAway);
+        TESTS.register("bots_registry_export",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::registryExportMatchesServer);
+        TESTS.register("wildlife_hunger_drives_hunting",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::hungerDrivesHunting);
+        TESTS.register("wildlife_people_not_ordinary_prey",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::peopleAreNotOrdinaryPrey);
+        TESTS.register("wildlife_wolves_need_the_pack",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::wolvesNeedThePack);
+        TESTS.register("wildlife_rout_bite_carcass",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::routBiteAndCarcass);
+        TESTS.register("wildlife_bear_takes_bait",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::hungryBearTakesBait);
+        TESTS.register("wildlife_bear_runs_down_sheep",()->dev.qube.spawn_9b5fbb9.wildlife.WildlifeGameTests::bearRunsDownSheep);
     }
     public static void register(IEventBus bus){TESTS.register(bus);bus.addListener(IndustrialGameTests::tests);}
     private static void tests(RegisterGameTestsEvent event){

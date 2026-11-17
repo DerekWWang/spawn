@@ -61,7 +61,7 @@ public final class SurvivalCommands {
             .executes(c->status(c.getSource(),c.getSource().getPlayerOrException()))
             .then(literal("health").executes(c->{ServerPlayer p=c.getSource().getPlayerOrException();SurvivalNetwork.send(p,SurvivalApi.state(p),true);return 1;}))
             .then(literal("json").executes(c->json(c.getSource(),c.getSource().getPlayerOrException())))
-            .then(literal("act").then(argument("action",StringArgumentType.word()).suggests((c,b)->SharedSuggestionProvider.suggest(new String[]{"eat","feed","drink","read","play","clothe","treat","social"},b))
+            .then(literal("act").then(argument("action",StringArgumentType.word()).suggests((c,b)->SharedSuggestionProvider.suggest(new String[]{"eat","feed","drink","read","play","clothe","undress","undress_jacket","undress_shirt","undress_pants","undress_shoes","mend","treat","social"},b))
                 .executes(c->act(c.getSource(),c.getSource().getPlayerOrException(),StringArgumentType.getString(c,"action"),null))
                 .then(argument("target",EntityArgument.entity()).executes(c->act(c.getSource(),c.getSource().getPlayerOrException(),StringArgumentType.getString(c,"action"),target(EntityArgument.getEntity(c,"target")))))))
             .then(literal("inspect").then(argument("target",EntityArgument.entity()).executes(c->{
@@ -85,7 +85,12 @@ public final class SurvivalCommands {
                 .then(argument("part",StringArgumentType.word()).then(argument("amount",DoubleArgumentType.doubleArg(0,100)).executes(c->{
                     LivingEntity actor=living(EntityArgument.getEntity(c,"target"));var s=SurvivalApi.state(actor);try{s.injure(SurvivalState.Part.valueOf(StringArgumentType.getString(c,"part").toUpperCase(java.util.Locale.ROOT)),DoubleArgumentType.getDouble(c,"amount"),true);}catch(IllegalArgumentException invalid){c.getSource().sendFailure(Component.literal("Use an anatomy part, e.g. LEFT_ARM or RIGHT_EYE"));return 0;}SurvivalApi.save(actor,s);return 1;
                 })))))
-            .then(literal("calendar").executes(c->{long ticks=SurvivalApi.calendar(c.getSource().getLevel());c.getSource().sendSuccess(()->Component.literal(calendarText(ticks)),false);return 1;})));
+            .then(literal("calendar").executes(c->{long ticks=SurvivalApi.calendar(c.getSource().getLevel());c.getSource().sendSuccess(()->Component.literal(calendarText(ticks)),false);return 1;}))
+            // For protocol bots: the mod's block states, items and entity types with this server's ids.
+            .then(literal("export_registry").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).executes(c->{
+                try{var file=dev.qube.spawn_9b5fbb9.controllers.RegistryExport.write(c.getSource().getServer());c.getSource().sendSuccess(()->Component.literal("Registry written to "+file),false);return 1;}
+                catch(java.io.IOException failure){c.getSource().sendFailure(Component.literal("Could not write the registry: "+failure.getMessage()));return 0;}
+            })));
     }
     public static String calendarText(long ticks){return calendarText(ticks,dev.qube.spawn_9b5fbb9.Config.SEASON_DAYS.get());}
     public static String calendarText(long ticks,int length){long day=ticks/24000;return new String[]{"Spring","Summer","Autumn","Winter"}[(int)(day/length%4)]+" day "+(day%length+1)+" | Year "+(day/(length*4)+1);}

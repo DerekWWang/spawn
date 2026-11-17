@@ -66,6 +66,7 @@ public final class SurvivalEvents {
         long ticks=Math.max(1,Math.round(20*Config.NEEDS_RATE.get()));
         if(actor instanceof Player player)CraftingGuard.tick(player,s);
         var outcome=s.advance(ticks,activity,climate(actor,level),recreation,actor.isSleeping());
+        onset(actor,s,ticks);wornOut(actor,s);
         if(s.hunger<=20)actor.setSprinting(false);
         SurvivalApi.save(actor,s);SurvivalApi.syncFood(actor,s);applyCapacities(actor,s,false);
         if(actor instanceof Mob mob){
@@ -78,7 +79,7 @@ public final class SurvivalEvents {
             actor.setInvulnerableTime(0);actor.hurtServer(level,actor.damageSources().starve(),(float)outcome.damage());
         }else if(actor.tickCount%200==0&&s.hunger>60&&s.thirst>60&&!s.severeSymptoms()&&s.bleeding==0&&s.poisonTicks==0)actor.heal(1);
         if(s.blind())actor.addEffect(new MobEffectInstance(MobEffects.BLINDNESS,60,0,false,false));
-        if(s.mildSymptoms()||s.severeSymptoms())transmit(actor,s,level);
+        if(s.infectious(false)||s.infectious(true))transmit(actor,s,level);
         SurvivalNetwork.tracking(actor,s);
     }
     public static SurvivalState.Climate climate(LivingEntity actor,ServerLevel level){
@@ -87,8 +88,7 @@ public final class SurvivalEvents {
     public static SurvivalState.Climate climate(LivingEntity actor,ServerLevel level,long tick){
         if(dev.qube.spawn_9b5fbb9.environment.WorldEnvironment.active(level)){
             var weather=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.at(level,actor.blockPosition(),tick);
-            var exposure=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.exposure(level,actor.blockPosition());var body=SurvivalApi.state(actor);double insulation=0;
-            for(String garment:body.clothing)insulation+=garment.contains("wool_jacket")?body.rules.number("woolJacketInsulation"):garment.contains("wool_")?body.rules.number("woolPieceInsulation"):garment.contains("fiber_")?body.rules.number("fiberPieceInsulation"):0;
+            var exposure=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.exposure(level,actor.blockPosition());var body=SurvivalApi.state(actor);double insulation=body.insulation();
             return new SurvivalState.Climate(weather.temperature(),insulation,actor.isInWater()||!exposure.roof()&&!weather.snow()&&weather.rain()>.15,exposure.roof(),exposure.fire(),weather.wind(),exposure.enclosure());
         }
         float biome=level.getBiome(actor.blockPosition()).value().getBaseTemperature();
@@ -100,8 +100,7 @@ public final class SurvivalEvents {
         for(BlockPos p:BlockPos.betweenClosed(actor.blockPosition().offset(-3,-1,-3),actor.blockPosition().offset(3,1,3))){
             var b=level.getBlockState(p);if(b.is(Blocks.FIRE)||b.is(Blocks.LAVA)||b.is(Blocks.CAMPFIRE)&&b.getValue(net.minecraft.world.level.block.CampfireBlock.LIT)){fire=true;break;}
         }
-        SurvivalState s=SurvivalApi.state(actor);double insulation=0;
-        for(String garment:s.clothing)insulation+=garment.contains("wool_jacket")?s.rules.number("woolJacketInsulation"):garment.contains("wool_")?s.rules.number("woolPieceInsulation"):garment.contains("fiber_")?s.rules.number("fiberPieceInsulation"):0;
+        SurvivalState s=SurvivalApi.state(actor);double insulation=s.insulation();
         return new SurvivalState.Climate(ambient,insulation,actor.isInWater()||level.isRainingAt(actor.blockPosition()),sheltered,fire);
     }
     public static void applyCapacities(LivingEntity entity,SurvivalState s,boolean exempt){
@@ -120,11 +119,35 @@ public final class SurvivalEvents {
         instance.removeModifier(id);
         if(capacity<.999)instance.addTransientModifier(new AttributeModifier(id,capacity-1,AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
     }
-    private static void transmit(LivingEntity actor,SurvivalState s,ServerLevel level){
+    /** Nobody has to hand a first case to anyone: illness turns up by chance, more often in the starved and parched. */
+    public static void onset(LivingEntity actor,SurvivalState s,long ticks){
+        double share=(double)ticks/SurvivalState.DAY,rundown=s.hunger<30||s.thirst<30?2:1;
+        if(actor.getRandom().nextDouble()<1-Math.pow(1-Math.min(1,s.rules.number("respiratoryOnsetChancePerDay")*rundown),share))s.infect(false);
+        if(actor.getRandom().nextDouble()<1-Math.pow(1-Math.min(1,s.rules.number("systemicOnsetChancePerDay")*rundown),share))s.infect(true);
+    }
+    private static void wornOut(LivingEntity actor,SurvivalState s){
+        if(s.wornOut==0)return;
+        if(actor instanceof ServerPlayer player)for(int i=0;i<4;i++)if((s.wornOut&1<<i)!=0)player.sendSystemMessage(Component.literal("Your "+SurvivalApi.GARMENT_SLOTS[i]+(i==0||i==2?" has":" have")+" worn through and fallen apart."));
+        s.wornOut=0;
+    }
+    /** Coughs carry about two metres in the open and across a shared room under one roof. */
+    public static int transmit(LivingEntity actor,SurvivalState s,ServerLevel level){
         double chance=1-Math.pow(1-s.rules.number("contactInfectionChancePerHour"),20d/1000);
-        for(LivingEntity other:level.getEntitiesOfClass(LivingEntity.class,actor.getBoundingBox().inflate(6),e->e!=actor&&SurvivalApi.isHumanoid(e)&&!SurvivalApi.exempt(e))){
-            if(actor.getRandom().nextDouble()<chance){var target=SurvivalApi.state(other);target.infect(s.severeSymptoms());SurvivalApi.save(other,target);}
+        return transmit(actor,s,level,chance);
+    }
+    public static int transmit(LivingEntity actor,SurvivalState s,ServerLevel level,double chance){
+        double near=s.rules.number("contactRange"),room=s.rules.number("sharedRoomRange");int cases=0;
+        boolean indoors=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.roofed(level,actor.blockPosition());
+        for(LivingEntity other:level.getEntitiesOfClass(LivingEntity.class,actor.getBoundingBox().inflate(Math.max(near,room)),e->e!=actor&&e.isAlive()&&SurvivalApi.isHumanoid(e)&&!SurvivalApi.exempt(e))){
+            double distance=actor.distanceTo(other);
+            boolean shared=indoors&&distance<=room&&dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.roofed(level,other.blockPosition())&&actor.hasLineOfSight(other);
+            if(distance>near&&!shared||actor.getRandom().nextDouble()>=chance)continue;
+            var target=SurvivalApi.state(other);boolean caught=false;
+            if(s.infectious(false))caught|=target.infect(false);
+            if(s.infectious(true))caught|=target.infect(true);
+            if(caught){SurvivalApi.save(other,target);cases++;}
         }
+        return cases;
     }
     private static SurvivalState autonomy(Mob actor,SurvivalState state,ServerLevel level,long now){
         if(state.mental()==0){actor.getNavigation().stop();return state;}
@@ -132,7 +155,9 @@ public final class SurvivalEvents {
             var held=actor.getItemInHand(hand);String name=BuiltInRegistries.ITEM.getKey(held.getItem()).getPath();
             if(usefulTreatment(name,state)){SurvivalApi.act(actor,"treat",null,hand);state=SurvivalApi.state(actor);}
             int slot=garmentSlot(name);
-            if(slot>=0&&state.clothing[slot].isEmpty()&&!(name.startsWith("wool_")&&state.temperature>39)){
+            // A garment in rags is changed for a sounder one in hand.
+            boolean ragged=slot>=0&&!state.clothing[slot].isEmpty()&&state.condition(slot)<.2&&dev.qube.spawn_9b5fbb9.content.ItemAging.data(held).getLongOr("garmentWear",0)<state.clothingWear[slot];
+            if(slot>=0&&(state.clothing[slot].isEmpty()||ragged)&&!(name.startsWith("wool_")&&state.temperature>39)){
                 SurvivalApi.act(actor,"clothe",null,hand);state=SurvivalApi.state(actor);
             }
         }
@@ -186,7 +211,7 @@ public final class SurvivalEvents {
         return state;
     }
     private static int garmentSlot(String name){if(!name.startsWith("wool_")&&!name.startsWith("fiber_"))return -1;return name.endsWith("_shirt")?0:name.endsWith("_pants")?1:name.endsWith("_jacket")?2:name.endsWith("_shoes")?3:-1;}
-    private static boolean usefulTreatment(String name,SurvivalState state){return switch(name){case "bandage"->state.bleeding>0;case "antitoxin"->state.poisonTicks>0;case "antiseptic"->state.woundInfection;case "antibiotic"->state.mildTicks>0||state.severeTicks>0;case "painkiller"->state.bleeding>0&&state.painkillerTicks==0;default->false;};}
+    private static boolean usefulTreatment(String name,SurvivalState state){return switch(name){case "bandage"->state.bleeding>0;case "antitoxin"->state.poisonTicks>0;case "antiseptic"->state.woundInfection;case "antibiotic"->state.mildSymptoms()||state.severeSymptoms();case "painkiller"->state.bleeding>0&&state.painkillerTicks==0;default->false;};}
     public static boolean brainTick(LivingEntity actor){
         if(!SurvivalApi.isHumanoid(actor)||SurvivalApi.exempt(actor))return true;
         if(dev.qube.spawn_9b5fbb9.warfare.Military.underOrders(actor))return false;
@@ -219,12 +244,22 @@ public final class SurvivalEvents {
             BuiltInRegistries.ITEM.getKey(a.getMainHandItem().getItem()).getPath().matches(".*(sword|spear|axe).*"))
             // Balls and shot tear and carry cloth into the wound: they bleed and fester like a cut.
             ||source.equals("gunshot")||source.equals("artillery");
+        // Teeth and claws open wounds as a blade does, and a bite is far dirtier.
+        boolean bitten=e.getSource().getDirectEntity() instanceof LivingEntity beast&&dev.qube.spawn_9b5fbb9.wildlife.Predators.predator(beast);
+        edged|=bitten;
+        boolean burnt=e.getSource().is(net.minecraft.tags.DamageTypeTags.IS_FIRE);
+        long rip=Math.round(e.getHealthDamage()*s.rules.number("garmentTearTicksPerDamage"));
+        if(burnt)for(int i=0;i<4;i++)s.tear(i,rip);
+        else if(edged&&part!=SurvivalState.Part.BRAIN){
+            // The outer layer over the struck limb takes the cut.
+            if(part.ordinal()<2)s.tear(s.clothing[2].isEmpty()?0:2,rip);else s.tear(1,rip);
+        }
         s.injure(part,e.getHealthDamage()*6,edged);
         if(part.ordinal()<4&&target.getRandom().nextFloat()<.35){int start=part.ordinal()<2?8+part.ordinal()*5:18+(part.ordinal()-2)*5;s.injure(SurvivalState.Part.values()[start+target.getRandom().nextInt(5)],e.getHealthDamage()*8,edged);}
         if(part==SurvivalState.Part.BRAIN&&e.getHealthDamage()>=4&&target.getRandom().nextFloat()<.35)s.injure(target.getRandom().nextBoolean()?SurvivalState.Part.LEFT_EYE:SurvivalState.Part.RIGHT_EYE,e.getHealthDamage()*10,false);
         if(part==SurvivalState.Part.BRAIN&&e.getHealthDamage()>=4&&target.getRandom().nextFloat()<.2)s.injure(SurvivalState.Part.HEARING,e.getHealthDamage()*6,false);
-        if(edged&&target.getRandom().nextFloat()<s.rules.number("woundInfectionChance"))s.woundInfection=true;
-        SurvivalApi.save(target,s);
+        if(edged&&target.getRandom().nextFloat()<s.rules.number("woundInfectionChance")*(bitten?3:1))s.woundInfection=true;
+        wornOut(target,s);SurvivalApi.save(target,s);
     }
     @SubscribeEvent public static void eaten(LivingEntityUseItemEvent.Finish e){
         var actor=e.getEntity();if(!(actor.level() instanceof ServerLevel)||!SurvivalApi.isHumanoid(actor))return;
@@ -243,6 +278,7 @@ public final class SurvivalEvents {
         if(!(e.getLevel() instanceof ServerLevel))return;
         String id=BuiltInRegistries.ITEM.getKey(e.getItemStack().getItem()).getPath();String action=
             id.matches("(wool|fiber)_(shirt|pants|jacket|shoes)")?"clothe":
+            e.getEntity().isShiftKeyDown()&&(id.equals("yarn")||id.equals("cordage"))&&BuiltInRegistries.ITEM.getKey(e.getItemStack().getItem()).getNamespace().equals("spawn_9b5fbb9")?"mend":
             java.util.Set.of("bandage","painkiller","antitoxin","antiseptic","antibiotic").contains(id)?"treat":
             id.equals("wooden_toy")?"play":e.getItemStack().is(Items.BOOK)?"read":null;
         if(action!=null){var result=SurvivalApi.act(e.getEntity(),action,null,e.getHand());e.getEntity().sendOverlayMessage(Component.literal(result.message()));e.setCancellationResult(InteractionResult.SUCCESS);e.setCanceled(true);}
@@ -298,6 +334,7 @@ public final class SurvivalEvents {
                 long end=SurvivalApi.calendar(world),start=end-skipped;
                 for(long cursor=start;cursor<end;){long bucket=Math.floorDiv(cursor,600),next=Math.min(end,(bucket+1)*600);long batch=Math.max(0,Math.round((next-cursor)*Config.NEEDS_RATE.get()));while(batch>0){long part=Math.min(batch,7*SurvivalState.DAY);var partial=state.advance(part,SurvivalState.Activity.IDLE,climate(actor,world,bucket*600+300),false,sleepStates.getOrDefault(actor.getUUID(),false));damage+=partial.damage();dry|=partial.dehydrated();batch-=part;}cursor=next;}
             }else while(elapsed>0){long batch=Math.min(elapsed,7*SurvivalState.DAY);var partial=state.advance(batch,SurvivalState.Activity.IDLE,climate(actor,world),false,sleepStates.getOrDefault(actor.getUUID(),false));damage+=partial.damage();dry|=partial.dehydrated();elapsed-=batch;}
+            onset(actor,state,Math.round(skipped*Config.NEEDS_RATE.get()));wornOut(actor,state);
             SurvivalApi.save(actor,state);SurvivalApi.syncFood(actor,state);
             if(dry)actor.hurtServer(world,actor.damageSources().genericKill(),Float.MAX_VALUE);
             else if(damage>0)actor.hurtServer(world,actor.damageSources().starve(),(float)damage);

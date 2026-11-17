@@ -65,7 +65,7 @@ public final class SurvivalHud {
             for(int i=4;i<8;i++)g.text(font,SurvivalState.Part.values()[i].name().toLowerCase(Locale.ROOT).replace('_',' ')+": "+Math.round(s.anatomy[i])+"%",right,top+68+(i-4)*12,0xFFD7E3DE);
             g.text(font,"Clothing beneath armor",right,top+123,0xFFF1D5A0);
             for(int i=0;i<4;i++){
-                String garment=s.clothing[i].isEmpty()?"Bare":s.clothing[i].substring(s.clothing[i].indexOf(':')+1).replace('_',' ');
+                String garment=s.clothing[i].isEmpty()?"Bare":s.clothing[i].substring(s.clothing[i].indexOf(':')+1).replace('_',' ')+" "+Math.round(s.condition(i)*100)+"%";
                 g.text(font,new String[]{"Shirt: ","Pants: ","Jacket: ","Shoes: "}[i]+garment,right,top+139+i*12,0xFFD7E3DE);
             }
             int figureX=right+108,figureY=top+187;

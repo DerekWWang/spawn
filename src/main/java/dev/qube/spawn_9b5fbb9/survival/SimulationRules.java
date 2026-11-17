@@ -25,6 +25,10 @@ public final class SimulationRules {
         setting("woundInfectionChance",.08,0,1);setting("contactInfectionChancePerHour",.06,0,1);
         setting("anatomyRecoveryPerDay",3,0,100);setting("garmentLifetimeTicks",672000,1000,2688000);
         setting("woolJacketInsulation",.35,0,1);setting("woolPieceInsulation",.18,0,1);setting("fiberPieceInsulation",.06,0,1);
+        // Appended settings keep older saved rule tables readable: they are stored by position.
+        setting("respiratoryOnsetChancePerDay",.02,0,1);setting("systemicOnsetChancePerDay",.002,0,1);
+        setting("contactRange",2,0,16);setting("sharedRoomRange",6,0,16);
+        setting("garmentTearTicksPerDamage",12000,0,2688000);setting("garmentMendTicks",134400,0,2688000);setting("garmentMendFloor",.2,0,1);
     }
     private static void setting(String name,double initial,double min,double max){SPECS.put(name,new Setting(initial,min,max));}
     public static final SimulationRules DEFAULT=new SimulationRules(Map.of());

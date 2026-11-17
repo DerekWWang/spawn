@@ -352,5 +352,7 @@
   "block.spawn_9b5fbb9.bauxite_ore": "Bauxite",
   "block.spawn_9b5fbb9.wolframite_ore": "Wolframite Ore",
   "block.spawn_9b5fbb9.borax_ore": "Borax Deposit",
-  "block.spawn_9b5fbb9.distillation_column": "Distillation Column"
+  "block.spawn_9b5fbb9.distillation_column": "Distillation Column",
+  "entity.spawn_9b5fbb9.brown_bear": "Brown Bear",
+  "entity.spawn_9b5fbb9.lion": "Lion"
 }

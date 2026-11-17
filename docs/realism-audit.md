@@ -188,6 +188,29 @@ repeated in the last section).
 | Walls | Timber splinters, masonry is battered down, earth absorbs | Cumulative damage by material | = |
 | Men | Fed, led and unbroken, or gone | Rations, water, morale, rout and desertion | = |
 
+### Weather on fire, illness, cloth and predators
+
+| Process | Real | In the mod | |
+| --- | --- | --- | --- |
+| Rain on fire | Rain puts out open flame and stops it spreading; a roof keeps a fire alight; a small cooking fire is drowned by a downpour, not a drizzle | Regional rain puts out fire that it reaches and stops spread; nothing happens under a roof; a campfire open to the sky goes out in rain heavier than half the scale | = |
+| Catching a cold | Two or three a year for an adult, from nobody in particular; more in the malnourished | 2% a day (about twice a 112-day year), doubled when starved or parched | = |
+| Serious infection | Sporadic and uncommon apart from bad water, bad food and wounds, which are already modelled | 0.2% a day by chance, beside the water, food and wound routes | ~ |
+| Spread | Droplets carry a metre or two; shared indoor air carries across a room; a carrier sheds from about a day before symptoms | Two blocks in the open, six under one roof in line of sight, from the last quarter of the incubation, 6% an hour of exposure | = |
+| Wear of cloth | By abrasion, strain and wet, not by age; shoes on the road | Wear by activity (a quarter asleep to three times climbing), half as fast again wet, shoes almost only when moving | = |
+| Life of a garment | A year or more of working wear | 28 days of walking wear | ~ |
+| Damage to cloth | Cuts, bites and burns ruin the cloth over the wound | Half a day of life per point of damage to the outer garment on the struck limb; fire scorches all of it | = |
+| Worn cloth | Thin cloth is cold cloth | Insulation falls to half as the garment wears out | = |
+| Mending | Patched and darned for years with thread, never to new | A length of yarn or cordage gives back a fifth of the life, to four fifths at best | = |
+| Taking and giving clothes | Nobody awake is stripped; the helpless are dressed by others | Consent by crouching for players; companions keep the better garment; the unconscious can be dressed and undressed | = |
+| Wolf | 30-50 kg; packs; bolts up to 9 kg then goes days; takes stock; attacks on people rare, on the lone, weak or by starving packs | Fed for 3 days by a kill; small stock alone, cattle and horses as a pack of three; people only by a pack, alone, when starving or hurt | = |
+| Brown bear | 100-400 kg, 0.9-1.5 m at the shoulder; avoids people, kills stock, dens in winter, attacks when surprised at close range | 40 health against a person's 20; fed 2 days; stock when hungry; people when starving or startled within 5 m; no hunting while it freezes | = |
+| Lion | Male about 190 kg, 1.2 m at the shoulder; gorges up to 30 kg and rests days; hunts mostly by night; takes cattle and lone people | Fed 4 days; hunts by night unless starving; all stock; people when hungry | = |
+| Polar bear | Up to 450 kg; the one bear that hunts people | 44 health, bite 10; people whenever hungry | = |
+| Speed | Wolf 16 m/s, bear 13-15, lion 20 in a burst; a person sprints 6-8 | 7 to 9 m/s in pursuit against a sprint of 5.6: always faster than a person, slower than life | ~ |
+| What keeps them off | Fire, company, walls, wounding them | Open flame within six blocks or a torch in hand, two to four people together, fences and walls, and a rout below a quarter to half health | = |
+| The kill | Eaten on the spot by the pack; carrion and bait draw the hungry | The pack is fed by the kill and the meat is gone; hungry animals come to raw meat on the ground and eat a full meal of it | = |
+| Bites | Ragged, bleeding, and far more often infected than a clean cut | Bleed as a blade cut, tear the garment, three times the wound-infection chance | = |
+
 ## What is deliberately brutal
 
 - A locomotive is some fifty tonnes of ore through the furnaces, twelve thousand man-hours in the
@@ -200,6 +223,9 @@ repeated in the last section).
   that is not braked in time leaves the rails.
 - Nobody carries a tonne of ore home. It goes in a cart, and the cart needs a horse, and the
   horse eats.
+- Nobody outruns a bear. A flock with no fence, fire or herdsmen is a meal, and so is someone
+  bleeding and alone when the wolves are starving.
+- The only coat wears out on the wearer's back, faster in the rain, and is colder every week.
 
 ## Models
 
@@ -210,6 +236,10 @@ from the body so they turn with distance travelled, and the coupling rods ride t
 Scale and the build-on-the-track approach follow the conventions of Immersive Railroading; the
 cleanroom follows the idea of GregTech's sealed, filtered multiblock, with physical rules of its
 own. No assets or code from either were used.
+
+The brown bear and the lion are original models at true scale: the bear 2.1 m long and 1.1 m at its
+shoulder hump with a pale muzzle, the lion 1.9 m with a 0.9 m tufted tail and a dark mane. Both
+walk, idle and strike with their own animations.
 
 ## What is still not one to one
 
@@ -250,6 +280,13 @@ cross, and none is hidden behind a number that pretends otherwise.
 12. **Ballistics** have no wind, barrel wear or air density, drag is a single coefficient per shot,
     and a shot that leaves the loaded world is lost, so the computed ranges of kilometres are
     never seen in play.
+13. **Two illnesses stand for all of them.** One mild respiratory and one serious systemic
+    infection, and the one antibiotic treats both, which no real drug does for a cold.
+14. **Cloth lasts a season, not a year.** The rules of wear are real; the scale follows the
+    compressed calendar.
+15. **Predators** run at about half their real speed (still faster than any person), do not breed,
+    keep no territories, do not climb or swim after prey, borrow the voices of other animals, and
+    there is one lion and one brown bear model with no cubs or lionesses.
 
 ## Verification
 
@@ -264,8 +301,31 @@ Writing the player wiki from the code turned up three more, also fixed: a jar co
 made because it wanted a clay block that nothing yields any more (it now takes eight lumps); ore
 and coal left on the ground weathered into plant fibre after four days; and prospecting did not
 recognise the accessory ores. Charcoal and ash can now be made from any timber, not one species.
+Measuring how many protocol bots a server carries turned up three costs, also fixed: the crop
+calendar's check, asked for every random tick the world takes, built a text id and looked it up
+each time; forbidden monsters were still in every biome's spawn list, so the spawner built one,
+saw it discarded and tried again every tick; and nothing dropped ever left the world, because
+organic litter weathered to plant fibre and fibre weathered to fresh fibre. Fibre and spoiled food
+left in the open now rot away after the same spell again; rock, metal scrap and shards stay.
 
-142 GameTests pass. Those that changed or were added in this pass check: per-block ore yields
+157 GameTests pass. Three added with the server-load fixes check that no biome offers the spawner a
+forbidden creature while plains still offer sheep; that the crop calendar answers per block exactly
+as its rules do and leaves vanilla random ticking alone; and that a sapling left out rots to fibre
+and then away, a fish spoils and then rots away, and coal stays. Twelve added for weather, illness,
+cloth, predators and protocol bots check: regional rain
+putting out open fire and a campfire while a roofed one burns on and dry weather touches neither;
+illness beginning by chance, staying hidden and harmless early in the incubation, then crossing two
+metres of open air but not four, and a whole roofed room; cloth wearing by activity and wet,
+losing warmth, falling apart, being patched to four fifths and no further, taken off, exchanged
+only for a sounder garment and scorched by fire; bears and lions in the right biomes' spawn lists
+and nowhere else; a fed bear ignoring a flock and a hungry one taking it unless a fire burns by the
+fold; a lion hunting by night unless starving; a starving bear going for someone alone but not for
+a torch-bearer or three people together, and a fed one attacking when walked up on; wolves needing
+a pack of three for a person or a cow and preferring someone bleeding; a bite bleeding and tearing
+cloth; a kill feeding the animal and leaving no meat; a badly hurt bear breaking off; a hungry bear
+eating thirty cuts of bait and leaving the rest; a bear with its own will running down and
+killing a sheep; and the id table written for protocol bots carrying the block states, item ids and
+entity sizes the server really uses. Those that changed or were added in the earlier pass check: per-block ore yields
 through real mining; charcoal as reductant; no recipe creating mass and nothing assembled weighing
 more than its parts; every recipe naming only
 registered items; the year-long nitre bed and its yield; kilowatt capacity, coal burn and
@@ -283,6 +343,12 @@ real acceleration while a two-horse wagon starts alongside; a fab on two engine-
 generating sets (70 kW, 17 kW drawn) reaches 100% cleanliness, packages sixteen chips and falls to 0%
 when its wall is breached; a conscript loads through the full
 drill and fires. Images are in `docs/validation/2026-11-15-war-industry/`.
+
+Also on a live dedicated server: the brown bear and the lion render textured and to scale beside a
+villager from three angles and play their strike; a starving bear in a fenced pen sees a sheep
+eight blocks off, covers the ground in about a second, kills it, leaves no mutton and has its hunger
+reset; and the health screen lists each garment with its condition and shows a jacket and trousers
+gone after undressing. Images are in `docs/validation/2026-11-15-wildlife/`.
 
 Sources consulted for the reference mods: [Immersive Railroading overview](https://www.9minecraft.net/immersive-railroading-mod/wiki/),
 [GregTech CEu Modern changelog](https://modrinth.com/mod/gregtechceu-modern/changelog?page=1).

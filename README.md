@@ -8,7 +8,10 @@ The explicit Tectonic profile integrates **Tectonic 3.0.32 + Lithostitched 2.0.6
 with terrain-relative mineral districts, regional weather, persistent soil water,
 physical irrigation, wind exposure, and climate-dependent pasture. Players and
 enrolled agents share the same environment; each client sees its own local rain
-or snow. Backstories and autonomous settlement/trading AI are outside this milestone.
+or snow. Rain falls where the regional weather puts it, and it does what rain does:
+fire in the open goes out and will not spread, and a downpour drowns a campfire
+that has no roof over it. Backstories and autonomous settlement/trading AI are
+outside this milestone.
 
 Use a **new world** with the supplied runtime and configuration. Existing worlds
 retain their saved profile, and mismatched generators/configurations are refused.
@@ -34,6 +37,7 @@ can inspect conditions, plan work, and coordinate through the server API.
 | Thirst | Activity and hot/arid exposure increase water use. At 30% or less, mental capacity is capped at 30%. Zero thirst kills. Untreated water can cause illness. |
 | Temperature | Climate, altitude, seasons, rain/wetness, shelter, fire, exertion, and garments change body temperature. Sustained cold/heat causes progressive illness and damage. |
 | Health | Limbs and individual digits affect manipulation/movement; cranial and sensory injuries affect work. Bleeding, poisoning, infection, and permanent blindness persist. |
+| Illness | A respiratory infection turns up by chance about twice a year, a systemic one far less often, and twice as readily in the starved or parched. A carrier passes it on from shortly before the first symptom: within two blocks in the open, across a shared room under one roof. |
 
 One game hour is 1,000 ticks. At 20 TPS, a day lasts 20 real minutes and the
 4.5-hour recreation requirement lasts 3 minutes 45 seconds. Seasons default to
@@ -175,9 +179,23 @@ food stacks according to quality and cannot nest containers. Transport keeps
 their contents and freshness.
 Worn-out pottery spills stored food and leaves shards.
 
-Right-click garments to wear them. `/survival dye <0–3>` consumes a held natural
-dye for the shirt, pants, jacket, or shoes respectively. Garment wear and color
-survive swapping and ordinary inventory/death rules.
+Right-click garments to wear them; a garment already in that slot comes back to
+the hand. `/survival act undress` takes off the outermost garment, or
+`undress_jacket`, `undress_shirt`, `undress_pants`, `undress_shoes` a named one.
+`/survival dye <0–3>` consumes a held natural dye for the shirt, pants, jacket,
+or shoes respectively. Garment wear and color survive swapping and ordinary
+inventory/death rules.
+
+Cloth wears with use, not with the calendar. A garment lasts 28 days of steady
+walking: half as fast standing about, a quarter as fast asleep, twice as fast
+at a run, three times climbing, and half as fast again when wet. Shoes wear on
+the road and hardly at all at rest. A cut, a bite or a burn takes half a day of
+life out of the cloth over the wound for every point of damage. Worn cloth is
+thinner: a garment about to fall apart keeps half its warmth, and the health
+screen shows each garment's condition. Sneak-use yarn (wool) or cordage (fibre),
+or `/survival act mend`, to patch the most worn garment of that cloth: each
+length gives back a fifth of its life, but a patched garment never gets better
+than four fifths sound. Worn right through, it falls apart.
 
 Bandages stop excessive bleeding. Painkillers temporarily relieve pain without
 repairing injuries. Antitoxin treats poisoning, antiseptic treats infected wounds,
@@ -189,7 +207,10 @@ Right-click treatment to use it; interact with a nearby humanoid while holding
 medicine to treat them. Sneak-interact with food or clothing to feed or clothe a
 companion. Supplies are consumed. Eating follows the item's actual consumption
 time and remainder rules. Players must crouch to accept clothing from another
-actor, and companion clothing cannot replace an occupied slot.
+actor or to hand it over. Someone awake keeps the coat already worn unless the
+one held out is the warmer and sounder garment, in which case the old one comes
+back to the giver; nobody conscious can be stripped, and someone unconscious or
+helpless can be dressed and undressed by another.
 
 ## Agriculture and livestock
 
@@ -212,9 +233,38 @@ water, or provide grazing and surface water. Place fertilized eggs on hay by
 lit heat. Throwing ordinary eggs cannot create chicks.
 
 Food spoils, tools/armor/garments wear, and unstored dropped materials weather.
+Organic things left on the ground rot to plant fiber, and fiber and spoiled food
+left out rot away entirely. Rock, ore, metal scrap and ceramic shards stay.
 Splitting, storage transfers, cooking, and reload do not refresh old food.
 Unlike freshness components prevent merging old and new stacks into a fresh one.
 Stored unused durable materials remain stable.
+
+## Predators
+
+Wolves, brown bears, lions and polar bears have to eat, and behave accordingly.
+Each carries the time of its last full meal. Fed, it leaves flocks and people
+alone; once the meal has worn off it takes the nearest prey it can manage, eats
+what it kills (the hide and bones are left, the meat is not) and is quiet again
+for days. A hungry animal also comes to raw meat left lying, so a carcass or an
+open larder draws them and a bait can hold one.
+
+| Animal | Where | Size | A meal lasts | Takes | People |
+| --- | --- | --- | ---: | --- | --- |
+| Wolf | Taiga and forest, as before | 8 health, bite 4 | 3 days | Sheep, goats, pigs, chickens, rabbits; cattle and horses only as a pack of three | Only a pack of three, only someone alone, and only when starving or when the person is hurt or bleeding |
+| Brown bear | Taiga, forest and mountain country | 40 health, bite 9; 1.1 m at the shoulder | 2 days | Sheep, goats, pigs, chickens, rabbits, cattle | When starving; and at once, fed or not, if walked up on within five blocks. Lies up while it freezes |
+| Lion | Savanna, in groups of two to four | 28 health, bite 8; 1.2 m at the shoulder | 4 days | All stock, cattle and horses included | When hungry, by night; by day only when starving |
+| Polar bear | Ice and snow, as before | 44 health, bite 10 | 5 days | All stock | Whenever hungry |
+
+All of them run faster than a person can sprint, so the defences are the real
+ones. None will come near open fire: a lit campfire or burning block within six
+blocks protects stock and people alike, and so does a torch in the hand. None
+will approach people standing together (two for wolves, three for bears and
+lions, four for polar bears). Walls and fences keep them from stock they cannot
+reach. Badly hurt (half its health for a wolf, a quarter for a brown bear) the
+animal breaks off and runs for a minute rather than fight to the death. A
+bite opens a bleeding wound, tears the cloth over it, and festers three times
+as often as a blade cut. Tame dogs hunt nobody. Bears and lions drop hide and
+bone.
 
 ## World rules
 
@@ -465,6 +515,14 @@ shakes the morale of men nearby. Powder in a wrecked vehicle explodes.
 
 ## Bot and script interface
 
+There are two ways to drive an actor. A **protocol bot** joins as a player: the `bots/` folder holds a
+[mineflayer](https://github.com/PrismarineJS/mineflayer) package that carries a bot through the NeoForge
+login, teaches it the names of the mod's blocks, items and animals, and gives it `bot.survival` for its
+own body, climate and actions. Such a bot has no operator rights and lives under every rule a person
+does. See [bots/README.md](bots/README.md). `/survival export_registry` (operators) writes the id table
+those bots read. The other way is the **controller commands** below, which steer a body that already
+exists on the server.
+
 Ordinary players operate themselves. Operator controller commands may select a
 living humanoid, including a fake player or an entity enrolled with
 `/survival enroll <targets>`:
@@ -477,6 +535,8 @@ survival control <actor> social <companion>
 survival control <actor> treat <patient>
 survival control <actor> feed <companion>
 survival control <actor> clothe <companion>
+survival control <actor> undress <companion>
+survival control <actor> mend <companion>
 survival control <actor> vessel <operation>
 survival control <actor> produce <recipe>
 survival control <actor> fuel

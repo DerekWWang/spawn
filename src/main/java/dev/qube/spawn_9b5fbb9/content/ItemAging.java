@@ -83,7 +83,8 @@ public final class ItemAging {
         entity.setUnlimitedLifetime();
         var rules=RULES;double exposure=(level.isRainingAt(entity.blockPosition())?rules.rainMultiplier:1)*(level.getBiome(entity.blockPosition()).value().getBaseTemperature()>=1.5f?rules.hotMultiplier:1);
         ItemStack stack=entity.getItem(); exposed(stack,level,exposure);
-        if(isFood(stack)||stack.is(SurvivalContent.item("fertilized_egg")))return;
+        // Sound food keeps to its shelf life; once spoiled it lies out like any other organic litter.
+        if(stack.is(SurvivalContent.item("fertilized_egg"))||isFood(stack)&&!spoiled(stack))return;
         CompoundTag tag=data(stack);long now=SurvivalApi.calendar(level);long last=tag.getLongOr("weatherTick",now);
         String id=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
         // Rock does not rot: broken ore, coal, clay, brick and lime lie where they fell.
@@ -91,6 +92,10 @@ public final class ItemAging {
         boolean durable=id.contains("ingot")||id.contains("stone")||id.contains("pot")||id.contains("scrap")||id.contains("copper")||id.contains("bronze")||id.contains("iron")||id.contains("gold")||id.contains("diamond")||id.contains("ceramic")||id.contains("obsidian");
         double age=tag.getDoubleOr("weatherAge",0)+Math.max(0,now-last)*exposure;
         tag.putLong("weatherTick",now);tag.putDouble("weatherAge",age);data(stack,tag);
-        if(age>DAY*(durable?rules.durableWeatherDays:rules.organicWeatherDays) && !id.equals("ceramic_shard")&&!id.equals("metal_scrap")) entity.setItem(new ItemStack(SurvivalContent.item(durable?"metal_scrap":"plant_fiber"),Math.min(4,stack.getCount())));
+        boolean weathered=age>DAY*(durable?rules.durableWeatherDays:rules.organicWeatherDays);
+        // Fibre is what organic litter rots down to, and spoiled food is already rot: a second spell in the open
+        // and nothing is left. Without an end, every egg and sapling a loaded area ever dropped stays in it for good.
+        if(weathered&&(id.equals("plant_fiber")||spoiled(stack))){entity.discard();return;}
+        if(weathered && !id.equals("ceramic_shard")&&!id.equals("metal_scrap")) entity.setItem(new ItemStack(SurvivalContent.item(durable?"metal_scrap":"plant_fiber"),Math.min(4,stack.getCount())));
     }
 }
