@@ -203,8 +203,9 @@ What you carry slows you. Up to 35 kg costs nothing. From 35 to 120 kg your pace
 The heap can wait while you fetch one.
 
 - Broken ore, crushed and roasted ore, coal, charcoal, coke, clay, brick, lime, limestone, sulfur and pig iron do not weather at all. A heap lies where it fell until it is carted away.
-- No dropped item is removed on a timer. What removes other things left in the open is weathering.
+- No dropped item is removed on a timer. What removes other things left in the open is weathering and rot.
 - Other loose material is ruined after 4 game days exposed, and what is left is a few scraps of plant fibre. Items whose names mark them as stone, ingots, copper, bronze, iron, gold, diamond, pottery, scrap or obsidian last 28 days and end as metal scrap.
+- Plant fibre left out rots away to nothing after another 4 days exposed, and so does spoiled food, 4 days after it spoils. Metal scrap and ceramic shards stay where they lie.
 - Rain doubles the rate of weathering and the hottest biomes multiply it by 1.5. Both rates are set in the `decay` rules and can be changed by a data pack.
 - Weathering stops while an item is in an inventory, a container or a vehicle.
 

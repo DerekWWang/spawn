@@ -152,7 +152,7 @@ Where the food is kept changes how fast it ages:
 | Lying on the ground in rain | 200% | `rainMultiplier` |
 | Lying on the ground in a hot biome | 150% | `hotMultiplier` |
 
-Rain and heat multiply together, so food left out in hot rain ages three times as fast.
+Rain and heat multiply together, so food left out in hot rain ages three times as fast. Food that spoils on the ground does not lie there for ever: after 4 more days in the open, counted at the same rain and heat rates, it has rotted away.
 
 Resulting shelf life in a sealed jar:
 
