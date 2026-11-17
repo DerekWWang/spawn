@@ -215,7 +215,7 @@ Nothing assigns a profession. Specialisation follows from the numbers:
 - The top smithing gates need level 12 and 14, which is 81,000 and 115,000 XP. Since only the first 4,000 XP a day is paid in full, that is roughly 20 and 29 days of dedicated work, before decay.
 - Gated goods cannot be bought or grid-crafted, so a settlement needs a smith, a weaver and a potter, and they need each other's output.
 
-Skills survive death. The new body keeps every level, its XP and its passions.
+Skills die with the learner. Death is permanent, and a player an operator revives comes back as a new person with nothing learned: see [Survival and Physiology](Survival-and-Physiology).
 
 ## Commands
 

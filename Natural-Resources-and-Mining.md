@@ -123,7 +123,7 @@ Nothing in the game tells you where buried ore is. You find it by looking.
 | Rule | Value |
 | --- | --- |
 | Radius | 1 to 16 blocks, 12 if not given, and at most 8 blocks up or down |
-| Line of sight | Required from your eyes to the block. Buried blocks are never listed |
+| Line of sight | Required from your eyes to the block: any face turned towards you that open air reaches. Buried blocks are never listed |
 | Who | A living, sighted humanoid. The blind see nothing |
 | Listed | Hand-gatherable surface resources, fruit trees, crops, malachite, cassiterite, haematite and coal ore, and quarry material (limestone, granite, sandstone, red sandstone, clay, gravel, sand) |
 | Each entry | Name, kind, host, position, whether it is ready to harvest, and whether to gather, harvest or mine it |

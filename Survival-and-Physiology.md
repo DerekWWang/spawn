@@ -312,9 +312,19 @@ Do not go to bed bleeding, thirsty or cold. The night will be charged to you in 
 
 Vanilla food-based regeneration is disabled for simulated players. A limb at 0 needs about 33 days of good conditions to return to 100.
 
-## Death and respawn
+## Death
 
-On respawn a player receives a new body: hunger, thirst and recreation at 100, temperature 37 C, every part at 100, no bleeding, poison or infection, and no immunity. Skills, experience and passions carry over. Worn garments drop with the body, unless the `keepInventory` game rule is on, in which case they stay worn with their wear and colour. Non-player actors drop their garments when they die.
+Death is permanent. A player who dies does not return to the world.
+
+- You come back only as a spectator. You can watch, but you cannot touch a block, use an item, run a command or speak in chat, and the simulation no longer counts you.
+- Leaving and rejoining changes nothing.
+- Everything you had learned is gone with you. Your soldiers are released, and your place at a works, in a gun crew or as a station's worker is given up.
+- Worn garments drop with the body, unless the `keepInventory` game rule is on. Non-player actors drop their garments when they die.
+- A creative or spectating operator was never part of the simulation and is not ended by dying.
+
+An operator can return a dead player to the world with `/survival revive <players>`. They come back as a new person, in survival mode where they stand: hunger, thirst and recreation at 100, temperature 37 C, every part at 100, no immunity, and nothing learned.
+
+Dead villagers, soldiers and animals leave the world, and nothing keeps a place for them. A dead draught animal is out of the harness, and a dying animal neither mates, lays nor gives birth.
 
 ## Commands
 
