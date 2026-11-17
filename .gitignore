@@ -7,3 +7,6 @@ reference/
 /.claude/skills/qube/
 .gstack/
 /wiki/
+
+# Node bots
+/bots/node_modules/

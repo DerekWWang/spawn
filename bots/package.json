@@ -1,0 +1,33 @@
+{
+  "name": "spawn-bots",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Mineflayer bots that join a Spawn (NeoForge, Minecraft 26.3) server as ordinary players",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "node scripts/setup-data.js",
+    "test": "node --test test/unit.test.js",
+    "live": "node test/live.js"
+  },
+  "dependencies": {
+    "minecraft-protocol": "github:suisarbre/node-minecraft-protocol#3473413d32ee09af55aa77579000391be3bb9753",
+    "mineflayer": "github:suisarbre/mineflayer#ad4af12611fd55309bb387b2b416212bffb0eddf",
+    "prismarine-chunk": "github:suisarbre/prismarine-chunk#a96fd7050163b5ae3cbce240deab453a03cd3bc2",
+    "prismarine-physics": "github:suisarbre/prismarine-physics#e641ceb574e42e8a3cdc8cecbcf2c0d2bf5d729b"
+  },
+  "overrides": {
+    "minecraft-protocol": "$minecraft-protocol",
+    "prismarine-chunk": "$prismarine-chunk",
+    "prismarine-physics": "$prismarine-physics"
+  },
+  "spawn": {
+    "minecraftData": {
+      "repository": "https://github.com/suisarbre/minecraft-data",
+      "commit": "312f3cada17a7d9e2e1a1834fe26f17296163096"
+    }
+  }
+}
