@@ -178,12 +178,15 @@ public final class WarfareGameTests {
         h.runAfterDelay(20,()->{
             h.assertTrue(level.getBlockState(stone).isAir(),"Round shot smashes the masonry block it strikes");
             h.assertTrue(level.getBlockState(behind).is(Blocks.COBBLESTONE)&&Siege.battered(level,behind)>0,"The block behind is battered but stands: breaching is cumulative");
+            h.assertTrue(dev.qube.spawn_9b5fbb9.world.ChunkRecords.peek(level,behind,"battered")!=null,"What the wall has taken is kept in the chunk it stands in, and so outlasts the server stopping");
             gun.shot="spawn_9b5fbb9:round_shot";gun.charges=1;gun.ready=true;
             h.assertTrue(Siege.fire(gunner,gun,Vec3.atCenterOf(earth)).success(),"The piece is relaid on the earth bank");
             h.runAfterDelay(20,()->{
                 h.assertTrue(level.getBlockState(earth).is(Blocks.DIRT)&&Siege.battered(level,earth)>0,"An earth rampart absorbs the same shot that broke stone");
                 h.assertTrue(Siege.resistance(level,earth,level.getBlockState(earth))>Siege.resistance(level,behind,level.getBlockState(behind)),"Earth outlasts masonry under cannon fire");
                 h.assertTrue(SurvivalApi.state(gunner).skills.experience(Skill.GUNNERY)>265000,"Serving the piece is gunnery practice");
+                net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent(net.neoforged.neoforge.common.util.BlockSnapshot.create(level.dimension(),level,earth,3),Blocks.DIRT.defaultBlockState(),gunner));
+                h.assertTrue(Siege.battered(level,earth)==0,"What is built again in the same place starts whole");
                 gun.discard();gunner.discard();h.succeed();
             });
         });

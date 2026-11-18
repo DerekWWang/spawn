@@ -26,7 +26,7 @@ import net.minecraft.world.phys.Vec3;
 public class WorksEntity extends BlockEntity {
     /** A works bunkers eight tonnes of fuel; a power station two hundred. */
     public long fuelLimit(){return station().equals("power_station")?64_000_000L:2_560_000L;}
-    public final Map<String,Long> stock=new TreeMap<>(),products=new TreeMap<>();
+    public final Map<String,Long> stock=new Ledger.Account(),products=new Ledger.Account();
     public final Set<String> workers=new LinkedHashSet<>();
     private final Map<String,Long> activeTicks=new HashMap<>();
     public String recipe="";
@@ -61,7 +61,10 @@ public class WorksEntity extends BlockEntity {
     }
     public boolean pendingVehicle(){for(String id:products.keySet())if(id.startsWith("vehicle:"))return true;return false;}
     public static void tick(Level world,BlockPos pos,BlockState state,WorksEntity works){
-        if(world instanceof ServerLevel level&&level.getGameTime()%20==0)works.advance(level,SurvivalApi.calendar(level));
+        if(!(world instanceof ServerLevel level)||level.getGameTime()%20!=0)return;
+        // Food held as stock or as finished goods goes on ageing while it waits.
+        if(level.getGameTime()%100==0){long before=Ledger.count(works.stock,Ledger.SPOILED)+Ledger.count(works.products,Ledger.SPOILED);Ledger.settle(works.stock,level);Ledger.settle(works.products,level);if(Ledger.count(works.stock,Ledger.SPOILED)+Ledger.count(works.products,Ledger.SPOILED)!=before)works.setChanged();}
+        works.advance(level,SurvivalApi.calendar(level));
     }
     private boolean begin(Industry.Recipe r){
         if(!Ledger.has(stock,r.inputs()))return false;
@@ -199,9 +202,9 @@ public class WorksEntity extends BlockEntity {
     }
     @Override protected void saveAdditional(ValueOutput out){
         super.saveAdditional(out);
-        var items=new TreeMap<String,Long>();var vehicles=new CompoundTag();
-        products.forEach((id,count)->{if(id.startsWith("vehicle:"))vehicles.putLong(id.substring(8),count);else items.put(id,count);});
-        out.store("stock",CompoundTag.CODEC,Ledger.save(stock));out.store("products",CompoundTag.CODEC,Ledger.save(items));out.store("vehicles",CompoundTag.CODEC,vehicles);
+        var items=Ledger.save(products);var vehicles=new CompoundTag();
+        products.forEach((id,count)->{if(id.startsWith("vehicle:")){vehicles.putLong(id.substring(8),count);items.remove(id);}});
+        out.store("stock",CompoundTag.CODEC,Ledger.save(stock));out.store("products",CompoundTag.CODEC,items);out.store("vehicles",CompoundTag.CODEC,vehicles);
         out.putString("recipe",recipe);out.putBoolean("active",active);out.putDouble("progress",progress);out.putLong("fuel",fuel);out.putLong("last",last);out.putLong("batches",batches);out.putDouble("cleanliness",cleanliness);
         out.putString("workers",String.join(",",workers));
         var ticks=new CompoundTag();activeTicks.forEach(ticks::putLong);out.store("activeTicks",CompoundTag.CODEC,ticks);
@@ -211,7 +214,7 @@ public class WorksEntity extends BlockEntity {
         if(level!=null){
             for(var ledger:List.of(stock,products))for(String id:new ArrayList<>(ledger.keySet())){
                 if(id.startsWith("vehicle:"))continue;
-                for(int stacks=0;stacks<54&&ledger.containsKey(id);stacks++){ItemStack stack=Ledger.withdrawStack(ledger,id);if(stack.isEmpty())break;Block.popResource(level,pos,stack);}
+                for(int stacks=0;stacks<54&&ledger.containsKey(id);stacks++){ItemStack stack=Ledger.withdrawStack(ledger,id,level);if(stack.isEmpty())break;Block.popResource(level,pos,stack);}
             }
             stock.clear();products.clear();
         }

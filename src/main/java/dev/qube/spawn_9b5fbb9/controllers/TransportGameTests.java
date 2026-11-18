@@ -168,4 +168,35 @@ public final class TransportGameTests {
         h.assertTrue(Vehicles.load(driver,cart,net.minecraft.world.InteractionHand.MAIN_HAND,false).success()&&!cart.cargo.isEmpty(),"Sound meat is loaded");
         cart.discard();driver.discard();h.succeed();
     }
+    public static void foodAgesInCargo(GameTestHelper h){
+        IndustrialGameTests.floor(h);var level=h.getLevel();var cart=Vehicles.spawn(level,"cart",at(h,3.5,2,8.5),-90);var driver=IndustrialGameTests.worker(h,3,6,Skill.RIDING,0);
+        var store=level.getServer().getCommandStorage();var original=store.get(SurvivalApi.CALENDAR).copy();
+        try{
+            driver.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.BREAD,8));
+            h.assertTrue(Vehicles.load(driver,cart,InteractionHand.MAIN_HAND,false).success()&&Ledger.count(cart.cargo,"minecraft:bread")==8,"Fresh bread is loaded");
+            Ledger.add(cart.cargo,"minecraft:iron_ingot",5);
+            var later=original.copy();later.putLong("sleepOffset",original.getLongOr("sleepOffset",0)+12000);store.set(SurvivalApi.CALENDAR,later);
+            Ledger.settle(cart.cargo,level);
+            ItemStack out=Ledger.withdrawStack(cart.cargo,"minecraft:bread",4,level);double age=dev.qube.spawn_9b5fbb9.content.ItemAging.data(out).getDoubleOr("foodAge",0);
+            h.assertTrue(out.getCount()==4&&age>10000&&age<12001&&!dev.qube.spawn_9b5fbb9.content.ItemAging.spoiled(out),"Half a day on, bread comes off the cart half a day older, not as it went on: age "+age);
+            later.putLong("sleepOffset",original.getLongOr("sleepOffset",0)+12000+24000);store.set(SurvivalApi.CALENDAR,later);
+            Ledger.settle(cart.cargo,level);
+            h.assertTrue(Ledger.count(cart.cargo,"minecraft:bread")==0&&Ledger.count(cart.cargo,Ledger.SPOILED)==4&&Ledger.count(cart.cargo,"minecraft:iron_ingot")==5,"Past its day it is spoiled food in the cart as it would be on a shelf, and iron is iron: "+Ledger.describe(cart.cargo));
+        }finally{store.set(SurvivalApi.CALENDAR,original);}
+        cart.discard();driver.discard();h.succeed();
+    }
+    public static void backingOffTheLine(GameTestHelper h){
+        IndustrialGameTests.floor(h);line(h,1,14,8);var level=h.getLevel();var engine=Vehicles.spawn(level,"locomotive",at(h,4.5,2,8.5),-90);
+        h.assertTrue(engine!=null&&engine.facing==Direction.EAST,"The engine stands on the line facing east");
+        Ledger.add(engine.cargo,"minecraft:coal",4);engine.water=Railway.TENDER_WATER;engine.steam=1;double west=at(h,0,2,8.5).x;
+        engine.velocity=-.05;
+        h.runAfterDelay(70,()->{
+            h.assertTrue(engine.isAlive()&&engine.damage==0&&engine.velocity==0&&engine.getX()-west<2.5,"Backed gently to the last rail, a train stops there: "+(engine.getX()-west)+" along, way "+engine.velocity+", damage "+engine.damage);
+            engine.velocity=-.3;
+            h.runAfterDelay(5,()->{
+                h.assertTrue(engine.isRemoved()||engine.damage>=25&&engine.velocity==0,"Backed off the end of the line at speed, it derails as it would running forward: damage "+engine.damage);
+                engine.discard();h.succeed();
+            });
+        });
+    }
 }

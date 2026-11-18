@@ -60,14 +60,14 @@ public final class ReviewFixGameTests {
         }
         var fresh=pos.south();var snapshot=net.neoforged.neoforge.common.util.BlockSnapshot.create(h.getLevel().dimension(),h.getLevel(),fresh,3);h.getLevel().setBlock(fresh,Blocks.GRANITE.defaultBlockState(),3);
         NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent(snapshot,Blocks.DIRT.defaultBlockState(),actor));
-        var storage=h.getLevel().getServer().getCommandStorage();var saved=storage.get(dev.qube.spawn_9b5fbb9.world.ExtractionHistory.KEY).copy();storage.set(dev.qube.spawn_9b5fbb9.world.ExtractionHistory.KEY,new net.minecraft.nbt.CompoundTag());storage.set(dev.qube.spawn_9b5fbb9.world.ExtractionHistory.KEY,saved);
-        h.assertFalse(dev.qube.spawn_9b5fbb9.world.ExtractionHistory.claim(h.getLevel(),fresh,Blocks.GRANITE.defaultBlockState()),"A real placement event excludes a fresh position, and serialized world exclusions survive reload");
+        h.assertTrue(dev.qube.spawn_9b5fbb9.world.ChunkRecords.peek(h.getLevel(),fresh,"mined")!=null&&h.getLevel().getServer().getCommandStorage().get(dev.qube.spawn_9b5fbb9.world.ExtractionHistory.KEY).isEmpty(),"The mark is kept in the chunk the block is in, not in the world-wide store");
+        h.assertFalse(dev.qube.spawn_9b5fbb9.world.ExtractionHistory.claim(h.getLevel(),fresh,Blocks.GRANITE.defaultBlockState()),"A real placement event excludes a fresh position");
         actor.discard();h.succeed();
     }
     public static void twoActorMineralChain(GameTestHelper h){
         var miner=h.spawn(EntityTypes.VILLAGER,new BlockPos(1,2,1));var processor=h.spawn(EntityTypes.VILLAGER,new BlockPos(1,2,4));miner.setNoAi(true);processor.setNoAi(true);SurvivalApi.enroll(miner);SurvivalApi.enroll(processor);miner.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(SurvivalContent.item("knapped_stone_pickaxe")));var pos=h.absolutePos(new BlockPos(2,2,1));
         h.getLevel().setBlock(pos,SurvivalContent.MALACHITE_ORE.get().defaultBlockState(),3);h.assertTrue(WorldActions.start(miner,"mine",pos).success(),"A supplied miner extracts actual malachite ore");work(miner);
-        var drops=h.getLevel().getEntitiesOfClass(ItemEntity.class,new net.minecraft.world.phys.AABB(pos).inflate(3),e->e.getItem().is(SurvivalContent.item("malachite")));h.assertTrue(drops.stream().mapToInt(e->e.getItem().getCount()).sum()==420,"A cubic metre of copper lode breaks down to 420 kg of sorted malachite: "+drops.stream().mapToInt(e->e.getItem().getCount()).sum()+" in "+drops.size()+" heaps");processor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(SurvivalContent.item("malachite"),48));drops.forEach(ItemEntity::discard);
+        var drops=h.getLevel().getEntitiesOfClass(ItemEntity.class,new net.minecraft.world.phys.AABB(pos).inflate(3),e->e.getItem().is(SurvivalContent.item("malachite")));h.assertTrue(drops.stream().mapToLong(ItemAging::heap).sum()==420&&drops.size()==1,"A cubic metre of copper lode breaks down to 420 kg of sorted malachite, lying in one heap: "+drops.stream().mapToLong(ItemAging::heap).sum()+" in "+drops.size()+" heaps");processor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(SurvivalContent.item("malachite"),48));drops.forEach(heap->heap.kill(h.getLevel()));
         var at=h.absolutePos(new BlockPos(2,2,4));h.getLevel().setBlock(at,SurvivalContent.ANVIL.get().defaultBlockState(),3);var station=(WorkstationEntity)h.getLevel().getBlockEntity(at);Production.reloadDefinitions(com.google.gson.JsonParser.parseString("{\"crush_malachite\":{\"ticks\":20}}").getAsJsonObject());h.assertTrue(Production.start(processor,station,"crush_malachite").startsWith("Started"),"Another actor reserves the transferred mineral in a real processing station");
         h.runAfterDelay(80,()->{try{h.assertTrue(station.output.is(SurvivalContent.item("crushed_copper"))&&station.output.getCount()==48&&processor.getMainHandItem().isEmpty(),"The processor consumes exactly the transferred 48 kg for 48 kg of crushed ore");
         Production.collect(processor,station);h.assertTrue(station.output.isEmpty()&&SurvivalApi.state(miner).skills.experience(SkillSet.Skill.MINING)>0&&SurvivalApi.state(processor).skills.experience(SkillSet.Skill.MINING)>0,"Collection and learning belong to the two actual workers");
@@ -93,5 +93,21 @@ public final class ReviewFixGameTests {
     public static void fullAnimal(GameTestHelper h){
         var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(1,2,1));actor.setNoAi(true);SurvivalApi.enroll(actor);var cow=h.spawn(EntityTypes.COW,new BlockPos(2,2,1));cow.setNoAi(true);cow.getPersistentData().putLong("husbandryBorn",-10000000);cow.getPersistentData().putDouble("nutrition",100);actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.WHEAT));
         dev.qube.spawn_9b5fbb9.agriculture.Husbandry.action(actor,cow);h.assertTrue(SurvivalApi.state(actor).skills.experience(SkillSet.Skill.ANIMALS)==0,"Consuming the last food on a fully nourished animal is not useful animal-handling practice");actor.discard();cow.discard();h.succeed();
+    }
+    public static void recordsKeptByChunk(GameTestHelper h){
+        var level=h.getLevel();BlockPos pos=h.absolutePos(new BlockPos(1,2,1));String key=Long.toString(pos.asLong());
+        var records=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(level);records.remove(key);
+        h.assertTrue(records.getCompoundOrEmpty(key).isEmpty(),"Nothing is on record of a place nothing was grown in");
+        // What a world made before records were kept by chunk still holds in its one store is moved across when first asked for.
+        var store=level.getServer().getCommandStorage();var id=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.storage(level);
+        var old=store.get(id);var crop=new net.minecraft.nbt.CompoundTag();crop.putLong("growth",777);old.put(key,crop);store.set(id,old);
+        h.assertTrue(records.getCompoundOrEmpty(key).getLongOr("growth",0)==777,"An older world's crop record is still found");
+        var kept=dev.qube.spawn_9b5fbb9.world.ChunkRecords.peek(level,pos,"crop");
+        h.assertTrue(!store.get(id).contains(key)&&kept!=null&&kept.contains(key),"And is kept from then on in the chunk the crop stands in");
+        var grown=records.getCompoundOrEmpty(key);grown.putLong("growth",778);records.put(key,grown);
+        h.assertTrue(dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(level).getCompoundOrEmpty(key).getLongOr("growth",0)==778,"A record written is the record read");
+        records.remove(key);
+        h.assertTrue(records.getCompoundOrEmpty(key).isEmpty()&&!store.get(id).contains(key),"A record removed stays removed");
+        h.succeed();
     }
 }

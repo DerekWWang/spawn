@@ -103,6 +103,10 @@ public final class SurvivalContent {
         TESTS.register("content_dead_workers_job_taken_up",()->ContentGameTests::deadWorkersJobIsTakenUp);
         TESTS.register("content_slow_hand_needs_more_fire",()->ContentGameTests::slowHandNeedsMoreFire);
         TESTS.register("content_furnace_stays_cold",()->ContentGameTests::furnaceStaysCold);
+        TESTS.register("content_ore_lies_in_one_heap",()->ContentGameTests::oreLiesInOneHeap);
+        TESTS.register("content_only_stock_breeds",()->ContentGameTests::onlyStockBreeds);
+        TESTS.register("survival_unconscious_lies_still",()->ContentGameTests::unconsciousLiesStill);
+        TESTS.register("reviewfix_records_kept_by_chunk",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::recordsKeptByChunk);
         TESTS.register("survival_sleep_and_pain",()->ContentGameTests::sleepAndPain);
         TESTS.register("content_litter_lamb_dying_dam",()->ContentGameTests::litterLambAndDyingDam);
         TESTS.register("content_product_recovery",()->ContentGameTests::productRecovery);

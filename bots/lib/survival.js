@@ -48,6 +48,7 @@ const SHAPES = {
 }
 // What the server says to every command of a dead player (SurvivalEvents), instead of running it.
 const DEAD = 'The dead take no part in the world.'
+const UNCONSCIOUS = 'You are unconscious.'
 
 // The server counts 20 against a player for every command and takes 1 off on each of its ticks. A player
 // who is not an operator is disconnected for spam when the count reaches 20 x command-spam-threshold-seconds
@@ -292,6 +293,7 @@ function install (bot, options = {}) {
   function report (text, shape) {
     return request(text, message => {
       if (message.trim() === DEAD) return { error: Object.assign(new Error(`The server refused "${text}": ${DEAD}`), { code: 'EDEAD' }) }
+      if (message.trim() === UNCONSCIOUS) return { error: Object.assign(new Error(`The server refused "${text}": ${UNCONSCIOUS}`), { code: 'EUNCONSCIOUS' }) }
       if (!message.trimStart().startsWith('{')) return null
       let value
       try { value = parseJson(message) } catch { return null }

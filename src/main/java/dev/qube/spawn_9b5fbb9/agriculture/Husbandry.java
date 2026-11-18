@@ -28,7 +28,16 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 public final class Husbandry {
     public static final long DAY=24000;
     public record AnimalDefinition(int maturityDays,int gestationDays,int productRecoveryDays,int breedingCooldownDays){}
-    private static final Map<String,AnimalDefinition> DEFAULT_RULES=Map.of("cow",new AnimalDefinition(28,12,1,4),"sheep",new AnimalDefinition(20,8,4,4),"chicken",new AnimalDefinition(12,4,1,4),"pig",new AnimalDefinition(20,8,1,4));
+    // On the scale that gives a cow twelve days in calf: a mare carries eleven months to a ewe's five, and a doe rabbit one.
+    private static final Map<String,AnimalDefinition> DEFAULT_RULES=Map.ofEntries(Map.entry("cow",new AnimalDefinition(28,12,1,4)),Map.entry("sheep",new AnimalDefinition(20,8,4,4)),Map.entry("chicken",new AnimalDefinition(12,4,1,4)),Map.entry("pig",new AnimalDefinition(20,8,1,4)),
+        Map.entry("goat",new AnimalDefinition(20,8,1,4)),Map.entry("rabbit",new AnimalDefinition(6,2,1,2)),Map.entry("horse",new AnimalDefinition(40,14,1,6)),Map.entry("donkey",new AnimalDefinition(36,15,1,6)),Map.entry("llama",new AnimalDefinition(28,14,1,6)),Map.entry("camel",new AnimalDefinition(40,16,1,6)));
+    private static final Map<EntityType<?>,String> SPECIES=new java.util.concurrent.ConcurrentHashMap<>();
+    /** The kind of stock an animal is kept as, or nothing for a beast that is not stock: a mooshroom is a cow, a trader's llama a llama. */
+    private static String species(Entity animal){
+        return SPECIES.computeIfAbsent(animal.getType(),type->{String id=net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(type).getPath();id=id.equals("mooshroom")?"cow":id.equals("trader_llama")?"llama":id;return DEFAULT_RULES.containsKey(id)?id:"";});
+    }
+    private static boolean milch(Entity animal){String kind=species(animal);return kind.equals("cow")||kind.equals("goat");}
+    private static boolean prolific(Entity animal){String kind=species(animal);return kind.equals("pig")||kind.equals("rabbit");}
     private static volatile Map<String,AnimalDefinition> RULES=DEFAULT_RULES;
     public static Map<String,AnimalDefinition> definitions(){return RULES;}
     public static void reloadDefinitions(com.google.gson.JsonObject definitions){
@@ -41,8 +50,9 @@ public final class Husbandry {
         }
         RULES=Collections.unmodifiableMap(replacement);
     }
-    private static AnimalDefinition definition(Entity animal){return RULES.get(animal instanceof Cow?"cow":animal instanceof Sheep?"sheep":animal instanceof Chicken?"chicken":"pig");}
-    public static boolean managed(Entity entity){return entity instanceof Cow||entity instanceof Sheep||entity instanceof Chicken||entity instanceof Pig;}
+    private static AnimalDefinition definition(Entity animal){return RULES.getOrDefault(species(animal),RULES.get("pig"));}
+    /** Stock: the beasts that are fed, watered and bred by the calendar. The four of the farmyard, and with them goats, rabbits, horses, donkeys, llamas and camels. */
+    public static boolean managed(Entity entity){return entity instanceof Animal&&!species(entity).isEmpty();}
     public static int maturity(Entity animal){return definition(animal).maturityDays;}
     public static int gestation(Entity animal){return definition(animal).gestationDays;}
     public static void init(){NeoForge.EVENT_BUS.addListener(Husbandry::pre);NeoForge.EVENT_BUS.addListener(Husbandry::tick);NeoForge.EVENT_BUS.addListener(Husbandry::interact);NeoForge.EVENT_BUS.addListener(Husbandry::vanillaBirth);NeoForge.EVENT_BUS.addListener(Husbandry::join);NeoForge.EVENT_BUS.addListener((PlayerInteractEvent.RightClickBlock event) -> nest(event));}
@@ -53,7 +63,7 @@ public final class Husbandry {
         // Existing adults may have one ready product; every subsequent product has a persisted clock.
         if(animal instanceof Chicken&&!data.contains("eggAt"))data.putLong("eggAt",now);
         if(animal instanceof Sheep&&!data.contains("woolRecovery")){data.putLong("woolRecovery",Math.max(0,data.getLongOr("woolAt",now)-now));data.putLong("woolRecoveryLast",now);}
-        if(animal instanceof Cow&&!data.contains("milkRecovery")){data.putLong("milkRecovery",Math.max(0,data.getLongOr("milkAt",now)-now));data.putLong("milkRecoveryLast",now);}
+        if(milch(animal)&&!data.contains("milkRecovery")){data.putLong("milkRecovery",Math.max(0,data.getLongOr("milkAt",now)-now));data.putLong("milkRecoveryLast",now);}
         return data;
     }
     public static void beginWoolRecovery(Sheep sheep,long now){var data=sheep.getPersistentData();long duration=definition(sheep).productRecoveryDays*DAY;data.putLong("woolAt",now+duration);data.putLong("woolRecovery",duration);data.putLong("woolRecoveryLast",now);}
@@ -82,7 +92,10 @@ public final class Husbandry {
     private static void tick(EntityTickEvent.Post event){
         if(!(event.getEntity().level() instanceof ServerLevel level)||event.getEntity().tickCount%20!=0)return;
         if(event.getEntity() instanceof ItemEntity item&&item.getItem().is(SurvivalContent.item("fertilized_egg"))){incubate(item,level);return;}
-        if(!(event.getEntity() instanceof Animal animal)||!animal.isAlive()||!managed(animal))return;
+        if(!(event.getEntity() instanceof Animal animal)||!animal.isAlive())return;
+        // The game's own courtship is never left to run its minute: stock is bred by feed and the calendar, and what is not stock is not bred.
+        if(animal.isInLove())animal.resetLove();
+        if(!managed(animal))return;
         long now=SurvivalApi.calendar(level);CompoundTag data=state(animal,now);long last=data.getLongOr("husbandryLast",now);long elapsed=Math.max(0,now-last);boolean drinking=water(level,animal.blockPosition());
         boolean naturalDrinking=naturalWater(level,animal.blockPosition());
         long watered=naturalDrinking?elapsed:consumeProvision(level,animal.blockPosition(),elapsed,"water",1);
@@ -115,7 +128,7 @@ public final class Husbandry {
             long credited=Math.min(products,Math.max(0,now-data.getLongOr("woolRecoveryLast",last)));
             long remaining=Math.max(0,data.getLongOr("woolRecovery",0)-credited);data.putLong("woolRecovery",remaining);data.putLong("woolRecoveryLast",now);data.putLong("woolAt",now+remaining);sheep.setSheared(remaining>0||nutrition<50||!drinking);
         }
-        if(animal instanceof Cow&&data.contains("milkAt")){
+        if(milch(animal)&&data.contains("milkAt")){
             long credited=Math.min(products,Math.max(0,now-data.getLongOr("milkRecoveryLast",last)));
             long remaining=Math.max(0,data.getLongOr("milkRecovery",0)-credited);data.putLong("milkRecovery",remaining);data.putLong("milkRecoveryLast",now);data.putLong("milkAt",now+remaining);
         }
@@ -129,10 +142,14 @@ public final class Husbandry {
             for(int i=0;i<litter;i++){AgeableMob baby=animal.getBreedOffspring(level,animal);if(baby!=null){baby.setBaby(true);baby.setPos(animal.position().add((i%2)*.6,0,(i/2)*.6));baby.getPersistentData().putLong("husbandryBorn",now);baby.getPersistentData().putLong("husbandryLast",now);baby.getPersistentData().putDouble("nutrition",75);level.addFreshEntity(baby);}}
         }
     }
-    private static void vanillaBirth(BabyEntitySpawnEvent event){if(managed(event.getParentA()))event.setCanceled(true);}
+    /** No young come of two animals fed in the game's way, whatever they are: a birth is a dam's, carried to term. */
+    private static void vanillaBirth(BabyEntitySpawnEvent event){if(event.getParentA() instanceof Animal)event.setCanceled(true);}
     private static void interact(PlayerInteractEvent.EntityInteract event){if(event.getEntity().isSpectator())return;
         if(!(event.getLevel() instanceof ServerLevel)||!(event.getTarget() instanceof Animal animal)||!managed(animal))return;
-        var held=event.getItemStack();if(!held.is(Items.BUCKET)&&!held.is(Items.SHEARS)&&!animal.isFood(held))return;
+        var held=event.getItemStack();
+        // A mooshroom's bowl of stew was a meal for nothing, as often as asked.
+        if(held.is(Items.BOWL)&&animal.getType()==EntityTypes.MOOSHROOM){event.setCanceled(true);return;}
+        if(!(held.is(Items.BUCKET)&&milch(animal))&&!(held.is(Items.SHEARS)&&animal instanceof Sheep)&&!animal.isFood(held))return;
         // Either hand is stopped; the main hand does the work. A bucket in the other hand used to reach the game's own milking, with no calf, feed or rest asked for.
         event.setCanceled(true);if(event.getHand()==net.minecraft.world.InteractionHand.MAIN_HAND)event.getEntity().sendOverlayMessage(Component.literal(action(event.getEntity(),animal)));
     }
@@ -140,7 +157,7 @@ public final class Husbandry {
         if(!(actor.level() instanceof ServerLevel level)||animal.level()!=level||!actor.isAlive()||!animal.isAlive()||!managed(animal)||!SurvivalApi.isHumanoid(actor)||actor.distanceToSqr(animal)>16)return "Stand within four blocks of a living farm animal.";
         if(SurvivalApi.state(actor).manipulation()<=.05)return "Your body cannot handle livestock supplies.";
         ItemStack held=actor.getMainHandItem();long now=SurvivalApi.calendar(level);CompoundTag data=state(animal,now);String message="";int initialCount=held.getCount(),initialDamage=held.getDamageValue();double initialNutrition=data.getDoubleOr("nutrition",75);boolean feeding=animal.isFood(held);long previousPregnancy=data.getLongOr("pregnantUntil",0),previousBreeding=data.getLongOr("breedAt",0);
-        if(held.is(Items.BUCKET)&&animal instanceof Cow){
+        if(held.is(Items.BUCKET)&&milch(animal)){
             if(data.getLongOr("calvedAt",0)>0&&data.getLongOr("milkRecovery",0)==0&&data.getDoubleOr("nutrition",0)>=50&&water(level,animal.blockPosition())){held.shrink(1);SurvivalApi.give(actor,new ItemStack(Items.MILK_BUCKET));long duration=definition(animal).productRecoveryDays*DAY;data.putLong("milkAt",now+duration);data.putLong("milkRecovery",duration);data.putLong("milkRecoveryLast",now);data.putDouble("nutrition",data.getDoubleOr("nutrition",0)-5);message="Milk collected; recovers in "+definition(animal).productRecoveryDays+" supplied days.";}else message="Milk requires calving, nutrition, water, and product recovery.";
         }else if(held.is(Items.SHEARS)&&animal instanceof Sheep sheep){if(mature(animal,now)&&woolRecovery(sheep,now)==0&&!sheep.isSheared()&&data.getDoubleOr("nutrition",0)>=50&&watered(animal)){Block.popResource(level,animal.blockPosition(),new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(net.minecraft.resources.Identifier.parse("minecraft:white_wool")),2));sheep.setSheared(true);beginWoolRecovery(sheep,now);held.setDamageValue(held.getDamageValue()+1);if(held.getDamageValue()>=held.getMaxDamage()){held.setCount(0);Block.popResource(level,animal.blockPosition(),new ItemStack(SurvivalContent.item("metal_scrap")));}message="Sheared; wool needs "+definition(animal).productRecoveryDays+" well-fed days to regrow.";}else message="No mature, recovered, watered fleece available.";
         }else if(animal.isFood(held)){
@@ -150,10 +167,10 @@ public final class Husbandry {
             else if(now<data.getLongOr("breedAt",0)||!water(level,animal.blockPosition()))message="Breeding requires recovery and drinking water.";
             else {
                 Animal mate=level.getEntitiesOfClass(Animal.class,animal.getBoundingBox().inflate(4),other->other!=animal&&other.isAlive()&&other.getType()==animal.getType()&&mature(other,now)&&state(other,now).getLongOr("fedAt",-DAY)>=now-1000&&state(other,now).getLongOr("breedAt",0)<=now&&state(other,now).getLongOr("pregnantUntil",0)==0).stream().findFirst().orElse(null);
-                if(mate!=null&&space(level,animal,animal instanceof Pig?4:1)){
+                if(mate!=null&&space(level,animal,prolific(animal)?4:1)){
                     data.putLong("breedAt",now+(gestation(animal)+definition(animal).breedingCooldownDays)*DAY);state(mate,now).putLong("breedAt",now+(gestation(animal)+definition(animal).breedingCooldownDays)*DAY);
                     if(animal instanceof Chicken){ItemStack egg=new ItemStack(SurvivalContent.item("fertilized_egg"));Block.popResource(level,animal.blockPosition(),egg);message="Fertilized egg laid. Place on warm hay to incubate for "+gestation(animal)+" days.";}
-                    else{data.putLong("pregnantUntil",now+gestation(animal)*DAY);data.putInt("litter",animal instanceof Pig?2+level.getRandom().nextInt(3):1);message="Pregnancy begun; due in "+gestation(animal)+" days.";}
+                    else{data.putLong("pregnantUntil",now+gestation(animal)*DAY);data.putInt("litter",prolific(animal)?2+level.getRandom().nextInt(3):1);message="Pregnancy begun; due in "+gestation(animal)+" days.";}
                 }else message="Fed. Feed another mature adult nearby; provide water and space.";
             }
         }

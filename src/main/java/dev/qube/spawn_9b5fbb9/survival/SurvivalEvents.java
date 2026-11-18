@@ -28,7 +28,7 @@ import net.neoforged.neoforge.event.level.*;
 import java.util.UUID;
 
 public final class SurvivalEvents {
-    private static final Identifier MOVE=id("movement"),HANDS=id("hands"),ATTACK=id("attack"),MIND=id("mind");
+    private static final Identifier MOVE=id("movement"),HANDS=id("hands"),ATTACK=id("attack"),MIND=id("mind"),LEGS=id("legs");
     private static Identifier id(String name){return Identifier.fromNamespaceAndPath("spawn_9b5fbb9",name);}
     private static long sleepBefore=-1;
     private static final java.util.Map<UUID,Boolean> sleepStates=new java.util.HashMap<>();
@@ -119,7 +119,10 @@ public final class SurvivalEvents {
         if(entity.tickCount%20==0||!data.contains("survivalBurden"))data.putDouble("survivalBurden",dev.qube.spawn_9b5fbb9.industry.Ledger.carried(entity));
         double burden=data.getDoubleOr("survivalBurden",0),pace=dev.qube.spawn_9b5fbb9.industry.Ledger.pace(burden);
         if(!exempt&&pace<.5&&entity.tickCount%100==0&&entity instanceof net.minecraft.server.level.ServerPlayer player)player.sendOverlayMessage(net.minecraft.network.chat.Component.literal("Overloaded: carrying "+Math.round(burden)+" kg. Load a cart."));
-        modifier(entity,Attributes.MOVEMENT_SPEED,MOVE,exempt?1:s.movement()*pace);
+        // Out cold, nothing answers: the body lies where it fell.
+        boolean out=!exempt&&s.mental()==0;
+        modifier(entity,Attributes.MOVEMENT_SPEED,MOVE,exempt?1:out?0:s.movement()*pace);
+        modifier(entity,Attributes.JUMP_STRENGTH,LEGS,out?0:1);
         modifier(entity,Attributes.ATTACK_SPEED,HANDS,exempt?1:s.manipulation());
         modifier(entity,Attributes.ATTACK_DAMAGE,ATTACK,exempt?1:s.manipulation());
         modifier(entity,Attributes.BLOCK_BREAK_SPEED,MIND,exempt?1:Math.min(s.manipulation(),Math.max(.05,s.mental())));
@@ -341,16 +344,43 @@ public final class SurvivalEvents {
     }
     // The dead touch nothing, order nothing and say nothing. Vanilla lets a spectator's clicks reach block handlers
     // and its commands and chat reach everyone, so each of those doors is shut here for a player who has died.
-    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadTouchBlock(PlayerInteractEvent.RightClickBlock e){if(departed(e.getEntity()))e.setCanceled(true);}
-    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadUseItem(PlayerInteractEvent.RightClickItem e){if(departed(e.getEntity()))e.setCanceled(true);}
-    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadStrikeBlock(PlayerInteractEvent.LeftClickBlock e){if(departed(e.getEntity()))e.setCanceled(true);}
-    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadTouchEntity(PlayerInteractEvent.EntityInteract e){if(departed(e.getEntity()))e.setCanceled(true);}
-    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadSpeak(net.neoforged.neoforge.event.ServerChatEvent e){if(departed(e.getPlayer()))e.setCanceled(true);}
+    /** Out cold: nothing in the head is answering. Read from the mark the body's own tick leaves, so that asking is a lookup. */
+    public static boolean insensible(Player player){return !SurvivalApi.exempt(player)&&player.isAlive()&&player.getPersistentData().getDoubleOr(SurvivalApi.MENTAL,1)<=0;}
+    /** What the dead may not do, the unconscious cannot. */
+    private static boolean absent(Player player){return departed(player)||insensible(player);}
+    /** An unconscious player lies where they fell. The body may fall, or be carried in a vehicle; it does not walk, jump or swim along,
+     * whatever the client says of its own legs. A player's movement is the client's to report, so it is undone here, each tick. */
+    @SubscribeEvent public static void laidOut(PlayerTickEvent.Post e){
+        if(!(e.getEntity() instanceof ServerPlayer player))return;var data=player.getPersistentData();
+        if(!insensible(player)){if(data.contains("survivalDownX")){data.remove("survivalDownX");data.remove("survivalDownZ");player.setForcedPose(null);}return;}
+        boolean adrift=player.isPassenger();
+        double x=data.getDoubleOr("survivalDownX",player.getX()),z=data.getDoubleOr("survivalDownZ",player.getZ()),dx=player.getX()-x,dz=player.getZ()-z;
+        if(adrift||!data.contains("survivalDownX")){data.putDouble("survivalDownX",player.getX());data.putDouble("survivalDownZ",player.getZ());}
+        else if(dx*dx+dz*dz>.0004){if(player.connection!=null)player.connection.teleport(x,player.getY(),z,player.getYRot(),player.getXRot());else player.setPos(x,player.getY(),z);}
+        if(player.getForcedPose()!=Pose.SWIMMING)player.setForcedPose(Pose.SWIMMING);
+        player.setSprinting(false);if(player.isUsingItem())player.stopUsingItem();
+        if(player.connection!=null&&player.tickCount%20==0){
+            player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS,60,0,false,false));
+            if(player.containerMenu!=player.inventoryMenu)player.closeContainer();
+            if(player.tickCount%100==0)player.sendOverlayMessage(Component.literal("You are unconscious."));
+        }
+    }
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadTouchBlock(PlayerInteractEvent.RightClickBlock e){if(absent(e.getEntity()))e.setCanceled(true);}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadUseItem(PlayerInteractEvent.RightClickItem e){if(absent(e.getEntity()))e.setCanceled(true);}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadStrikeBlock(PlayerInteractEvent.LeftClickBlock e){if(absent(e.getEntity()))e.setCanceled(true);}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadTouchEntity(PlayerInteractEvent.EntityInteract e){if(absent(e.getEntity()))e.setCanceled(true);}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadSpeak(net.neoforged.neoforge.event.ServerChatEvent e){if(absent(e.getPlayer()))e.setCanceled(true);}
     @SubscribeEvent public static void sighted(PlayerEvent.StartTracking e){if(e.getTarget() instanceof LivingEntity actor&&e.getEntity() instanceof ServerPlayer viewer)SurvivalNetwork.appear(actor,viewer);}
     @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadCommand(net.neoforged.neoforge.event.CommandEvent e){
         var source=e.getParseResults().getContext().getSource();
         if(source.getEntity() instanceof Player player&&departed(player)&&!net.minecraft.commands.Commands.hasPermission(net.minecraft.commands.Commands.LEVEL_GAMEMASTERS).test(source)){
-            e.setCanceled(true);source.sendFailure(Component.literal("The dead take no part in the world."));
+            e.setCanceled(true);source.sendFailure(Component.literal("The dead take no part in the world."));return;
+        }
+        // The unconscious give no orders and learn nothing of the world. Their own body is still theirs to be told of.
+        if(source.getEntity() instanceof Player player&&insensible(player)&&!net.minecraft.commands.Commands.hasPermission(net.minecraft.commands.Commands.LEVEL_GAMEMASTERS).test(source)){
+            String line=e.getParseResults().getReader().getString().trim();if(line.startsWith("/"))line=line.substring(1);
+            if(line.matches("survival (json|health|skills|calendar)"))return;
+            e.setCanceled(true);source.sendFailure(Component.literal("You are unconscious."));
         }
     }
     /** An operator's way to put a player back into the world as a new person: fresh body, nothing learned. */

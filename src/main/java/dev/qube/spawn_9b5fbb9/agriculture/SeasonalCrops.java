@@ -61,9 +61,33 @@ public final class SeasonalCrops {
     }
     public static int season(long time){return (int)(Math.floorDiv(time,DAY*Config.SEASON_DAYS.get())%4);}
     public static int seasonDay(long time){return (int)(Math.floorDiv(time,DAY)%Config.SEASON_DAYS.get())+1;}
-    public static Identifier storage(ServerLevel level){return Identifier.fromNamespaceAndPath("spawn_9b5fbb9","crops/"+level.dimension().identifier().getNamespace()+"/"+level.dimension().identifier().getPath());}
-    public static CompoundTag records(ServerLevel level){return level.getServer().getCommandStorage().get(storage(level));}
-    public static void save(ServerLevel level,CompoundTag records){level.getServer().getCommandStorage().set(storage(level),records);}
+    private static final Map<ServerLevel,Identifier> STORAGE=new WeakHashMap<>();
+    /** Where a world made before records were kept by chunk holds them. Asked for with every crop tick, so the name is made once. */
+    public static Identifier storage(ServerLevel level){return STORAGE.computeIfAbsent(level,world->Identifier.fromNamespaceAndPath("spawn_9b5fbb9","crops/"+world.dimension().identifier().getNamespace()+"/"+world.dimension().identifier().getPath()));}
+    /** Crop and soil records, each kept in the chunk it stands in. A key is a block position, or {@code soil/} and one.
+     * What an older world still holds in its one world-wide store is moved across the first time it is asked for. */
+    public static final class Records {
+        private final ServerLevel level;
+        private Records(ServerLevel level){this.level=level;}
+        private static boolean soil(String key){return key.startsWith("soil/");}
+        private static String place(String key){return soil(key)?key.substring(5):key;}
+        private static BlockPos at(String key){return BlockPos.of(Long.parseLong(place(key)));}
+        private CompoundTag old(){return level.getServer().getCommandStorage().get(storage(level));}
+        private CompoundTag forget(String key){
+            var old=old();if(old.isEmpty()||!old.contains(key))return null;
+            var found=old.getCompoundOrEmpty(key);old.remove(key);level.getServer().getCommandStorage().set(storage(level),old);return found;
+        }
+        /** The record itself where there is one, to be changed and then {@link #put}; otherwise an empty one that is not kept. */
+        public CompoundTag getCompoundOrEmpty(String key){
+            var held=dev.qube.spawn_9b5fbb9.world.ChunkRecords.peek(level,at(key),soil(key)?"soil":"crop");
+            var found=held==null?null:held.getCompound(place(key)).orElse(null);if(found!=null)return found;
+            found=forget(key);if(found==null)return new CompoundTag();
+            dev.qube.spawn_9b5fbb9.world.ChunkRecords.put(level,at(key),soil(key)?"soil":"crop",place(key),found);return found;
+        }
+        public void put(String key,CompoundTag record){forget(key);dev.qube.spawn_9b5fbb9.world.ChunkRecords.put(level,at(key),soil(key)?"soil":"crop",place(key),record);}
+        public void remove(String key){forget(key);dev.qube.spawn_9b5fbb9.world.ChunkRecords.remove(level,at(key),soil(key)?"soil":"crop",place(key));}
+    }
+    public static Records records(ServerLevel level){return new Records(level);}
     public static boolean sowable(String crop,long now){
         Schedule r=schedule(crop);if(r==null)return true;
         crop=ContentDefinitions.id(qualified(crop)).getPath();
@@ -96,7 +120,7 @@ public final class SeasonalCrops {
         if(!SurvivalApi.exempt(actor)&&event.getItemStack().is(net.minecraft.tags.ItemTags.HOES)&&(targetState.is(Blocks.DIRT)||targetState.is(Blocks.GRASS_BLOCK)||targetState.is(Blocks.DIRT_PATH))){event.setCanceled(true);actor.sendOverlayMessage(Component.literal(WorldActions.start(actor,"till",event.getPos(),event.getHand()).message()));return;}
         if(target.equals("sweet_berry_bush")||target.startsWith("cave_vines")){
             if(!SurvivalApi.exempt(actor)){var body=SurvivalApi.state(actor);if(Math.min(body.manipulation(),body.mental())<=.05||LaborGuard.worldBusy(actor)||LaborGuard.forgeBusy(actor)||LaborGuard.gridBusy(actor)){event.setCanceled(true);actor.sendOverlayMessage(Component.literal("Finish the current manual work and use able hands to harvest."));return;}}
-            long now=SurvivalApi.calendar(level);var all=records(level);String key=Long.toString(event.getPos().asLong());var data=all.getCompoundOrEmpty(key);initializeWildBerry(level.getBlockState(event.getPos()),data,now);all.put(key,data);save(level,all);long duration=data.getBooleanOr("established",false)?2*DAY:8*DAY;
+            long now=SurvivalApi.calendar(level);var all=records(level);String key=Long.toString(event.getPos().asLong());var data=all.getCompoundOrEmpty(key);initializeWildBerry(level.getBlockState(event.getPos()),data,now);all.put(key,data);long duration=data.getBooleanOr("established",false)?2*DAY:8*DAY;
             if((season(now)!=1&&season(now)!=2)||data.getLongOr("growth",0)<duration){event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal("Berries require eight days to establish, then two suitable days between summer/autumn harvests."));return;}
             event.setCanceled(true);actor.sendOverlayMessage(Component.literal(WorldActions.start(actor,"harvest",event.getPos(),event.getHand()).message()));return;
         }
@@ -109,7 +133,7 @@ public final class SeasonalCrops {
         if(invalid){event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal("Unsuitable sowing season or rice paddy. Spring/autumn wheat; spring rice; late spring/early summer maize."));}
     }
     private static void placed(BlockEvent.EntityPlaceEvent event){if(event.getLevel() instanceof ServerLevel level&&(isPlant(event.getPlacedBlock())||event.getPlacedBlock().is(SurvivalContent.FRUIT_TREE.get()))){
-        var all=records(level);var record=new CompoundTag();long now=SurvivalApi.calendar(level);record.putLong("last",now);record.putLong("born",now);record.putBoolean("sown",event.getEntity() instanceof LivingEntity);record.putString("type",BuiltInRegistries.BLOCK.getKey(event.getPlacedBlock().getBlock()).toString());all.put(Long.toString(event.getPos().asLong()),record);save(level,all);
+        var all=records(level);var record=new CompoundTag();long now=SurvivalApi.calendar(level);record.putLong("last",now);record.putLong("born",now);record.putBoolean("sown",event.getEntity() instanceof LivingEntity);record.putString("type",BuiltInRegistries.BLOCK.getKey(event.getPlacedBlock().getBlock()).toString());all.put(Long.toString(event.getPos().asLong()),record);
         if(event.getEntity() instanceof LivingEntity actor&&!WorldActions.completing(actor)&&(requiresCalendarTick(event.getPlacedBlock())||event.getPlacedBlock().getBlock() instanceof dev.qube.spawn_9b5fbb9.content.FruitTreeBlock))queuePractice(actor,event.getPos(),event.getPlacedBlock(),Skill.FARMING,3,false);
     }}
     private static void broken(net.neoforged.neoforge.event.level.BlockDropsEvent event){ServerLevel level=event.getLevel();String id=BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).getPath();
@@ -127,7 +151,7 @@ public final class SeasonalCrops {
         }
         Schedule definition=schedule(BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).toString());boolean frost=!WorldEnvironment.active(level)&&definition!=null&&definition.frost&&season(now)==3;
         if(frost&&(id.equals("rice_crop")||old.getLongOr("growth",0)<definition.days*DAY))event.getDrops().clear();
-        if(!old.isEmpty()){all.remove(key);save(level,all);}
+        if(!old.isEmpty()){all.remove(key);}
         // Practice belongs to the timed work transaction; a raw block-destruction event carries no labor credit.
         if(!id.endsWith("_crop")||!event.getState().hasProperty(CropBlock.AGE))return;
         if(frost)return;
@@ -153,7 +177,7 @@ public final class SeasonalCrops {
     public static boolean harvestBerries(LivingEntity actor,BlockPos pos){
         if(!(actor.level() instanceof ServerLevel level)||!WorldActions.completing(actor))return false;var state=level.getBlockState(pos);if(!berries(state)||!harvestReady(level,pos,state))return false;
         var age=net.minecraft.world.level.block.state.properties.BlockStateProperties.AGE_3;var hasBerries=net.minecraft.world.level.block.state.properties.BlockStateProperties.BERRIES;var after=state.hasProperty(age)?state.setValue(age,1):state.hasProperty(hasBerries)?state.setValue(hasBerries,false):null;if(after==null||!level.setBlock(pos,after,3))return false;
-        var all=records(level);var record=all.getCompoundOrEmpty(Long.toString(pos.asLong()));record.putBoolean("established",true);record.putLong("growth",0);record.putLong("last",SurvivalApi.calendar(level));all.put(Long.toString(pos.asLong()),record);save(level,all);boolean sweet=state.is(Blocks.SWEET_BERRY_BUSH);Block.popResource(level,pos,new ItemStack(sweet?Items.SWEET_BERRIES:Items.GLOW_BERRIES,sweet?2+level.getRandom().nextInt(2):1));return true;
+        var all=records(level);var record=all.getCompoundOrEmpty(Long.toString(pos.asLong()));record.putBoolean("established",true);record.putLong("growth",0);record.putLong("last",SurvivalApi.calendar(level));all.put(Long.toString(pos.asLong()),record);boolean sweet=state.is(Blocks.SWEET_BERRY_BUSH);Block.popResource(level,pos,new ItemStack(sweet?Items.SWEET_BERRIES:Items.GLOW_BERRIES,sweet?2+level.getRandom().nextInt(2):1));return true;
     }
     private static void nativeHarvest(PlayerInteractEvent.LeftClickBlock event){
         if(!(event.getLevel() instanceof ServerLevel level)||SurvivalApi.exempt(event.getEntity())||event.getAction()!=PlayerInteractEvent.LeftClickBlock.Action.START)return;var state=level.getBlockState(event.getPos());
@@ -183,8 +207,8 @@ public final class SeasonalCrops {
         var ground=plot(level,pos);var crop=ground.above();var state=level.getBlockState(crop);
         if(requiresCalendarTick(state))randomTick(state,level,crop,level.getRandom());
         var all=records(level);var soil=all.getCompoundOrEmpty(soilKey(ground));advanceSoil(level,ground,soil,SurvivalApi.calendar(level),null,false);
-        double before=soil.getDoubleOr("water",.25);if(before>=.95){all.put(soilKey(ground),soil);save(level,all);return false;}
-        soil.putDouble("water",Math.min(1,before+amount));all.put(soilKey(ground),soil);save(level,all);
+        double before=soil.getDoubleOr("water",.25);if(before>=.95){all.put(soilKey(ground),soil);return false;}
+        soil.putDouble("water",Math.min(1,before+amount));all.put(soilKey(ground),soil);
         level.setBlock(ground,level.getBlockState(ground).setValue(FarmlandBlock.MOISTURE,7),2);return true;
     }
     /** Fixed weather buckets make historical weather independent of random-tick frequency. */
@@ -228,11 +252,11 @@ public final class SeasonalCrops {
             var ground=plot(level,pos);String soilId=soilKey(ground);var soil=all.getCompoundOrEmpty(soilId);if(!soil.contains("last"))soil.putLong("last",last);
             if(soil.getLongOr("last",now)<last)advanceSoil(level,ground,soil,Math.min(now,last),null,false);
             var result=advanceSoil(level,ground,soil,now,rule,id.contains("mushroom"),growth+data.getDoubleOr("growthFraction",0),duration,id.equals("rice_crop"));all.put(soilId,soil);
-            if(result[1]>0){level.destroyBlock(pos,false);all.remove(key);save(level,all);return true;}
+            if(result[1]>0){level.destroyBlock(pos,false);all.remove(key);return true;}
             double earned=result[0]+data.getDoubleOr("growthFraction",0);growth+=(long)earned;data.putDouble("growthFraction",earned-(long)earned);
             if(level.getBlockState(ground).is(Blocks.FARMLAND))level.setBlock(ground,level.getBlockState(ground).setValue(FarmlandBlock.MOISTURE,soil.getDoubleOr("water",0)>.25?7:0),2);
         }else for(long cursor=now-remaining;cursor<now;){long end=Math.min(now,(Math.floorDiv(cursor,DAY)+1)*DAY);int season=season(cursor);boolean warmSeason=season!=3;
-            if(rule.frost&&season==3&&(growth<duration||id.equals("rice_crop"))){level.destroyBlock(pos,false);all.remove(key);save(level,all);return true;}
+            if(rule.frost&&season==3&&(growth<duration||id.equals("rice_crop"))){level.destroyBlock(pos,false);all.remove(key);return true;}
             if(suitable&&(warmSeason||id.contains("mushroom"))){growth+=end-cursor;}cursor=end;
         }
         data.putString("type",type);data.putLong("last",now);data.putLong("growth",growth);data.putLong("born",data.getLongOr("born",now));
@@ -250,7 +274,7 @@ public final class SeasonalCrops {
             Block fruitType=id.contains("melon")?Blocks.MELON:Blocks.PUMPKIN;boolean existing=false;for(Direction d:Direction.Plane.HORIZONTAL)if(level.getBlockState(pos.relative(d)).is(fruitType))existing=true;
             if(!existing)for(Direction d:Direction.Plane.HORIZONTAL){BlockPos fruit=pos.relative(d);if(level.isEmptyBlock(fruit)&&level.getBlockState(fruit.below()).isFaceSturdy(level,fruit.below(),Direction.UP)){level.setBlock(fruit,fruitType.defaultBlockState(),3);var grown=new CompoundTag();grown.putBoolean("grownFruit",true);grown.putBoolean("sown",true);grown.putLong("last",now);all.put(Long.toString(fruit.asLong()),grown);data.putLong("growth",0);data.putBoolean("fruited",true);break;}}
         }
-        all.put(key,data);save(level,all);return true;
+        all.put(key,data);return true;
     }
     private static void tooltip(ItemTooltipEvent event){String id=BuiltInRegistries.ITEM.getKey(event.getItemStack().getItem()).getPath();if(id.endsWith("seeds")||id.equals("fruit_tree"))event.getToolTip().add(Component.literal("Seasonal crop: prepared moist farmland; rice needs adjacent paddy water. Bone meal cannot replace growth days."));}
 }

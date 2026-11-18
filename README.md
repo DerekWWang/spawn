@@ -230,8 +230,17 @@ time. Player-planted fruit trees establish for one year.
 | Sheep | 8 days | 20 days | Four fed/watered days to regrow wool |
 | Chicken | 4 warm-nest days | 12 days | Daily eggs; only fertilized eggs hatch |
 | Pig | 8 days | 20 days | Litters of 2–4 with food, water, recovery, and space |
+| Goat | 8 days | 20 days | Milk after kidding, as a cow |
+| Rabbit | 2 days | 6 days | Litters of 2–4 |
+| Horse | 14 days | 40 days | One foal; six days before the mare is put to the horse again |
+| Donkey | 15 days | 36 days | One foal |
+| Llama | 14 days | 28 days | One cria |
+| Camel | 16 days | 40 days | One calf |
 
-Feed two mature adults nearby to begin pairing. Ordinary feeding does not
+These ten are stock. Feed two mature adults nearby to begin pairing. No other
+animal breeds: the game's own courtship is stopped for every animal, so two
+wolves, cats or foxes fed together get no young, and a mooshroom gives no bowl
+of stew. Ordinary feeding does not
 instantly mature juveniles or create babies. Stock a trough with feed and pot
 water, or provide grazing and surface water. Place fertilized eggs on hay by
 lit heat. Throwing ordinary eggs cannot create chicks.
@@ -285,10 +294,26 @@ or comes into view; another's needs, illness and skills are learned by
 `/survival inspect`, within eight blocks in the same world.
 
 **What lies on the ground.** Nothing dropped vanishes after five minutes; it
-weathers. Rock, ore, coal, clay and brick lie where they fell. Organic litter
+weathers. Rock, ore, coal, clay and brick lie where they fell, in heaps: what a
+block breaks down to falls as one heap of each kind, showing a single stack
+and labelled with the whole count ("1,600 Hematite"). Taking the stack
+uncovers the next, and loose stacks of the same thing lying against a heap
+join it. A heap is one entity however large; `/kill` removes it whole. Organic litter
 rots to fibre and the fibre to nothing; metal leaves scrap, fired clay its
 sherds, and a stone tool the stone. A fertilized egg keeps only on its nest:
 taken up, or left lying anywhere else, it is an egg like any other and rots.
+
+**Out cold.** A player whose brain is at a tenth or less is unconscious. They
+lie where they fell, prone to anyone watching: they do not walk, jump, use
+their hands, speak or give orders, and a vehicle is the only thing that moves
+them. Their own body still answers (`/survival json`, `health`, `skills`,
+`calendar`); every other command is refused with "You are unconscious."
+
+**Where records are kept.** What the mod remembers about a place (a crop's
+age, the water in a plot of soil, which stone has been taken once already,
+what a wall has stood up to under fire) is saved in the chunk the place is in,
+and is read and written with that chunk. A world made before this kept it all
+in one store; each record is moved to its chunk the first time it is wanted.
 
 **Death is permanent.** A player who dies does not return to the world. They
 come back only as a spectator: they can watch, but they cannot touch a block,
@@ -526,8 +551,11 @@ movement keys. Sneak-click with goods to load, with an empty hand to unload.
 `/survival vehicle status|load|unload|deliver|pickup|hitch|unhitch|board|leave|drive|halt|couple|uncouple`
 (and the `control` forms) cover everything; `deliver` and `pickup` move bulk
 cargo straight between a vehicle and a works drawn up within six blocks.
-Bulk cargo is counted by kind and comes off as new stock, so spoiled food and
-filled or sealed vessels are not taken aboard. `halt` is for those aboard: a
+Bulk cargo is counted by kind. Food in bulk, on a vehicle or in a works, has
+one age to the kind, the mean of what was put in; it goes on ageing at a store
+room's rate, comes off with that age, and past its shelf life is spoiled food
+where it lies. Food already spoiled, and filled or sealed vessels, are not
+taken aboard. `halt` is for those aboard: a
 road vehicle stops being driven, and a train under way is braked to a stand
 by its driver. A train ordered to a place stops abreast of it, measured along
 the line, and stops at the last rail if the place lies beyond it; driven by
@@ -546,7 +574,9 @@ every 1.8 km and boils seven litres of water for each kilogram, refilling at
 60 L a second when stopped within four blocks of water. It gathers way at a
 fifth of a metre per second each second (less with a heavy train), needs 150 m
 to stop from full speed, derails on a curve taken above 11 km/h, and runs off
-the end of the line if nobody brakes.
+the end of the line if nobody brakes. Backing is no different: the rear of the
+train leads, and it derails on a curve or off the last rail as the engine
+would going forward.
 
 ## Siege warfare
 

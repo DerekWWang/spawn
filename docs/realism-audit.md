@@ -342,7 +342,31 @@ The game's furnace still worked through a hopper. Loose fertilized eggs never ro
 item ever joined another. Predators with an odd entity number never broke off at a fire, and none
 gave up quarry it could not reach. All are fixed.
 
-180 GameTests pass. Sixteen added with that review check that a starved horse dies out of its team
+Seven things that review left open are closed. A cubic metre of seam fell as twenty-five and more
+stacks, each its own entity and none ever going away, so that a few hundred blocks mined were ten
+thousand entities to tick for good: what does not weather now lies in one heap, a single entity
+showing a stack over a count of the rest. Food in a cart or a works was outside time; it now has an
+age to the kind and spoils where it lies. Crop, soil and mining records lived in one world-wide
+store that grew with every chunk walked through and was written out whole at each autosave; they,
+and what a wall has taken from a siege, are kept in the chunk they belong to, which also means a
+siege is no longer undone by the server stopping. A train backing up took any curve at any speed and
+stopped dead at the railhead; it now derails as it would going forward. Rabbits, goats, horses and
+the rest bred the game's way, a foal on the spot for two golden carrots: goats, rabbits, horses,
+donkeys, llamas and camels are now stock with gestation and maturity of their own, and nothing else
+breeds. An unconscious player could walk, talk and work; they now lie where they fell.
+
+186 GameTests pass. Six added with that work check that a metre of haematite is one heap of 1,600,
+that taking its stack uncovers the next and a loose stack joins it; that bread comes off a cart
+half a day older after half a day and is spoiled food after its day; that an older world's crop
+record is found and kept from then on in its chunk; that a train backed gently to the last rail
+stops and one backed off it at speed derails; that two fed horses start a fourteen-day pregnancy
+and a wolf does not court; and that a player out cold is put back where they lay, has no use of legs
+or hands, and gets up when they come round. Played on a live server with bots: one seam block made
+one entity, all 1,600 were taken up in thirteen seconds and none was left; a bot out cold holding
+forward and jump moved nothing, was refused its commands and was not heard; and a crop's record was
+found in its chunk on disk and read back, growth carried on, after the chunk was unloaded.
+
+180 GameTests passed before that. Sixteen added with that review check that a starved horse dies out of its team
 with the feeding run to its end; that spoiled food is not cargo; that a full works is not pulled
 down; that rations go by nutrition; that a man away when his commander fell is released when next
 seen; that a commander's blow marks no enemy and a stranger's does; that buried stone is not mined

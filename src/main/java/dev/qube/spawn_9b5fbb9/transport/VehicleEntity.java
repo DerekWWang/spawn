@@ -39,7 +39,7 @@ import net.minecraft.world.phys.Vec3;
  * load and ground. */
 public class VehicleEntity extends Entity {
     private static final EntityDataAccessor<String> KIND=SynchedEntityData.defineId(VehicleEntity.class,EntityDataSerializers.STRING);
-    public final Map<String,Long> cargo=new TreeMap<>();
+    public final Map<String,Long> cargo=new Ledger.Account();
     public final List<UUID> team=new ArrayList<>();
     public Vec3 destination;
     public double throttle,velocity,water,fuelBurn;
@@ -107,6 +107,7 @@ public class VehicleEntity extends Entity {
         else roadTick(level,spec);
         if(spec.artillery()!=null)Siege.tick(this,level);
         if(tickCount%20==0){
+            if(tickCount%100==0)Ledger.settle(cargo,level);
             feedTeam(level);
             while(getPassengers().size()>spec.seats())getPassengers().getLast().stopRiding();
             for(Entity rider:getPassengers())if(rider instanceof LivingEntity living&&SurvivalApi.isHumanoid(living)&&Math.abs(velocity)>.03)SkillApi.award(living,Skill.RIDING,rider==getFirstPassenger()?3:.5);
@@ -261,7 +262,7 @@ public class VehicleEntity extends Entity {
         long powder=Ledger.count(cargo,"minecraft:gunpowder")+Ledger.count(cargo,"spawn_9b5fbb9:powder_charge")/2+Ledger.count(cargo,"spawn_9b5fbb9:paper_cartridge")/96+Ledger.count(cargo,"spawn_9b5fbb9:explosive_shell")+charges/2;
         for(String volatileItem:List.of("minecraft:gunpowder","spawn_9b5fbb9:powder_charge","spawn_9b5fbb9:paper_cartridge","spawn_9b5fbb9:explosive_shell"))cargo.remove(volatileItem);
         int stacks=0;
-        for(String id:new ArrayList<>(cargo.keySet()))while(stacks<16&&cargo.containsKey(id)){ItemStack stack=Ledger.withdrawStack(cargo,id);if(stack.isEmpty())break;spawnAtLocation(level,stack);stacks++;}
+        for(String id:new ArrayList<>(cargo.keySet()))while(stacks<16&&cargo.containsKey(id)){ItemStack stack=Ledger.withdrawStack(cargo,id,level);if(stack.isEmpty())break;spawnAtLocation(level,stack);stacks++;}
         spawnAtLocation(level,new ItemStack(SurvivalContent.item("metal_scrap"),2));
         Vec3 at=position();discard();
         if(powder>0)level.explode(null,at.x,at.y+.5,at.z,(float)Math.min(7,1.5+Math.sqrt(powder)/3),true,Level.ExplosionInteraction.TNT);

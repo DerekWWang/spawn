@@ -6,15 +6,15 @@ import static dev.qube.spawn_9b5fbb9.environment.EnvironmentModel.*;
 
 public final class EnvironmentGameTests {
     public static void frostHistory(GameTestHelper h){
-        var level=h.getLevel();var old=WorldEnvironment.replaceForTest(level,new Settings("vanilla",0,28,2));var store=level.getServer().getCommandStorage();var key=dev.qube.spawn_9b5fbb9.survival.SurvivalApi.CALENDAR;var calendar=store.get(key).copy();var original=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(level).copy();var pos=h.absolutePos(new net.minecraft.core.BlockPos(2,200,2));
+        var level=h.getLevel();var old=WorldEnvironment.replaceForTest(level,new Settings("vanilla",0,28,2));var store=level.getServer().getCommandStorage();var key=dev.qube.spawn_9b5fbb9.survival.SurvivalApi.CALENDAR;var calendar=store.get(key).copy();var pos=h.absolutePos(new net.minecraft.core.BlockPos(2,200,2));
         try{
             level.setBlock(pos.below(),net.minecraft.world.level.block.Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmlandBlock.MOISTURE,7),3);level.setBlock(pos.below().east(),net.minecraft.world.level.block.Blocks.WATER.defaultBlockState(),3);
             for(int pass=0;pass<2;pass++){
-                level.setBlock(pos,net.minecraft.world.level.block.Blocks.POTATOES.defaultBlockState(),3);var all=original.copy();var data=new net.minecraft.nbt.CompoundTag();data.putLong("last",45*DAY);data.putLong("born",0);data.putLong("growth",10*DAY-600);all.put(Long.toString(pos.asLong()),data);dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.save(level,all);
+                level.setBlock(pos,net.minecraft.world.level.block.Blocks.POTATOES.defaultBlockState(),3);var all=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(level);var data=new net.minecraft.nbt.CompoundTag();data.putLong("last",45*DAY);data.putLong("born",0);data.putLong("growth",10*DAY-600);all.remove("soil/"+pos.below().asLong());all.put(Long.toString(pos.asLong()),data);
                 for(long time=pass==0?46*DAY:104*DAY;time<=104*DAY;time+=pass==0?DAY:104*DAY){var clock=calendar.copy();clock.putLong("sleepOffset",time-level.getServer().overworld().getLevelData().getGameTime());store.set(key,clock);dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.randomTick(level.getBlockState(pos),level,pos,level.getRandom());}
                 h.assertTrue(level.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.POTATOES),"A crop that matures before frost survives both frequent and catch-up updates; pass="+pass);
             }
-        }finally{store.set(key,calendar);dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.save(level,original);WorldEnvironment.replaceForTest(level,old);}
+        }finally{store.set(key,calendar);WorldEnvironment.replaceForTest(level,old);}
         h.succeed();
     }
     public static void exposure(GameTestHelper h){
@@ -31,20 +31,20 @@ public final class EnvironmentGameTests {
     }
     public static void cropHistory(GameTestHelper h){
         var level=h.getLevel();var old=WorldEnvironment.replaceForTest(level,new Settings("vanilla",0,28,2));var store=level.getServer().getCommandStorage();var calendar=store.get(dev.qube.spawn_9b5fbb9.survival.SurvivalApi.CALENDAR).copy();
-        var records=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(level).copy();var pos=h.absolutePos(new net.minecraft.core.BlockPos(2,2,2));
+        var records=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(level);var pos=h.absolutePos(new net.minecraft.core.BlockPos(2,2,2));
         try{
             level.setBlock(pos.below(),net.minecraft.world.level.block.Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmlandBlock.MOISTURE,7),3);level.setBlock(pos,net.minecraft.world.level.block.Blocks.WHEAT.defaultBlockState(),3);
-            long start=dev.qube.spawn_9b5fbb9.survival.SurvivalApi.calendar(level);var initial=records.copy();var crop=new net.minecraft.nbt.CompoundTag();crop.putLong("last",start);crop.putLong("born",start);initial.put(Long.toString(pos.asLong()),crop);
+            long start=dev.qube.spawn_9b5fbb9.survival.SurvivalApi.calendar(level);var crop=new net.minecraft.nbt.CompoundTag();crop.putLong("last",start);crop.putLong("born",start);
             double water=0;long growth=0;
             for(int pass=0;pass<2;pass++){
-                dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.save(level,initial.copy());level.setBlock(pos,net.minecraft.world.level.block.Blocks.WHEAT.defaultBlockState(),3);level.setBlock(pos.below(),net.minecraft.world.level.block.Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmlandBlock.MOISTURE,7),3);
+                records.remove("soil/"+pos.below().asLong());records.put(Long.toString(pos.asLong()),crop.copy());level.setBlock(pos,net.minecraft.world.level.block.Blocks.WHEAT.defaultBlockState(),3);level.setBlock(pos.below(),net.minecraft.world.level.block.Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmlandBlock.MOISTURE,7),3);
                 for(long t=pass==0?600:2*DAY;t<=2*DAY;t+=pass==0?600:2*DAY){var clock=calendar.copy();clock.putLong("sleepOffset",clock.getLongOr("sleepOffset",0)+t);store.set(dev.qube.spawn_9b5fbb9.survival.SurvivalApi.CALENDAR,clock);dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.randomTick(level.getBlockState(pos),level,pos,level.getRandom());}
                 var result=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(level);double actualWater=result.getCompoundOrEmpty("soil/"+pos.below().asLong()).getDoubleOr("water",0);long actualGrowth=result.getCompoundOrEmpty(Long.toString(pos.asLong())).getLongOr("growth",0);
                 if(pass==0){water=actualWater;growth=actualGrowth;}else h.assertTrue(Math.abs(water-actualWater)<1e-8&&Math.abs(growth-actualGrowth)<=1,"Saved soil and suitable growth agree for frequent ticks versus historical catch-up");
             }
-            var bare=initial.copy();var soil=new net.minecraft.nbt.CompoundTag();soil.putLong("last",start-2*DAY);soil.putDouble("water",.8);bare.put("soil/"+pos.below().asLong(),soil);crop.putLong("last",start+2*DAY);crop.putLong("born",start+2*DAY);bare.put(Long.toString(pos.asLong()),crop);dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.save(level,bare);level.setBlock(pos,net.minecraft.world.level.block.Blocks.WHEAT.defaultBlockState(),3);
+            var soil=new net.minecraft.nbt.CompoundTag();soil.putLong("last",start-2*DAY);soil.putDouble("water",.8);records.put("soil/"+pos.below().asLong(),soil);crop.putLong("last",start+2*DAY);crop.putLong("born",start+2*DAY);records.put(Long.toString(pos.asLong()),crop);level.setBlock(pos,net.minecraft.world.level.block.Blocks.WHEAT.defaultBlockState(),3);
             dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.randomTick(level.getBlockState(pos),level,pos,level.getRandom());h.assertTrue(dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(level).getCompoundOrEmpty(Long.toString(pos.asLong())).getLongOr("growth",0)==0,"A newly sown crop cannot receive growth from earlier bare-soil weather");
-        }finally{store.set(dev.qube.spawn_9b5fbb9.survival.SurvivalApi.CALENDAR,calendar);dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.save(level,records);WorldEnvironment.replaceForTest(level,old);}
+        }finally{store.set(dev.qube.spawn_9b5fbb9.survival.SurvivalApi.CALENDAR,calendar);WorldEnvironment.replaceForTest(level,old);}
         h.succeed();
     }
     public static void packet(GameTestHelper h){

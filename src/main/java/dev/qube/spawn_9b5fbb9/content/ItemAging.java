@@ -42,7 +42,7 @@ public final class ItemAging {
         if(id.contains("grain") || id.equals("wheat") || id.contains("seeds")) return Math.round(DAY*rules.dryGrainDays);
         return Math.round(DAY*rules.produceDays);
     }
-    public static void init() { NeoForge.EVENT_BUS.addListener(ItemAging::crafted); }
+    public static void init() { NeoForge.EVENT_BUS.addListener(ItemAging::crafted); NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.LOWEST,ItemAging::dropped); }
     public static void update(ItemStack stack,ServerLevel level,double rate) {
         update(stack,level,rate,true);
     }
@@ -78,6 +78,11 @@ public final class ItemAging {
             stack.set(DataComponents.FOOD,new net.minecraft.world.food.FoodProperties.Builder().nutrition(1).saturationModifier(0).build());
         }
     }
+    /** Gives food the age it has reached, as of now: for what comes out of bulk stowage, where age is kept by kind and not by stack. */
+    public static void stamp(ItemStack stack,ServerLevel level,double age){
+        if(!isFood(stack)&&!stack.is(Items.WHEAT))return;
+        var tag=data(stack);tag.putDouble("foodAge",age);tag.putLong("freshTick",SurvivalApi.calendar(level)-20);data(stack,tag);update(stack,level,0);
+    }
     public static boolean spoiled(ItemStack stack){return data(stack).getBooleanOr("spoiled",false)||stack.is(SurvivalContent.item("spoiled_food"));}
     public static void inherit(ItemStack output,Iterable<ItemStack> inputs,ServerLevel level) {
         // Only what can go off is given an age. Stamped on cloth or iron, the moment of making kept every batch from
@@ -92,6 +97,64 @@ public final class ItemAging {
         if(!(event.getEntity().level() instanceof ServerLevel level))return;
         java.util.List<ItemStack> inputs=new java.util.ArrayList<>();for(int i=0;i<event.getInventory().getContainerSize();i++)inputs.add(event.getInventory().getItem(i));
         inherit(event.getCrafting(),inputs,level);
+    }
+    // ---- Heaps ----------------------------------------------------------------------------------------
+    // A cubic metre of seam breaks down to more than a tonne of ore, twenty-five stacks and more. Each stack lying as
+    // its own entity, and none of them ever going away, a few hundred blocks mined were ten thousand entities for
+    // the server to tick for good. What does not weather lies in one heap instead: one entity showing a stack, with
+    // the count of what is under it. Taking the stack uncovers the next.
+    private static final String HEAP="survivalHeap",HEAP_ITEM="survivalHeapItem",HEAP_SHOWN="survivalHeapShown";
+    private static boolean inert(String id){return INERT.contains(id)||id.startsWith("crushed_")||id.startsWith("roasted_")||id.endsWith("stone")||id.endsWith("_stones");}
+    /** Nothing added to what the item is made with. Every stack that enters the world has its enchantments struck off, so a stack with things taken away is still plain. */
+    private static boolean plain(ItemStack stack){var patch=stack.getComponentsPatch();return patch.isEmpty()||patch.split().added().isEmpty();}
+    /** Plain goods that never weather: nothing about one differs from the next, so a count stands for them. */
+    public static boolean heapable(ItemStack stack){return !stack.isEmpty()&&stack.getMaxStackSize()>1&&plain(stack)&&inert(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath());}
+    /** What lies under the stack that shows. */
+    public static long under(ItemEntity entity){return entity.getPersistentData().getLongOr(HEAP,0);}
+    /** Everything in the heap: the stack that shows and what lies under it. */
+    public static long heap(ItemEntity entity){return entity.getItem().getCount()+under(entity);}
+    /** Makes the entity a heap of its own stack over {@code under} more, and says how much is there to anyone looking. */
+    public static void heap(ItemEntity entity,long under){
+        var data=entity.getPersistentData();ItemStack stack=entity.getItem();
+        if(under<=0||stack.isEmpty()){if(data.contains(HEAP)){data.remove(HEAP);data.remove(HEAP_ITEM);data.remove(HEAP_SHOWN);entity.setCustomName(null);entity.setCustomNameVisible(false);}return;}
+        data.putLong(HEAP,under);data.putString(HEAP_ITEM,net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+        long total=under+stack.getCount();if(data.getLongOr(HEAP_SHOWN,-1)==total)return;
+        data.putLong(HEAP_SHOWN,total);entity.setCustomName(net.minecraft.network.chat.Component.literal(String.format(java.util.Locale.ROOT,"%,d ",total)).append(stack.getItemName()));entity.setCustomNameVisible(true);
+    }
+    /** What a block breaks down to falls as one heap of each kind, not as a stack to the entity. */
+    private static void dropped(net.neoforged.neoforge.event.level.BlockDropsEvent event){
+        var drops=event.getDrops();if(drops.size()<2)return;
+        var heaps=new java.util.IdentityHashMap<Item,ItemEntity>();var totals=new java.util.IdentityHashMap<Item,Long>();
+        for(var each=drops.iterator();each.hasNext();){
+            ItemEntity drop=each.next();ItemStack stack=drop.getItem();if(!heapable(stack))continue;
+            totals.merge(stack.getItem(),(long)stack.getCount(),Long::sum);if(heaps.putIfAbsent(stack.getItem(),drop)!=null)each.remove();
+        }
+        heaps.forEach((item,heap)->{long total=totals.get(item);int shown=(int)Math.min(total,heap.getItem().getMaxStackSize());if(total<=heap.getItem().getCount())return;heap.setItem(heap.getItem().copyWithCount(shown));heap(heap,total-shown);});
+    }
+    /** Once a second: a heap takes in the smaller heaps and loose stacks of its own kind lying against it, and shows a full stack while it has one. */
+    private static void gather(ItemEntity entity,ServerLevel level){
+        ItemStack stack=entity.getItem();if(!heapable(stack))return;
+        long under=under(entity),mine=under+stack.getCount();
+        for(ItemEntity other:level.getEntitiesOfClass(ItemEntity.class,entity.getBoundingBox().inflate(1.25,.5,1.25),near->near!=entity&&near.isAlive()&&ItemStack.isSameItemSameComponents(near.getItem(),stack))){
+            long theirs=heap(other);
+            // The larger takes the smaller, and of two alike the elder: asked the other way about, the other does the taking.
+            if(theirs>mine||theirs==mine&&other.getId()<entity.getId())continue;
+            under+=theirs;mine+=theirs;other.getPersistentData().remove(HEAP);other.setItem(ItemStack.EMPTY);other.discard();
+        }
+        int shown=stack.getCount(),full=stack.getMaxStackSize();
+        if(shown<full&&under>0){int more=(int)Math.min(full-shown,under);under-=more;entity.setItem(stack.copyWithCount(shown+more));}
+        heap(entity,under);
+    }
+    /** Called as an item entity is discarded, whatever took it: a hand, a hopper, another stack. What lay under it is still
+     * there, and is uncovered as a new entity so that every client sees the old stack go and the next one lie in its place. */
+    public static void taken(ItemEntity entity){
+        if(!(entity.level() instanceof ServerLevel level))return;
+        var data=entity.getPersistentData();long under=data.getLongOr(HEAP,0);if(under<=0)return;
+        data.remove(HEAP);var id=net.minecraft.resources.Identifier.tryParse(data.getStringOr(HEAP_ITEM,""));
+        Item item=id==null?Items.AIR:net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(id);if(item==null||item==Items.AIR)return;
+        ItemStack next=new ItemStack(item);next.setCount((int)Math.min(under,next.getMaxStackSize()));
+        var heap=new ItemEntity(level,entity.getX(),entity.getY(),entity.getZ(),next,0,0,0);heap.setDefaultPickUpDelay();
+        heap(heap,under-next.getCount());level.addFreshEntity(heap);
     }
     private static final java.util.Set<String> INERT=java.util.Set.of("hematite","malachite","cassiterite","galena","pyrite","salt","fluorite","bauxite","wolframite","oil_sand","borax","coal","charcoal","coke","clay_ball","brick","flint","quicklime","limestone","sulfur","pig_iron");
     public static void weather(ItemEntity entity) {
@@ -108,8 +171,8 @@ public final class ItemAging {
         if(nested||isFood(stack)&&!spoiled(stack))return;
         CompoundTag tag=data(stack);long now=SurvivalApi.calendar(level);long last=tag.getLongOr("weatherTick",now);
         String id=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
-        // Rock does not rot: broken ore, coal, clay, brick and lime lie where they fell.
-        if(INERT.contains(id)||id.startsWith("crushed_")||id.startsWith("roasted_")||id.endsWith("stone")||id.endsWith("_stones"))return;
+        // Rock does not rot: broken ore, coal, clay, brick and lime lie where they fell, and what falls together lies in one heap.
+        if(inert(id)){gather(entity,level);return;}
         // By what the thing is, not by letters in its name: "pot" is also in potato, and stone is not metal.
         boolean ceramic=id.endsWith("_pot")||id.startsWith("pot_")||id.contains("ceramic");
         boolean metal=id.contains("ingot")||id.contains("scrap")||id.contains("copper")||id.contains("bronze")||id.contains("iron")||id.contains("steel")||id.contains("gold")||id.contains("diamond")||id.contains("obsidian");

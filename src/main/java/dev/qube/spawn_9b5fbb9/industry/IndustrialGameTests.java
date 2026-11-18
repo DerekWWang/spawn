@@ -46,6 +46,8 @@ public final class IndustrialGameTests {
         TESTS.register("transport_dead_animal_leaves_team",()->TransportGameTests::deadAnimalLeavesTeam);
         TESTS.register("transport_starving_team_dies",()->TransportGameTests::starvingTeamDies);
         TESTS.register("transport_spoiled_food_not_cargo",()->TransportGameTests::spoiledFoodIsNotCargo);
+        TESTS.register("transport_food_ages_in_cargo",()->TransportGameTests::foodAgesInCargo);
+        TESTS.register("transport_backing_off_the_line",()->TransportGameTests::backingOffTheLine);
         TESTS.register("industry_full_works_not_pulled_down",()->IndustrialGameTests::fullWorksIsNotPulledDown);
         TESTS.register("military_rations_by_nutrition",()->WarfareGameTests::rationsByNutrition);
         TESTS.register("military_absent_soldier_learns_of_death",()->WarfareGameTests::absentSoldierLearnsOfDeath);

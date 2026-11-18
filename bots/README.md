@@ -133,7 +133,8 @@ The server does not mark which command a line answers, so a reply is matched by 
 Every call returns a promise that rejects when no reply comes in time (`error.code` is `ETIMEDOUT`),
 when the bot disconnects (`EDISCONNECTED`, with the kick reason when there was one; calls waiting
 in the queue and every later call reject at once), or, for the three JSON calls, when the bot is dead
-(`EDEAD`). Handle the rejection: a call whose promise is dropped fails silently, so that one careless
+(`EDEAD`) or unconscious (`EUNCONSCIOUS`: out cold, a bot is told of its own body by `query()` and
+nothing else, and cannot move or speak until it comes round). Handle the rejection: a call whose promise is dropped fails silently, so that one careless
 call cannot end a process full of bots.
 
 The mod's names carry their namespace (`spawn_9b5fbb9:kiln`); vanilla names do not (`stone`), as in

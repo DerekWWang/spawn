@@ -141,23 +141,23 @@ public final class Vehicles {
         String unfit=Ledger.unfit(held);if(!unfit.isEmpty())return fail(unfit);
         String id=Ledger.id(held);double each=Ledger.mass(id),room=vehicle.spec().capacity()-Ledger.mass(vehicle.cargo);
         if(room<each)return fail("The "+vehicle.kind().replace('_',' ')+" cannot carry more ("+Math.round(Ledger.mass(vehicle.cargo))+" of "+vehicle.spec().capacity()+" kg aboard)");
-        long moved=(long)Math.min(Math.floor(room/each),held.getCount());Ledger.add(vehicle.cargo,id,moved);held.shrink((int)moved);room-=moved*each;
+        long moved=(long)Math.min(Math.floor(room/each),held.getCount());Ledger.stow(vehicle.cargo,held,moved,vehicle.level());held.shrink((int)moved);room-=moved*each;
         if(everything&&actor instanceof Player player)for(int slot=0;slot<player.getInventory().getContainerSize()&&room>=each;slot++){
             ItemStack other=player.getInventory().getItem(slot);if(other.isEmpty()||other.isDamaged()||!Ledger.id(other).equals(id)||!Ledger.unfit(other).isEmpty())continue;
-            long part=(long)Math.min(Math.floor(room/each),other.getCount());Ledger.add(vehicle.cargo,id,part);other.shrink((int)part);moved+=part;room-=part*each;
+            long part=(long)Math.min(Math.floor(room/each),other.getCount());Ledger.stow(vehicle.cargo,other,part,vehicle.level());other.shrink((int)part);moved+=part;room-=part*each;
         }
         return ok("Loaded "+moved+"; cargo "+Math.round(Ledger.mass(vehicle.cargo))+"/"+vehicle.spec().capacity()+" kg");
     }
     public static ActionResult unload(LivingEntity actor,VehicleEntity vehicle,String itemId,int count){
         String invalid=reach(actor,vehicle);if(!invalid.isEmpty())return fail(invalid);
+        Ledger.settle(vehicle.cargo,vehicle.level());
         if(vehicle.cargo.isEmpty())return fail("The cargo bed is empty");
         String id=itemId==null||itemId.isEmpty()?vehicle.cargo.keySet().iterator().next():itemId.indexOf(':')<0?IndustrialContent.MODID+":"+itemId:itemId;
         if(!vehicle.cargo.containsKey(id)&&itemId!=null&&itemId.indexOf(':')<0&&vehicle.cargo.containsKey("minecraft:"+itemId))id="minecraft:"+itemId;
         if(!vehicle.cargo.containsKey(id))return fail("No such cargo aboard: "+Ledger.describe(vehicle.cargo));
         long moved=0;int limit=actor instanceof Player?Math.max(1,count):Math.min(Math.max(1,count),256);
         while(moved<limit&&vehicle.cargo.containsKey(id)){
-            ItemStack stack=Ledger.withdrawStack(vehicle.cargo,id);if(stack.isEmpty())break;
-            if(stack.getCount()>limit-moved){Ledger.add(vehicle.cargo,id,stack.getCount()-(limit-moved));stack.setCount((int)(limit-moved));}
+            ItemStack stack=Ledger.withdrawStack(vehicle.cargo,id,limit-moved,vehicle.level());if(stack.isEmpty())break;
             moved+=stack.getCount();SurvivalApi.give(actor,stack);
         }
         return ok("Unloaded "+moved+" "+Identifier.parse(id).getPath());
@@ -166,17 +166,17 @@ public final class Vehicles {
     public static ActionResult deliver(LivingEntity actor,VehicleEntity vehicle){
         String invalid=reach(actor,vehicle);if(!invalid.isEmpty())return fail(invalid);
         WorksEntity works=worksBeside(vehicle);if(works==null)return fail("Draw up within six blocks of a works");
-        long moved=Industry.depositFrom(works,vehicle.cargo);
+        Ledger.settle(vehicle.cargo,vehicle.level());long moved=Industry.depositFrom(works,vehicle.cargo);
         return moved>0?ok("Delivered "+moved+" units to the "+works.station().replace('_',' ')+"; "+Industry.status(works)):fail("Nothing aboard is used by that works' selected recipe");
     }
     /** Takes finished goods from a works onto the vehicle. */
     public static ActionResult pickup(LivingEntity actor,VehicleEntity vehicle){
         String invalid=reach(actor,vehicle);if(!invalid.isEmpty())return fail(invalid);
         WorksEntity works=worksBeside(vehicle);if(works==null)return fail("Draw up within six blocks of a works");
-        double room=vehicle.spec().capacity()-Ledger.mass(vehicle.cargo);long moved=0;
+        Ledger.settle(works.products,vehicle.level());double room=vehicle.spec().capacity()-Ledger.mass(vehicle.cargo);long moved=0;
         for(String id:new ArrayList<>(works.products.keySet())){
             double each=Ledger.mass(id);if(id.startsWith("vehicle:")||room<each)continue;long part=(long)Math.min(Math.floor(room/each),works.products.get(id));
-            Ledger.take(works.products,id,part);Ledger.add(vehicle.cargo,id,part);room-=part*each;moved+=part;
+            Ledger.receive(vehicle.cargo,works.products,id,part,vehicle.level());Ledger.take(works.products,id,part);room-=part*each;moved+=part;
         }
         if(moved>0)works.setChanged();
         return moved>0?ok("Took on "+moved+" finished units; cargo "+Math.round(Ledger.mass(vehicle.cargo))+"/"+vehicle.spec().capacity()+" kg"):fail("No finished goods to take on, or no room");

@@ -16,7 +16,7 @@ public final class IrrigationGameTests {
         try{
             var clock=calendar.copy();clock.putLong("sleepOffset",84*24000L-level.getServer().overworld().getLevelData().getGameTime());store.set(SurvivalApi.CALENDAR,clock);
             level.setBlock(pos.below(),Blocks.FARMLAND.defaultBlockState().setValue(net.minecraft.world.level.block.FarmlandBlock.MOISTURE,7),3);level.setBlock(pos,SurvivalContent.CROPS.get("maize").get().defaultBlockState().setValue(net.minecraft.world.level.block.CropBlock.AGE,7),3);
-            var all=SeasonalCrops.records(level);var data=new net.minecraft.nbt.CompoundTag();data.putLong("growth",10*24000L);data.putLong("last",SurvivalApi.calendar(level));all.put(Long.toString(pos.asLong()),data);SeasonalCrops.save(level,all);
+            var all=SeasonalCrops.records(level);var data=new net.minecraft.nbt.CompoundTag();data.putLong("growth",10*24000L);data.putLong("last",SurvivalApi.calendar(level));all.put(Long.toString(pos.asLong()),data);
             h.assertTrue(WorldActions.start(actor,"harvest",pos).success(),"A mature crop in the regional profile can be harvested in calendar winter");for(int i=0;i<240&&WorldActions.inspectJob(actor).get("active").getAsBoolean();i++){actor.tickCount++;WorldActions.tick(actor);}
             int maize=level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,actor.getBoundingBox().inflate(4)).stream().filter(e->e.getItem().is(SurvivalContent.item("maize"))).mapToInt(e->e.getItem().getCount()).sum();h.assertTrue(maize>=3,"Regional winter cannot silently erase a mature maize harvest");
         }finally{WorldActions.cancel(actor,"cleanup");store.set(SurvivalApi.CALENDAR,calendar);WorldEnvironment.replaceForTest(level,old);actor.discard();}

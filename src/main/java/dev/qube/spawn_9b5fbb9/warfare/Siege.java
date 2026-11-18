@@ -51,13 +51,17 @@ public final class Siege {
     public static final double GRAVITY=.0245;
     public static final ResourceKey<DamageType> ARTILLERY=ResourceKey.create(Registries.DAMAGE_TYPE,Identifier.fromNamespaceAndPath(IndustrialContent.MODID,"artillery"));
     private static final String M="spawn_9b5fbb9:";
-    /** Accumulated structural damage per world, keyed by block position. */
-    private static final Map<ResourceKey<Level>,Map<Long,Batter>> BATTERED=new HashMap<>();
-    /** The damage, and the block that took it: what is rebuilt in the same place starts whole. */
-    private record Batter(double done,BlockState state){}
+    /** What a block has stood up to so far is kept in its chunk, with the block that took it: a siege is not undone by the
+     * server stopping overnight, and what is rebuilt in the same place starts whole. */
+    private static String mark(BlockPos pos){return Long.toString(pos.asLong());}
+    private static double done(ServerLevel level,BlockPos pos,BlockState state){
+        var held=dev.qube.spawn_9b5fbb9.world.ChunkRecords.peek(level,pos,"battered");if(held==null)return 0;
+        var mark=held.getCompoundOrEmpty(mark(pos));return mark.getStringOr("state","").equals(state.toString())?mark.getDoubleOr("done",0):0;
+    }
+    private static void mend(ServerLevel level,BlockPos pos){dev.qube.spawn_9b5fbb9.world.ChunkRecords.remove(level,pos,"battered",mark(pos));}
     public static void init(){
         NeoForge.EVENT_BUS.addListener(Siege::commands);
-        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent event)->BATTERED.clear());
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent event)->{if(event.getLevel() instanceof ServerLevel level)mend(level,event.getPos());});
     }
     public static boolean isMunition(ItemStack stack){String id=Ledger.id(stack);return id.equals(M+"powder_charge")||id.equals(M+"round_shot")||id.equals(M+"stone_shot")||id.equals(M+"explosive_shell");}
     public static DamageSource source(ServerLevel level,Entity shot,Entity gunner){return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ARTILLERY),shot,gunner);}
@@ -81,24 +85,21 @@ public final class Siege {
         Military.shock(level,at,7,3);
         if(shot.explosive){burst(level,shot,at);return true;}
         BlockState state=level.getBlockState(pos);double resistance=resistance(level,pos,state);
-        // Bounded by letting the oldest marks go, one at a time, rather than by forgetting a whole siege at once.
-        var ledger=BATTERED.computeIfAbsent(level.dimension(),key->new LinkedHashMap<Long,Batter>(){@Override protected boolean removeEldestEntry(Map.Entry<Long,Batter> eldest){return size()>20000;}});
-        Batter before=ledger.get(pos.asLong());double done=before!=null&&before.state()==state?before.done():0,left=resistance-done;
+        double done=done(level,pos,state),left=resistance-done;
         level.sendParticles(ParticleTypes.POOF,at.x,at.y,at.z,12,.4,.4,.4,.03);
         level.playSound(null,at.x,at.y,at.z,SoundEvents.GENERIC_EXPLODE,SoundSource.BLOCKS,1.2f,1.5f);
         if(shot.power>=left){
-            shot.power-=left;ledger.remove(pos.asLong());level.destroyBlockProgress(pos.hashCode(),pos,-1);
+            shot.power-=left;mend(level,pos);level.destroyBlockProgress(pos.hashCode(),pos,-1);
             level.destroyBlock(pos,level.getRandom().nextFloat()<.3f,shot.ownerEntity());
             return shot.power<.75;
         }
         if(Double.isInfinite(resistance)){shot.power=0;return true;}
-        double total=done+shot.power;ledger.put(pos.asLong(),new Batter(total,state));shot.power=0;
+        double total=done+shot.power;var mark=new net.minecraft.nbt.CompoundTag();mark.putDouble("done",total);mark.putString("state",state.toString());dev.qube.spawn_9b5fbb9.world.ChunkRecords.put(level,pos,"battered",mark(pos),mark);shot.power=0;
         level.destroyBlockProgress(pos.hashCode(),pos,Mth.clamp((int)(total/resistance*9),0,9));
         return true;
     }
     public static double battered(ServerLevel level,BlockPos pos){
-        var ledger=BATTERED.get(level.dimension());Batter mark=ledger==null?null:ledger.get(pos.asLong());
-        return mark!=null&&mark.state()==level.getBlockState(pos)?mark.done():0;
+        return done(level,pos,level.getBlockState(pos));
     }
     public static void burst(ServerLevel level,ShotEntity shot,Vec3 at){
         Military.shock(level,at,10,6);

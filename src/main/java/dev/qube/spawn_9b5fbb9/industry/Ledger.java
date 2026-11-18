@@ -16,11 +16,62 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import dev.qube.spawn_9b5fbb9.content.ItemAging;
+import dev.qube.spawn_9b5fbb9.survival.SurvivalApi;
 
 /** Bulk material accounts keyed by item id. Industrial quantities never fit in slot inventories;
  * every unit still enters from a real stack and leaves as a real stack. */
 public final class Ledger {
     private Ledger(){}
+    /** An account that also knows how old its food is. A bulk account keeps a kind and a number, and for food that was a
+     * larder outside time: bread came off a cart a season later as it went on. Each kind of food has one age here, the
+     * mean of what was put in, and goes on ageing at the rate of a store room. Past its time it is spoiled food. */
+    public static final class Account extends TreeMap<String,Long>{
+        /** By item id: age in ticks, and the calendar tick it was reckoned at. */
+        final Map<String,double[]> fresh=new HashMap<>();
+    }
+    public static final String SPOILED="spawn_9b5fbb9:spoiled_food";
+    private static final Map<String,Boolean> PERISHABLE=new java.util.concurrent.ConcurrentHashMap<>();
+    /** Food, and grain: what a store room does not keep for ever. */
+    public static boolean perishable(String itemId){
+        return PERISHABLE.computeIfAbsent(itemId,id->{if(id.equals(SPOILED)||Identifier.tryParse(id)==null)return false;Item item=item(id);if(item==Items.AIR)return false;ItemStack stack=new ItemStack(item);return stack.has(DataComponents.FOOD)||stack.is(Items.WHEAT);});
+    }
+    private static double age(Map<String,Long> ledger,String itemId,long now){
+        double[] age=ledger instanceof Account account?account.fresh.get(itemId):null;
+        return age==null||ledger.getOrDefault(itemId,0L)<=0?0:age[0]+Math.max(0,now-age[1])*ItemAging.storageRate();
+    }
+    private static void mix(Map<String,Long> ledger,String itemId,long amount,double theirs,long now){
+        if(amount<=0)return;
+        if(ledger instanceof Account account&&perishable(itemId)){long held=ledger.getOrDefault(itemId,0L);account.fresh.put(itemId,new double[]{(age(ledger,itemId,now)*held+theirs*amount)/(held+amount),now});}
+        ledger.merge(itemId,amount,Long::sum);
+    }
+    /** Puts {@code amount} of a real stack into the account, food with the age it has. The caller takes it from the stack. */
+    public static void stow(Map<String,Long> ledger,ItemStack stack,long amount,Level world){
+        String id=id(stack);
+        if(world instanceof ServerLevel level&&perishable(id)){ItemAging.update(stack,level,1);mix(ledger,id,amount,ItemAging.data(stack).getDoubleOr("foodAge",0),SurvivalApi.calendar(level));}
+        else add(ledger,id,amount);
+    }
+    /** Adds units that are coming out of another account, food with the age it had there. The caller takes them out of that one. */
+    public static void receive(Map<String,Long> to,Map<String,Long> from,String itemId,long amount,Level world){
+        if(world instanceof ServerLevel level&&perishable(itemId)){long now=SurvivalApi.calendar(level);mix(to,itemId,amount,age(from,itemId,now),now);}
+        else add(to,itemId,amount);
+    }
+    /** Brings the food in an account up to the present. What has passed its shelf life is spoiled food from then on. */
+    public static void settle(Map<String,Long> ledger,Level world){
+        if(!(ledger instanceof Account account)||!(world instanceof ServerLevel level))return;
+        if(!account.fresh.isEmpty())account.fresh.keySet().retainAll(ledger.keySet());
+        if(ledger.isEmpty())return;
+        long now=SurvivalApi.calendar(level);List<String> gone=null;
+        for(String id:ledger.keySet()){
+            if(!perishable(id))continue;
+            double[] age=account.fresh.computeIfAbsent(id,key->new double[]{0,now});
+            age[0]+=Math.max(0,now-age[1])*ItemAging.storageRate();age[1]=now;
+            if(age[0]>=ItemAging.shelfLife(new ItemStack(item(id)))){if(gone==null)gone=new ArrayList<>();gone.add(id);}
+        }
+        if(gone!=null)for(String id:gone){long count=ledger.remove(id);account.fresh.remove(id);ledger.merge(SPOILED,count,Long::sum);}
+    }
     public static String id(ItemStack stack){return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();}
     public static Item item(String id){Item item=BuiltInRegistries.ITEM.getValue(Identifier.parse(id));return item==null?Items.AIR:item;}
     /** An ingredient is an exact item id, or {@code #namespace:tag} for interchangeable materials. */
@@ -77,36 +128,59 @@ public final class Ledger {
         if(!ingredient.startsWith("#"))return ledger.getOrDefault(ingredient,0L);
         long sum=0;for(var entry:ledger.entrySet())if(matches(ingredient,entry.getKey()))sum+=entry.getValue();return sum;
     }
-    public static void add(Map<String,Long> ledger,String itemId,long amount){if(amount>0)ledger.merge(itemId,amount,Long::sum);}
+    /** Adds new stock. Food made or brought in with no age of its own is fresh, and freshens the mean of what is there. */
+    public static void add(Map<String,Long> ledger,String itemId,long amount){
+        if(amount<=0)return;
+        if(ledger instanceof Account account&&!account.fresh.isEmpty()){
+            double[] age=account.fresh.get(itemId);long held=ledger.getOrDefault(itemId,0L);
+            if(age!=null){if(held<=0)account.fresh.remove(itemId);else age[0]*=held/(double)(held+amount);}
+        }
+        ledger.merge(itemId,amount,Long::sum);
+    }
     /** Removes up to {@code amount} units matching the ingredient; returns the amount actually removed. */
     public static long take(Map<String,Long> ledger,String ingredient,long amount){
         long remaining=amount;
         for(var iterator=ledger.entrySet().iterator();iterator.hasNext()&&remaining>0;){
             var entry=iterator.next();if(!matches(ingredient,entry.getKey()))continue;
             long used=Math.min(remaining,entry.getValue());remaining-=used;
-            if(used==entry.getValue())iterator.remove();else entry.setValue(entry.getValue()-used);
+            if(used==entry.getValue()){iterator.remove();if(ledger instanceof Account account)account.fresh.remove(entry.getKey());}else entry.setValue(entry.getValue()-used);
         }
         return amount-remaining;
     }
     public static boolean has(Map<String,Long> ledger,Map<String,Integer> requirements){
         for(var need:requirements.entrySet())if(count(ledger,need.getKey())<need.getValue())return false;return true;
     }
-    /** Why this stack cannot go into a bulk account, or nothing. An account knows a kind and a number: what comes
-     * out is new stock of that kind, so food already spoiled would come out sound and a filled vessel empty. */
+    /** Why this stack cannot go into a bulk account, or nothing. An account knows a kind, a number and for food an age:
+     * a stack already spoiled would be counted in with the sound, and a filled vessel would come out empty. */
     public static String unfit(ItemStack stack){
         if(dev.qube.spawn_9b5fbb9.content.ItemAging.spoiled(stack)&&!id(stack).endsWith("spoiled_food"))return "Spoiled food is not cargo: it would have to be sorted from the sound";
         var inside=stack.get(DataComponents.CONTAINER);var data=dev.qube.spawn_9b5fbb9.content.ItemAging.data(stack);
         if(inside!=null&&inside.nonEmptyItems().iterator().hasNext()||data.getIntOr("water",0)>0||data.getBooleanOr("sealed",false))return "Empty the vessel first: bulk stowage keeps the vessel, not what is in it";
         return "";
     }
-    /** Takes one real stack (at most a full stack) of the given item. */
-    public static ItemStack withdrawStack(Map<String,Long> ledger,String itemId){
+    /** Takes one real stack (at most a full stack) of the given item. Food comes out with the age it has reached. */
+    public static ItemStack withdrawStack(Map<String,Long> ledger,String itemId,Level world){return withdrawStack(ledger,itemId,Long.MAX_VALUE,world);}
+    public static ItemStack withdrawStack(Map<String,Long> ledger,String itemId,long limit,Level world){
         long stored=ledger.getOrDefault(itemId,0L);Item item=item(itemId);if(stored<=0||item==Items.AIR){ledger.remove(itemId);return ItemStack.EMPTY;}
-        int count=(int)Math.min(stored,new ItemStack(item).getMaxStackSize());take(ledger,itemId,count);return new ItemStack(item,count);
+        double age=world instanceof ServerLevel level&&perishable(itemId)?age(ledger,itemId,SurvivalApi.calendar(level)):0;
+        int count=(int)Math.min(Math.min(stored,Math.max(1,limit)),new ItemStack(item).getMaxStackSize());take(ledger,itemId,count);ItemStack stack=new ItemStack(item,count);
+        if(world instanceof ServerLevel level&&perishable(itemId))ItemAging.stamp(stack,level,age);
+        return stack;
     }
-    public static CompoundTag save(Map<String,Long> ledger){var tag=new CompoundTag();ledger.forEach(tag::putLong);return tag;}
+    public static CompoundTag save(Map<String,Long> ledger){
+        var tag=new CompoundTag();ledger.forEach(tag::putLong);
+        if(ledger instanceof Account account&&!account.fresh.isEmpty()){
+            var fresh=new CompoundTag();account.fresh.forEach((id,age)->{if(ledger.containsKey(id)){var each=new CompoundTag();each.putDouble("age",age[0]);each.putLong("at",(long)age[1]);fresh.put(id,each);}});
+            if(!fresh.isEmpty())tag.put("fresh",fresh);
+        }
+        return tag;
+    }
     public static void load(Map<String,Long> ledger,CompoundTag tag){
         ledger.clear();for(String key:tag.keySet()){long value=tag.getLongOr(key,0);if(value>0&&Identifier.tryParse(key)!=null)ledger.put(key,value);}
+        if(ledger instanceof Account account){
+            account.fresh.clear();var fresh=tag.getCompoundOrEmpty("fresh");
+            for(String key:fresh.keySet())if(ledger.containsKey(key)){var each=fresh.getCompoundOrEmpty(key);account.fresh.put(key,new double[]{each.getDoubleOr("age",0),each.getLongOr("at",0)});}
+        }
     }
     public static String describe(Map<String,Long> ledger){
         if(ledger.isEmpty())return "empty";var out=new StringJoiner(", ");

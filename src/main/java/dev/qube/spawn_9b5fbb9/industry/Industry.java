@@ -357,9 +357,9 @@ public final class Industry {
         }
         if(ingredientFor(recipe,id)==null)return fail("The selected recipe ("+works.recipe+") does not use that; it needs "+describe(recipe.inputs));
         String unfit=Ledger.unfit(held);if(!unfit.isEmpty())return fail(unfit);
-        long moved=held.getCount();Ledger.add(works.stock,id,moved);held.setCount(0);
+        long moved=held.getCount();Ledger.stow(works.stock,held,moved,works.getLevel());held.setCount(0);
         if(everything&&actor instanceof Player player)for(int slot=0;slot<player.getInventory().getContainerSize();slot++){
-            ItemStack other=player.getInventory().getItem(slot);if(!other.isEmpty()&&!other.isDamaged()&&Ledger.id(other).equals(id)&&Ledger.unfit(other).isEmpty()){moved+=other.getCount();Ledger.add(works.stock,id,other.getCount());other.setCount(0);}
+            ItemStack other=player.getInventory().getItem(slot);if(!other.isEmpty()&&!other.isDamaged()&&Ledger.id(other).equals(id)&&Ledger.unfit(other).isEmpty()){moved+=other.getCount();Ledger.stow(works.stock,other,other.getCount(),works.getLevel());other.setCount(0);}
         }
         works.setChanged();return ok("Delivered "+moved+"; "+progressLine(works,recipe));
     }
@@ -372,7 +372,7 @@ public final class Industry {
             boolean fuel=(recipe==null||recipe.burnsFuel())&&heat>0&&(recipe==null||ingredientFor(recipe,entry.getKey())==null)&&(heat==8000||!works.station().equals("foundry"));
             if(fuel){long units=Math.min(entry.getValue(),Math.max(0,(works.fuelLimit()-works.fuel)/heat));if(units<=0)continue;works.fuel+=units*heat;moved+=units;if(units==entry.getValue())iterator.remove();else entry.setValue(entry.getValue()-units);continue;}
             if(recipe==null||ingredientFor(recipe,entry.getKey())==null)continue;
-            Ledger.add(works.stock,entry.getKey(),entry.getValue());moved+=entry.getValue();iterator.remove();
+            Ledger.receive(works.stock,cargo,entry.getKey(),entry.getValue(),works.getLevel());moved+=entry.getValue();iterator.remove();
         }
         if(moved>0)works.setChanged();return moved;
     }
@@ -393,7 +393,7 @@ public final class Industry {
         int stacks=0;long units=0;
         for(String id:new ArrayList<>(works.products.keySet())){
             if(id.startsWith("vehicle:"))continue;
-            while(works.products.containsKey(id)&&stacks<(actor instanceof Player?27:4)){ItemStack stack=Ledger.withdrawStack(works.products,id);if(stack.isEmpty())break;units+=stack.getCount();stacks++;SurvivalApi.give(actor,stack);}
+            while(works.products.containsKey(id)&&stacks<(actor instanceof Player?27:4)){ItemStack stack=Ledger.withdrawStack(works.products,id,works.getLevel());if(stack.isEmpty())break;units+=stack.getCount();stacks++;SurvivalApi.give(actor,stack);}
         }
         works.setChanged();return units>0?ok("Collected "+units+" finished units; "+Ledger.describe(works.products)+" remain"):fail("Finished vehicles wait for clear ground or track beside the yard");
     }
@@ -401,7 +401,7 @@ public final class Industry {
         String invalid=reach(actor,works);if(!invalid.isEmpty())return fail(invalid);
         if(works.stock.isEmpty())return fail("No undelivered stock to recover");
         int stacks=0;long units=0;
-        for(String id:new ArrayList<>(works.stock.keySet()))while(works.stock.containsKey(id)&&stacks<(actor instanceof Player?27:4)){ItemStack stack=Ledger.withdrawStack(works.stock,id);if(stack.isEmpty())break;units+=stack.getCount();stacks++;SurvivalApi.give(actor,stack);}
+        for(String id:new ArrayList<>(works.stock.keySet()))while(works.stock.containsKey(id)&&stacks<(actor instanceof Player?27:4)){ItemStack stack=Ledger.withdrawStack(works.stock,id,works.getLevel());if(stack.isEmpty())break;units+=stack.getCount();stacks++;SurvivalApi.give(actor,stack);}
         works.setChanged();return ok("Recovered "+units+" units of unused stock");
     }
     public static ActionResult operate(LivingEntity actor,WorksEntity works){

@@ -268,6 +268,12 @@ test('each JSON report is taken only by the call that asked for it', async () =>
   await sends(bot, 6)
   bot.hear(DEAD)
   assert.equal(await refused, DEAD)
+
+  // So are the unconscious: a report is refused at once, with its own code.
+  const out = bot.survival.climate()
+  await sends(bot, 7)
+  bot.hear('You are unconscious.')
+  await assert.rejects(out, error => error.code === 'EUNCONSCIOUS' && /unconscious/.test(error.message))
 })
 
 test('a late reply to a command that timed out is not given to the next one', async () => {

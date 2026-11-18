@@ -129,14 +129,16 @@ public final class Railway {
     }
     private static double segment(BlockPos a,BlockPos b){return Math.sqrt(a.distSqr(b));}
     private static double length(List<BlockPos> path){double total=0;for(int i=0;i+1<path.size();i++)total+=segment(path.get(i),path.get(i+1));return total;}
-    private static void extendTail(VehicleEntity engine,ServerLevel level,double need){
+    /** Lays the path on behind the last vehicle. @return whether the rails gave out before it reached far enough. */
+    private static boolean extendTail(VehicleEntity engine,ServerLevel level,double need){
         var path=engine.path;
         for(int guard=0;guard<256&&length(path)<need;guard++){
             BlockPos last=path.getLast();int dx,dz;
             if(path.size()>1){BlockPos before=path.get(path.size()-2);dx=Integer.signum(last.getX()-before.getX());dz=Integer.signum(last.getZ()-before.getZ());}
             else{dx=-engine.facing.getStepX();dz=-engine.facing.getStepZ();}
-            BlockPos more=next(level,last,dx,dz);if(more==null||path.contains(more))return;path.add(more);
+            BlockPos more=next(level,last,dx,dz);if(more==null)return true;if(path.contains(more))return false;path.add(more);
         }
+        return false;
     }
     private static void advance(VehicleEntity engine,ServerLevel level,double distance){
         var path=engine.path;engine.headS-=distance;
@@ -162,8 +164,21 @@ public final class Railway {
     }
     private static void reverse(VehicleEntity engine,ServerLevel level,double distance){
         var path=engine.path;engine.headS+=distance;double need=engine.headS+offset(level,engine,engine.cars.size());
-        extendTail(engine,level,need);double total=length(path);
-        if(total<need){engine.headS=Math.max(0,total-offset(level,engine,engine.cars.size()));engine.velocity=0;}
+        int laid=path.size();boolean railhead=extendTail(engine,level,need);double total=length(path);
+        // The rear of a train backing up leads it: it meets a curve, and the end of the line, as the engine does going forward.
+        for(int i=Math.max(1,laid);i<path.size();i++){
+            BlockPos here=path.get(i-1),on=path.get(i);int dx,dz;
+            if(i>1){BlockPos before=path.get(i-2);dx=Integer.signum(here.getX()-before.getX());dz=Integer.signum(here.getZ()-before.getZ());}
+            else{dx=-engine.facing.getStepX();dz=-engine.facing.getStepZ();}
+            boolean curve=on.getX()-here.getX()!=dx||on.getZ()-here.getZ()!=dz;
+            if(curve&&Math.abs(engine.velocity)>CURVE_LIMIT){double at=engine.headS;derail(engine,level,"Derailed: the train backed round the curve too fast");engine.headS=at;return;}
+        }
+        if(total<need){
+            boolean fast=Math.abs(engine.velocity)>.08;engine.headS=Math.max(0,total-offset(level,engine,engine.cars.size()));double at=engine.headS;
+            if(railhead&&engine.destination!=null){engine.destination=null;for(Entity rider:engine.getPassengers())if(rider instanceof ServerPlayer player)player.sendOverlayMessage(Component.literal("End of the line: the place named is not on it"));}
+            else if(railhead&&fast){derail(engine,level,"Backed off the end of the line");engine.headS=at;return;}
+            engine.velocity=0;
+        }
         while(path.size()>2&&engine.headS>=segment(path.get(0),path.get(1))){engine.headS-=segment(path.get(0),path.get(1));path.removeFirst();}
     }
     private static void derail(VehicleEntity engine,ServerLevel level,String what){

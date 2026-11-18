@@ -37,7 +37,7 @@ public final class ContentGameTests {
         h.assertTrue(berryClick(h,actor,pos).isCanceled()&&!dev.qube.spawn_9b5fbb9.controllers.WorldActions.inspectJob(actor).get("active").getAsBoolean(),"Wild initial harvest must start a real two-day recovery");clock.at(summer+2*24000L-1);h.getLevel().getBlockState(pos).randomTick(h.getLevel(),pos,h.getLevel().getRandom());h.assertTrue(berryClick(h,actor,pos).isCanceled()&&!dev.qube.spawn_9b5fbb9.controllers.WorldActions.inspectJob(actor).get("active").getAsBoolean(),"Berry recovery cannot finish one tick early");clock.at(summer+2*24000L);h.getLevel().getBlockState(pos).randomTick(h.getLevel(),pos,h.getLevel().getRandom());h.assertTrue(berryClick(h,actor,pos).isCanceled()&&dev.qube.spawn_9b5fbb9.controllers.WorldActions.inspectJob(actor).get("active").getAsBoolean(),"Established wild berries must become eligible for timed harvest after exactly two suitable days");dev.qube.spawn_9b5fbb9.controllers.WorldActions.cancel(actor,"Test cleanup");
     }h.succeed();}
     public static void matureRiceFrost(GameTestHelper h){try(var clock=new CalendarScope(h)){
-        long season=dev.qube.spawn_9b5fbb9.Config.SEASON_DAYS.get()*24000L,year=season*4,winter=Math.floorDiv(clock.start,year)*year+season*3+1;if(winter<clock.start)winter+=year;clock.at(winter);BlockPos pos=h.absolutePos(new BlockPos(1,1,1));h.getLevel().setBlock(pos.below(),Blocks.FARMLAND.defaultBlockState().setValue(FarmlandBlock.MOISTURE,7),3);h.getLevel().setBlock(pos.offset(1,0,0),Blocks.WATER.defaultBlockState(),3);var rice=SurvivalContent.CROPS.get("rice").get().getStateForAge(7);h.getLevel().setBlock(pos,rice,3);var all=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(h.getLevel());var data=new net.minecraft.nbt.CompoundTag();data.putLong("last",winter-1);data.putLong("growth",12*24000L);all.put(Long.toString(pos.asLong()),data);dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.save(h.getLevel(),all);
+        long season=dev.qube.spawn_9b5fbb9.Config.SEASON_DAYS.get()*24000L,year=season*4,winter=Math.floorDiv(clock.start,year)*year+season*3+1;if(winter<clock.start)winter+=year;clock.at(winter);BlockPos pos=h.absolutePos(new BlockPos(1,1,1));h.getLevel().setBlock(pos.below(),Blocks.FARMLAND.defaultBlockState().setValue(FarmlandBlock.MOISTURE,7),3);h.getLevel().setBlock(pos.offset(1,0,0),Blocks.WATER.defaultBlockState(),3);var rice=SurvivalContent.CROPS.get("rice").get().getStateForAge(7);h.getLevel().setBlock(pos,rice,3);var all=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(h.getLevel());var data=new net.minecraft.nbt.CompoundTag();data.putLong("last",winter-1);data.putLong("growth",12*24000L);all.put(Long.toString(pos.asLong()),data);
         h.assertTrue(rice.isRandomlyTicking(),"Mature rice cannot stop its calendar and become immune to autumn frost");rice.randomTick(h.getLevel(),pos,h.getLevel().getRandom());h.assertTrue(h.getLevel().getBlockState(pos).isAir(),"Unharvested mature rice must be lost at winter frost");
     }h.succeed();}
     public static void stationFuelCatchup(GameTestHelper h){var pos=h.absolutePos(new BlockPos(1,1,1));h.getLevel().setBlock(pos,SurvivalContent.KILN.get().defaultBlockState(),3);var kiln=(WorkstationEntity)h.getLevel().getBlockEntity(pos);kiln.input=new ItemStack(SurvivalContent.item("unfired_pot"));kiln.recipe="fire_pot";kiln.required=2000;kiln.fuel=8000;kiln.last=100;kiln.advance(h.getLevel(),10100);h.assertTrue(kiln.output.is(SurvivalContent.item("fired_pot"))&&kiln.fuel==6000,"Unloaded catch-up must consume only2000job heat ticks, preserving6000unused fuel");h.succeed();}
@@ -166,7 +166,7 @@ public final class ContentGameTests {
             livestockSupplies(h,calf,true);serializeAnimal(h,calf);clock.at(clock.start+55*24000L);husbandryTick(calf);h.assertTrue(calf.isBaby(),"Cow must receive all twenty-eight supplied growth days");clock.at(clock.start+56*24000L);husbandryTick(calf);h.assertFalse(calf.isBaby(),"A continually fed watered calf matures at twenty-eight qualifying days");calf.discard();
         }h.succeed();
     }
-    private static void cropRecord(GameTestHelper h,BlockPos pos,long growth,boolean fruited){var all=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(h.getLevel());var data=new net.minecraft.nbt.CompoundTag();data.putLong("growth",growth);data.putLong("last",SurvivalApi.calendar(h.getLevel()));data.putBoolean("fruited",fruited);all.put(Long.toString(pos.asLong()),data);dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.save(h.getLevel(),all);}
+    private static void cropRecord(GameTestHelper h,BlockPos pos,long growth,boolean fruited){var all=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.records(h.getLevel());var data=new net.minecraft.nbt.CompoundTag();data.putLong("growth",growth);data.putLong("last",SurvivalApi.calendar(h.getLevel()));data.putBoolean("fruited",fruited);all.put(Long.toString(pos.asLong()),data);}
     public static void slowHarvest(GameTestHelper h){
         var actor=h.makeMockPlayer(GameType.SURVIVAL);BlockPos mushroom=h.absolutePos(new BlockPos(1,1,1));h.getLevel().setBlock(mushroom.below(),Blocks.DIRT.defaultBlockState(),3);h.getLevel().setBlock(mushroom,Blocks.BROWN_MUSHROOM.defaultBlockState(),3);cropRecord(h,mushroom,4*24000L-1,false);
         h.getLevel().destroyBlock(mushroom,true,actor);h.assertTrue(h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(mushroom).inflate(1),e->e.getItem().is(Blocks.BROWN_MUSHROOM.asItem())).isEmpty(),"A planted mushroom cannot yield before four suitable days");
@@ -291,5 +291,51 @@ public final class ContentGameTests {
         actor.tickCount=20;NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(actor));
         h.assertTrue(actor.isSleeping()&&actor.getHealth()<before,"He bleeds and sleeps on: health "+before+" to "+actor.getHealth()+", sleeping "+actor.isSleeping());
         actor.discard();h.succeed();
+    }
+    public static void oreLiesInOneHeap(GameTestHelper h){
+        var level=h.getLevel();for(int x=0;x<5;x++)for(int z=0;z<5;z++)h.setBlock(x,1,z,Blocks.STONE);
+        BlockPos pos=h.absolutePos(new BlockPos(2,2,2));var seam=net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(net.minecraft.resources.Identifier.parse("spawn_9b5fbb9:hematite_ore")).defaultBlockState();
+        var ore=SurvivalContent.item("hematite");
+        java.util.function.Supplier<List<net.minecraft.world.entity.item.ItemEntity>> lying=()->level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(pos).inflate(2),e->e.isAlive()&&e.getItem().is(ore));
+        for(var stale:lying.get())stale.kill(level);
+        Block.dropResources(seam,level,pos,null,null,ItemStack.EMPTY);
+        var heaps=lying.get();
+        h.assertTrue(heaps.size()==1&&ItemAging.heap(heaps.getFirst())==1600&&heaps.getFirst().getItem().getCount()==64&&heaps.getFirst().hasCustomName(),"A metre of seam breaks down to one heap of 1,600, not twenty-five stacks: "+heaps.size()+" entities");
+        var heap=heaps.getFirst();var miner=h.makeMockServerPlayer(GameType.SURVIVAL);miner.setPos(heap.position());heap.setNoPickUpDelay();heap.playerTouch(miner);
+        heaps=lying.get();
+        h.assertTrue(heap.isRemoved()&&miner.getInventory().countItem(ore)==64&&heaps.size()==1&&ItemAging.heap(heaps.getFirst())==1536,"Taking the stack that shows uncovers the next: carried "+miner.getInventory().countItem(ore)+", lying "+heaps.size());
+        var rest=heaps.getFirst();var loose=new net.minecraft.world.entity.item.ItemEntity(level,rest.getX()+.5,rest.getY(),rest.getZ(),new ItemStack(ore,40),0,0,0);level.addFreshEntity(loose);ItemAging.weather(rest);
+        h.assertTrue(loose.isRemoved()&&lying.get().size()==1&&ItemAging.heap(rest)==1576,"A loose stack lying against a heap joins it: "+ItemAging.heap(rest));
+        rest.kill(level);h.assertTrue(lying.get().isEmpty(),"A heap killed outright is gone, not uncovered again");
+        h.succeed();
+    }
+    public static void onlyStockBreeds(GameTestHelper h){try(var clock=new CalendarScope(h)){
+        var mare=h.spawn(EntityTypes.HORSE,new BlockPos(1,2,1));var stallion=h.spawn(EntityTypes.HORSE,new BlockPos(2,2,1));mare.setNoAi(true);stallion.setNoAi(true);livestockSupplies(h,mare,true);livestockSupplies(h,stallion,true);husbandryTick(mare);husbandryTick(stallion);
+        h.assertTrue(Husbandry.managed(mare)&&Husbandry.gestation(mare)==14&&Husbandry.managed(h.spawn(EntityTypes.RABBIT,new BlockPos(3,2,3))),"Horses and rabbits are stock, bred by the calendar like cattle");
+        var groom=h.spawn(EntityTypes.VILLAGER,new BlockPos(1,2,2));groom.setNoAi(true);SurvivalApi.enroll(groom);groom.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.WHEAT,2));Husbandry.action(groom,stallion);Husbandry.action(groom,mare);
+        long due=Math.max(mare.getPersistentData().getLongOr("pregnantUntil",0),stallion.getPersistentData().getLongOr("pregnantUntil",0));
+        h.assertTrue(due==clock.start+14*24000L,"Two fed, watered horses start a fourteen-day pregnancy, not a foal on the spot: due "+(due-clock.start));
+        var wolf=h.spawn(EntityTypes.WOLF,new BlockPos(3,2,1));wolf.setNoAi(true);wolf.setInLoveTime(600);wolf.tickCount=20;NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(wolf));
+        h.assertTrue(!Husbandry.managed(wolf)&&!wolf.isInLove(),"A beast that is not stock is not bred at all");
+        var birth=new net.neoforged.neoforge.event.entity.living.BabyEntitySpawnEvent(wolf,wolf,null);NeoForge.EVENT_BUS.post(birth);
+        h.assertTrue(birth.isCanceled(),"No young come of the game's own pairing, for any animal");
+        mare.discard();stallion.discard();groom.discard();wolf.discard();h.succeed();
+    }}
+    public static void unconsciousLiesStill(GameTestHelper h){
+        h.setBlock(1,1,1,Blocks.STONE);var player=h.makeMockServerPlayer(GameType.SURVIVAL);var at=h.absoluteVec(new Vec3(1.5,2,1.5));player.setPos(at);player.setOnGround(true);player.tickCount=1;
+        int brain=dev.qube.spawn_9b5fbb9.survival.SurvivalState.Part.BRAIN.ordinal();var body=SurvivalApi.state(player);body.anatomy[brain]=0;SurvivalApi.save(player,body);
+        h.assertTrue(dev.qube.spawn_9b5fbb9.survival.SurvivalEvents.insensible(player),"A player whose brain has stopped answering is out cold");
+        NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.tick.PlayerTickEvent.Post(player));
+        player.setPos(at.add(1,0,0));player.setOnGround(true);NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.tick.PlayerTickEvent.Post(player));
+        h.assertTrue(player.position().distanceTo(at)<.01&&player.getForcedPose()==net.minecraft.world.entity.Pose.SWIMMING,"Out cold, the body lies where it fell: it was walked a block and is back");
+        dev.qube.spawn_9b5fbb9.survival.SurvivalEvents.applyCapacities(player,SurvivalApi.state(player),false);
+        h.assertTrue(player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)==0&&player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH)==0,"The legs answer nothing");
+        var use=new PlayerInteractEvent.RightClickItem(player,InteractionHand.MAIN_HAND);NeoForge.EVENT_BUS.post(use);
+        var touch=new PlayerInteractEvent.LeftClickBlock(player,h.absolutePos(new BlockPos(1,1,1)),net.minecraft.core.Direction.UP,PlayerInteractEvent.LeftClickBlock.Action.START);NeoForge.EVENT_BUS.post(touch);
+        h.assertTrue(use.isCanceled()&&touch.isCanceled(),"Nor do the hands");
+        body=SurvivalApi.state(player);body.anatomy[brain]=100;SurvivalApi.save(player,body);NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.tick.PlayerTickEvent.Post(player));
+        dev.qube.spawn_9b5fbb9.survival.SurvivalEvents.applyCapacities(player,SurvivalApi.state(player),false);
+        h.assertTrue(!dev.qube.spawn_9b5fbb9.survival.SurvivalEvents.insensible(player)&&player.getForcedPose()==null&&player.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.JUMP_STRENGTH)>0,"Come round, the player gets up");
+        h.succeed();
     }
 }

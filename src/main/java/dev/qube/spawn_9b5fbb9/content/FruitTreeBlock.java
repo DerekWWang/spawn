@@ -32,6 +32,6 @@ public class FruitTreeBlock extends Block {
         long now=SurvivalApi.calendar(level),yearTicks=24000L*dev.qube.spawn_9b5fbb9.Config.SEASON_DAYS.get()*4;
         var all=SeasonalCrops.records(level);String key=Long.toString(pos.asLong());var tree=all.getCompoundOrEmpty(key);long born=tree.getLongOr("born",now-yearTicks);int season=SeasonalCrops.season(now);long year=now/yearTicks;
         Block.popResource(level,pos,new ItemStack(Items.APPLE,6));tree.putLong("harvestYear",year);
-        tree.putLong("born",born);all.put(key,tree);SeasonalCrops.save(level,all);return true;
+        tree.putLong("born",born);all.put(key,tree);return true;
     }
 }
