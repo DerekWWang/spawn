@@ -3,7 +3,6 @@ package dev.qube.spawn_9b5fbb9.environment.mixin;
 import dev.qube.spawn_9b5fbb9.environment.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -29,7 +28,7 @@ public abstract class ServerWeatherMixin {
         var top=level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING,pos);var below=top.below();if(!level.isAreaLoaded(below,1))return;
         var w=EnvironmentApi.at(level,top);var ground=level.getBlockState(below);var surface=level.getBlockState(top);
         if(w.temperature()>2){if(surface.is(Blocks.SNOW))level.removeBlock(top,false);if(ground.is(Blocks.SNOW))level.removeBlock(below,false);if(ground.is(Blocks.ICE))level.setBlockAndUpdate(below,Blocks.WATER.defaultBlockState());}
-        if(w.temperature()<-2&&ground.is(Blocks.WATER)&&level.getFluidState(below).isSource()&&level.getMaxLocalRawBrightness(below)<10)level.setBlockAndUpdate(below,Blocks.ICE.defaultBlockState());
+        if(w.temperature()<-2&&ground.is(Blocks.WATER)&&level.getFluidState(below).isSource()&&level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK,below)<10)level.setBlockAndUpdate(below,Blocks.ICE.defaultBlockState());
         if(w.rain()<=.15)return;
         if(!w.snow()&&w.rain()>EnvironmentApi.DOUSING_RAIN)douse(level,below,ground);
         if(w.snow()){

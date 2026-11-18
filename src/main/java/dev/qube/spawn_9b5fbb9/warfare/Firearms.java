@@ -73,6 +73,17 @@ public final class Firearms {
         if(shooter.isPassenger())sigma*=1.8;
         return sigma;
     }
+    /** How far the ball can be followed. Only through country that is loaded: tracing it further would make the
+     * server load, or build, whatever lies beyond in the middle of a tick. */
+    private static double loadedReach(ServerLevel level,Vec3 eye,Vec3 aim){
+        int lastX=Integer.MIN_VALUE,lastZ=Integer.MIN_VALUE;
+        for(double reach=0;reach<=RANGE;reach+=.5){
+            int x=Mth.floor(eye.x+aim.x*reach)>>4,z=Mth.floor(eye.z+aim.z*reach)>>4;if(x==lastX&&z==lastZ)continue;
+            if(!level.hasChunk(x,z))return Math.max(0,reach-.5);
+            lastX=x;lastZ=z;
+        }
+        return RANGE;
+    }
     public static Result fire(LivingEntity shooter,ItemStack musket,ServerLevel level,Vec3 direction){
         if(!loaded(musket))return new Result(false,null,"The musket is not loaded");
         if(flintWorn(musket)){level.playSound(null,shooter.getX(),shooter.getEyeY(),shooter.getZ(),SoundEvents.FLINTANDSTEEL_USE,SoundSource.PLAYERS,1,.5f);return new Result(false,null,"No spark: the flint is worn out");}
@@ -86,7 +97,7 @@ public final class Firearms {
         }
         double sigma=spread(shooter);
         Vec3 aim=direction.normalize().yRot((float)(level.getRandom().nextGaussian()*sigma*Mth.DEG_TO_RAD)).add(0,Math.tan(level.getRandom().nextGaussian()*sigma*.7*Mth.DEG_TO_RAD),0).normalize();
-        Vec3 end=eye.add(aim.scale(RANGE));
+        Vec3 end=eye.add(aim.scale(loadedReach(level,eye,aim)));
         var block=level.clip(new ClipContext(eye,end,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,shooter));
         if(block.getType()==HitResult.Type.BLOCK)end=block.getLocation();
         Entity struck=null;double nearest=eye.distanceToSqr(end);Entity mount=shooter.getVehicle();
@@ -101,8 +112,9 @@ public final class Firearms {
         for(Animal animal:level.getEntitiesOfClass(Animal.class,shooter.getBoundingBox().inflate(10),a->!a.isVehicle()&&!a.isNoAi())){Vec3 away=animal.position().subtract(shooter.position()).normalize().scale(10);animal.getNavigation().moveTo(animal.getX()+away.x,animal.getY(),animal.getZ()+away.z,1.6);}
         if(struck==null){Military.shock(level,end,4,1);return new Result(true,null,"Fired");}
         double range=Math.sqrt(nearest);float damage=damageAt(range);
-        struck.hurtServer(level,source(level,shooter),damage);Military.shock(level,struck.position(),5,2);
-        SkillApi.award(shooter,Skill.MARKSMANSHIP,damage*12);
+        boolean hurt=struck.hurtServer(level,source(level,shooter),damage);Military.shock(level,struck.position(),5,2);
+        // Marksmanship is learned from a ball that told on something alive, not from a cart or a creature it could not hurt.
+        if(hurt&&struck instanceof LivingEntity)SkillApi.award(shooter,Skill.MARKSMANSHIP,damage*12);
         return new Result(true,struck,"Hit at "+Math.round(range)+" blocks");
     }
 }

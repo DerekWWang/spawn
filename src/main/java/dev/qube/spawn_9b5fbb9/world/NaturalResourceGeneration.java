@@ -125,7 +125,7 @@ public final class NaturalResourceGeneration {
                     boolean exposure=(x-centerX)*(x-centerX)+(z-centerZ)*(z-centerZ)<100;
                     for(int y=Math.max(world.getMinY()+5,top.getY()-12);y<=top.getY();y++){var p=new BlockPos(x,y,z);var state=world.getBlockState(p);if(stone(state)||exposure&&soil(state))placed|=world.setBlock(p,host(quarry),2);}
                 }
-                if(soil(world.getBlockState(top))&&nearWater(world,top.above())&&ResourceFields.unit(ResourceFields.hash(seed,Math.floorDiv(x,12),Math.floorDiv(z,12),111))<.35){
+                if(soil(world.getBlockState(top))&&ResourceFields.unit(ResourceFields.hash(seed,Math.floorDiv(x,12),Math.floorDiv(z,12),111))<.35&&nearWater(world,top.above())){
                     for(int depth=0;depth<3;depth++){var p=top.below(depth);if(soil(world.getBlockState(p))||world.getBlockState(p).is(Blocks.GRAVEL))placed|=world.setBlock(p,Blocks.CLAY.defaultBlockState(),2);}
                 }
                 int low=Math.max(world.getMinY()+5,district.y()-district.height()-3),high=Math.min(top.getY(),district.y()+18);

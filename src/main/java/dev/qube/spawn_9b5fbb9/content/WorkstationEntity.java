@@ -50,6 +50,8 @@ public class WorkstationEntity extends BlockEntity {
         if(!hasUsableHeat())return;
         Skill learned=skill();double rate=1;SurvivalState body=null;
         if(jobManual){
+            // The dead do no work. A player who died comes back under the same name as an onlooker: the job is let go, for someone else to take up.
+            if(actor instanceof net.minecraft.world.entity.player.Player ghost&&(ghost.isSpectator()||dev.qube.spawn_9b5fbb9.survival.SurvivalEvents.dead(ghost))){worker="";setChanged();return;}
             if(actor==null||!actor.isAlive()||actor.level()!=level||actor.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(worldPosition))>36)return;
             body=SurvivalApi.state(actor);
             if(body.manipulation()<jobMinimumManipulation||body.mental()<=.05||(learned!=null&&SkillApi.level(actor,learned)<jobMinimumSkill))return;
@@ -59,7 +61,7 @@ public class WorkstationEntity extends BlockEntity {
         long remaining=Math.max(0,(long)Math.ceil((required-elapsed-workRemainder)/rate));long used=Math.min(dt,remaining);if(jobHeated)used=Math.min(used,fuel);
         if(used<=0)return;
         if(jobManual)activeTicks=Math.min(1000000,activeTicks+used);
-        if(jobHeated)fuel-=used;workRemainder+=used*rate;long progress=(long)workRemainder;workRemainder-=progress;elapsed+=progress;
+        if(jobHeated)fuel-=(int)used;workRemainder+=used*rate;long progress=(long)workRemainder;workRemainder-=progress;elapsed+=progress;
         if(jobManual){body.hunger=Math.max(0,body.hunger-used*.5/1000);SurvivalApi.save(actor,body);LaborGuard.worked(actor);if(learned==Skill.POTTERY)qualityScore=qualityScore<0?SkillApi.effective(actor,learned):Math.min(qualityScore,SkillApi.effective(actor,learned));}
         if(elapsed>=required){
             ItemStack consumed=input;output=pendingOutput.isEmpty()?Production.finish(recipe,consumed,level):pendingOutput.copy();ItemAging.inherit(output,List.of(consumed,secondary),level);

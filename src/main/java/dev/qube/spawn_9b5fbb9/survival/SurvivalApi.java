@@ -45,7 +45,10 @@ public final class SurvivalApi {
     public static void save(LivingEntity entity,SurvivalState state){
         if(!(entity.level() instanceof ServerLevel))throw new IllegalStateException("Server-side survival mutation required");
         entity.getPersistentData().putByteArray(KEY,state.encode());
+        // Kept beside the body for the one reader that asks twenty times a second (a villager's every thought).
+        entity.getPersistentData().putDouble(MENTAL,state.mental());
     }
+    public static final String MENTAL="survivalMental";
     public static void enroll(LivingEntity entity){entity.getPersistentData().putBoolean("survivalHumanoid",true);state(entity);}
     public static com.google.gson.JsonObject resources(LivingEntity actor,int radius){return dev.qube.spawn_9b5fbb9.controllers.ResourceActions.discover(actor,radius);}
     public static ActionResult prospect(LivingEntity actor,net.minecraft.core.BlockPos pos){return dev.qube.spawn_9b5fbb9.controllers.ResourceActions.prospect(actor,pos);}

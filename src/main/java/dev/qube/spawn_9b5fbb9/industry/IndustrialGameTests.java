@@ -43,6 +43,15 @@ public final class IndustrialGameTests {
         TESTS.register("facility_cleanroom_fab",()->FacilityGameTests::cleanroomFab);
         TESTS.register("transport_cargo_conserved",()->TransportGameTests::cargoConserved);
         TESTS.register("transport_team_required",()->TransportGameTests::teamRequired);
+        TESTS.register("transport_dead_animal_leaves_team",()->TransportGameTests::deadAnimalLeavesTeam);
+        TESTS.register("transport_starving_team_dies",()->TransportGameTests::starvingTeamDies);
+        TESTS.register("transport_spoiled_food_not_cargo",()->TransportGameTests::spoiledFoodIsNotCargo);
+        TESTS.register("industry_full_works_not_pulled_down",()->IndustrialGameTests::fullWorksIsNotPulledDown);
+        TESTS.register("military_rations_by_nutrition",()->WarfareGameTests::rationsByNutrition);
+        TESTS.register("military_absent_soldier_learns_of_death",()->WarfareGameTests::absentSoldierLearnsOfDeath);
+        TESTS.register("military_commander_no_threat",()->WarfareGameTests::commanderIsNoThreat);
+        TESTS.register("industry_dead_hand_frees_place",()->IndustrialGameTests::deadHandFreesPlace);
+        TESTS.register("military_dead_commander_releases_men",()->WarfareGameTests::deadCommanderReleasesMen);
         TESTS.register("transport_track_laying",()->TransportGameTests::trackLaying);
         TESTS.register("transport_train_runs",()->TransportGameTests::trainRuns);
         TESTS.register("transport_wagon_supplies_works",()->TransportGameTests::wagonSuppliesWorks);
@@ -78,7 +87,7 @@ public final class IndustrialGameTests {
     private static void tests(RegisterGameTestsEvent event){
         Holder<TestEnvironmentDefinition<?>> env=event.registerEnvironment(Identifier.fromNamespaceAndPath(SurvivalContent.MODID,"industry_and_war"),new TestEnvironmentDefinition.AllOf(List.of()));
         var data=new TestData<Holder<TestEnvironmentDefinition<?>>>(env,net.minecraft.world.level.Level.OVERWORLD,Identifier.fromNamespaceAndPath(SurvivalContent.MODID,"test_arena"),400,0,true,Rotation.NONE,false,1,1,true,8);
-        TESTS.getEntries().forEach(test->event.registerTest(test.getId(),new FunctionGameTestInstance(test.getKey(),data)));
+        TESTS.getEntries().forEach(test->event.registerTest(test.getId(),new FunctionGameTestInstance(test.unwrapKey().orElseThrow(),data)));
     }
 
     // ---- Shared fixtures ------------------------------------------------------------------------------
@@ -102,6 +111,18 @@ public final class IndustrialGameTests {
     private static void hand(LivingEntity actor,ItemStack stack){actor.setItemInHand(InteractionHand.MAIN_HAND,stack);}
 
     // ---- Industry -------------------------------------------------------------------------------------
+    /** A place at a works is not kept by the dead: once the body is gone the works could not tell, and the place would be lost for good. */
+    public static void deadHandFreesPlace(GameTestHelper h){
+        var first=worker(h,1,1,Skill.CONSTRUCTION,4);var second=worker(h,1,3,Skill.CONSTRUCTION,4);var works=works(h,"workshop",2,1);
+        h.assertTrue(Industry.select(first,works,"wooden_wheel").success()&&Industry.operate(first,works).success(),"The first worker takes the job");
+        int places=Industry.RECIPES.get("wooden_wheel").maxWorkers();
+        for(int i=1;i<places;i++)works.workers.add(java.util.UUID.randomUUID().toString());
+        h.assertTrue(!Industry.operate(second,works).success(),"A full crew admits nobody else");
+        first.hurtServer(h.getLevel(),h.getLevel().damageSources().genericKill(),Float.MAX_VALUE);
+        h.assertTrue(!first.isAlive()&&!works.workers.contains(first.getUUID().toString()),"The dead worker is struck off at the moment of death");
+        h.assertTrue(Industry.operate(second,works).success(),"The place the dead worker held can be taken");
+        second.discard();h.succeed();
+    }
     public static void batchNeedsFullBill(GameTestHelper h){
         var actor=worker(h,1,1,Skill.CONSTRUCTION,4);var works=works(h,"workshop",2,1);long now=SurvivalApi.calendar(h.getLevel());
         h.assertTrue(Industry.select(actor,works,"wooden_wheel").success(),"A workshop must accept its own recipe");
@@ -214,5 +235,16 @@ public final class IndustrialGameTests {
         int logs=h.getLevel().getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(pos).inflate(3),e->e.getItem().is(Items.OAK_LOG)).stream().mapToInt(e->e.getItem().getCount()).sum();
         h.assertTrue(logs==5,"Delivered stock is real material and spills when the works is demolished: "+logs);
         actor.discard();h.succeed();
+    }
+    /** A works holding more than would survive its fall is not pulled down until it is emptied. */
+    public static void fullWorksIsNotPulledDown(GameTestHelper h){
+        var works=works(h,"workshop",2,1);var player=h.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        works.stock.put("minecraft:oak_planks",54L*64+1);
+        var refused=new net.neoforged.neoforge.event.level.block.BreakBlockEvent(h.getLevel(),works.getBlockPos(),works.getBlockState(),player);net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(refused);
+        h.assertTrue(refused.isCanceled(),"More than fifty-four stacks of one thing cannot spill, so the works stands");
+        works.stock.put("minecraft:oak_planks",64L);
+        var allowed=new net.neoforged.neoforge.event.level.block.BreakBlockEvent(h.getLevel(),works.getBlockPos(),works.getBlockState(),player);net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(allowed);
+        h.assertTrue(!allowed.isCanceled(),"A works with a little stock comes down and spills it");
+        h.succeed();
     }
 }

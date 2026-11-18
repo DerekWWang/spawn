@@ -113,7 +113,7 @@ public final class Railway {
         }
         actor.getPersistentData().remove("survivalRailAxis");return true;
     }
-    private static void useRail(PlayerInteractEvent.RightClickBlock event){
+    private static void useRail(PlayerInteractEvent.RightClickBlock event){if(event.getEntity().isSpectator())return;
         if(!(event.getLevel() instanceof ServerLevel level)||event.getHand()!=InteractionHand.MAIN_HAND||!event.getItemStack().is(SurvivalContent.item("steel_rail")))return;
         if(level.getBlockEntity(event.getPos())!=null)return;
         BlockPos target=level.getBlockState(event.getPos()).canBeReplaced()?event.getPos():event.getPos().relative(event.getFace()==null?Direction.UP:event.getFace());
@@ -147,6 +147,8 @@ public final class Railway {
             if(more==null){
                 // Nothing stops a train at the end of the line but the ground.
                 boolean fast=Math.abs(engine.velocity)>.08;engine.headS=0;
+                // A driver working to a named place has the line ahead in view and stops at the last rail; only a hand on the regulator runs off it.
+                if(engine.destination!=null){engine.velocity=0;engine.destination=null;for(Entity rider:engine.getPassengers())if(rider instanceof ServerPlayer player)player.sendOverlayMessage(Component.literal("End of the line: the place named is not on it"));break;}
                 if(fast){derail(engine,level,"Ran off the end of the line");return;}
                 engine.velocity=0;break;
             }
@@ -222,12 +224,15 @@ public final class Railway {
         if(engine.path.size()>1&&engine.path.get(0).getY()!=engine.path.get(1).getY())limit*=.6*Math.min(1,60/tonnes);
         if(capable&&engine.destination==null&&driver instanceof ServerPlayer player){var input=player.getLastClientInput();command=(input.forward()?1:0)-(input.backward()?1:0);}
         else if(capable&&engine.destination!=null){
-            Vec3 offset=engine.destination.subtract(engine.position());double distance=offset.horizontalDistance();
+            // Measured along the track, not as the crow flies: a place beside the line is reached when the engine is
+            // abreast of it. By the straight distance it was never within reach, and the train shuttled past it for good.
+            Vec3 offset=engine.destination.subtract(engine.position()),heading=Vec3.directionFromRotation(0,engine.getYRot());
+            double along=offset.x*heading.x+offset.z*heading.z,distance=Math.abs(along);
             if(distance<3&&Math.abs(engine.velocity)<.02)engine.destination=null;
             else{
                 // The driver shuts off and brakes with the stopping distance in hand.
-                Vec3 heading=Vec3.directionFromRotation(0,engine.getYRot());double allowed=Math.sqrt(2*BRAKE*.8*Math.max(0,distance-3))+.008;
-                command=(offset.x*heading.x+offset.z*heading.z>=0?1:-1)*(limit<=0?1:Math.min(1,allowed/limit));
+                double allowed=Math.sqrt(2*BRAKE*.8*Math.max(0,distance-3))+.008;
+                command=(along>=0?1:-1)*(limit<=0?1:Math.min(1,allowed/limit));
             }
         }else if(!capable)engine.destination=null;
         engine.throttle=command;

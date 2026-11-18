@@ -3,7 +3,6 @@ package dev.qube.spawn_9b5fbb9.wildlife;
 
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
-import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.resources.Identifier;
 
 public class BrownBearRenderer extends MobRenderer<BrownBearEntity, BrownBearRenderState, BrownBearModel> {

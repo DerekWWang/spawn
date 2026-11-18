@@ -11,5 +11,5 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Level.class)
 public abstract class LevelWeatherMixin {
     @Inject(method="isRainingAt",at=@At("HEAD"),cancellable=true)
-    private void localRain(BlockPos pos,CallbackInfoReturnable<Boolean> cir){if((Object)this instanceof ServerLevel level&&WorldEnvironment.active(level)){var w=EnvironmentApi.at(level,pos);cir.setReturnValue(w.rain()>.15&&!w.snow()&&!EnvironmentApi.roofed(level,pos));}}
+    private void localRain(BlockPos pos,CallbackInfoReturnable<Boolean> cir){if((Object)this instanceof ServerLevel level&&WorldEnvironment.active(level))cir.setReturnValue(!EnvironmentApi.roofed(level,pos)&&EnvironmentApi.raining(level,pos));}
 }

@@ -13,18 +13,19 @@ import java.util.Locale;
 public final class SkillsScreen extends Screen {
     private int first,selected;
     public SkillsScreen(){super(Component.literal("Skills"));}
-    private int rows(){return Math.max(3,Math.min(11,(height-150)/18));}
+    private static final int SKILLS=SkillSet.Skill.values().length;
+    private int rows(){return Math.max(3,Math.min(SKILLS,(height-150)/18));}
     @Override public boolean isPauseScreen(){return false;}
     @Override protected void init(){
         int middle=width/2;
         addRenderableWidget(Button.builder(Component.literal("Previous"),b->{first=Math.max(0,first-rows());selected=first;}).bounds(middle-128,height-25,80,20).build());
         addRenderableWidget(Button.builder(Component.literal("Health"),b->Minecraft.getInstance().setScreenAndShow(new SurvivalHud.HealthScreen())).bounds(middle-40,height-25,80,20).build());
-        addRenderableWidget(Button.builder(Component.literal("Next"),b->{first=Math.min(Math.max(0,11-rows()),first+rows());selected=first;}).bounds(middle+48,height-25,80,20).build());
+        addRenderableWidget(Button.builder(Component.literal("Next"),b->{first=Math.min(Math.max(0,SKILLS-rows()),first+rows());selected=first;}).bounds(middle+48,height-25,80,20).build());
     }
-    @Override public boolean mouseScrolled(double x,double y,double dx,double dy){first=Math.clamp(first-(int)Math.signum(dy),0,Math.max(0,11-rows()));selected=first;return true;}
+    @Override public boolean mouseScrolled(double x,double y,double dx,double dy){first=Math.clamp(first-(int)Math.signum(dy),0,Math.max(0,SKILLS-rows()));selected=first;return true;}
     @Override public void extractRenderState(GuiGraphicsExtractor g,int mouseX,int mouseY,float partial){
         g.fill(0,0,width,height,0xF0121C22);var font=Minecraft.getInstance().font;var body=SurvivalNetwork.clientState;
-        int panel=Math.min(480,width-20),left=(width-panel)/2,shown=Math.min(rows(),11-first),top=54;
+        int panel=Math.min(480,width-20),left=(width-panel)/2,shown=Math.min(rows(),SKILLS-first),top=54;
         g.text(font,"SKILLS",left,12,0xFFF1D5A0);
         g.text(font,"Useful work teaches; interests affect learning.",left,28,0xFFB8CCC7);
         g.text(font,"Trade",left,42,0xFFB8CCC7);g.text(font,"Level",left+94,42,0xFFB8CCC7);g.text(font,"Progress",left+136,42,0xFFB8CCC7);g.text(font,"Interest",left+panel-72,42,0xFFB8CCC7);

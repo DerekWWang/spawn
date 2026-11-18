@@ -37,7 +37,8 @@ public final class SurvivalHud {
         g.fill(x,y+10,x+146,y+13,0xFF344047);g.fill(x,y+10,x+(int)(146*Math.max(0,Math.min(1,amount/Math.max(1,max)))),y+13,color);
     }
     public static void tick(ClientTickEvent.Post event){
-        while(HEALTH.consumeClick())if(Minecraft.getInstance().getConnection()!=null)Minecraft.getInstance().getConnection().sendCommand("survival health");
+        // The body is already here, sent every second: the key opens the screen without asking the server for it.
+        while(HEALTH.consumeClick())if(Minecraft.getInstance().player!=null){var mc=Minecraft.getInstance();mc.setScreenAndShow(mc.gui.screen() instanceof HealthScreen?null:new HealthScreen());}
         if(SurvivalNetwork.openHealth&&Minecraft.getInstance().player!=null){SurvivalNetwork.openHealth=false;var mc=Minecraft.getInstance();mc.setScreenAndShow(mc.gui.screen() instanceof HealthScreen?null:new HealthScreen());}
         if(SurvivalNetwork.openSkills&&Minecraft.getInstance().player!=null){SurvivalNetwork.openSkills=false;Minecraft.getInstance().setScreenAndShow(new SkillsScreen());}
     }
@@ -78,7 +79,7 @@ public final class SurvivalHud {
             g.text(font,"Health effects",left,top+211,0xFFF1D5A0);
             g.text(font,s.conditions(),left,top+227,0xFFFFBE9D);
             g.text(font,"Practiced skills",left,top+247,0xFFF1D5A0);
-            g.text(font,"Eleven independent trades. Levels 0–20, interests and daily practice.",left,top+266,0xFFB8CCC7);
+            g.text(font,"Sixteen independent trades. Levels 0–20, interests and daily practice.",left,top+266,0xFFB8CCC7);
             g.text(font,"Open Skills and interests below for progress and learning details.",left,top+282,0xFFB8CCC7);
             g.text(font,"Water: /survival act drink   |   Recreation: /survival act read or play",left,top+305,0xFFB8CCC7);
             g.text(font,"Esc to return. Time continues while inspecting.",left,top+321,0xFFB8CCC7);

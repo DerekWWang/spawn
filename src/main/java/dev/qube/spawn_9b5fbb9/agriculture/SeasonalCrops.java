@@ -5,7 +5,6 @@ import dev.qube.spawn_9b5fbb9.Config;
 import dev.qube.spawn_9b5fbb9.content.SurvivalContent;
 import dev.qube.spawn_9b5fbb9.content.ContentDefinitions;
 import dev.qube.spawn_9b5fbb9.survival.SurvivalApi;
-import dev.qube.spawn_9b5fbb9.survival.SkillApi;
 import dev.qube.spawn_9b5fbb9.survival.SkillSet.Skill;
 import dev.qube.spawn_9b5fbb9.survival.LaborGuard;
 import dev.qube.spawn_9b5fbb9.controllers.WorldActions;
@@ -91,7 +90,7 @@ public final class SeasonalCrops {
         ripe|=state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.BERRIES)&&state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.BERRIES);
         if(ripe){data.putBoolean("established",true);data.putLong("growth",8*DAY);data.putLong("born",now-8*DAY);data.putLong("last",now);}
     }
-    private static void plant(PlayerInteractEvent.RightClickBlock event){
+    private static void plant(PlayerInteractEvent.RightClickBlock event){if(event.getEntity().isSpectator())return;
         if(!(event.getLevel() instanceof ServerLevel level))return;
         var actor=event.getEntity();var targetState=level.getBlockState(event.getPos());String target=BuiltInRegistries.BLOCK.getKey(targetState.getBlock()).getPath();
         if(!SurvivalApi.exempt(actor)&&event.getItemStack().is(net.minecraft.tags.ItemTags.HOES)&&(targetState.is(Blocks.DIRT)||targetState.is(Blocks.GRASS_BLOCK)||targetState.is(Blocks.DIRT_PATH))){event.setCanceled(true);actor.sendOverlayMessage(Component.literal(WorldActions.start(actor,"till",event.getPos(),event.getHand()).message()));return;}
@@ -120,14 +119,15 @@ public final class SeasonalCrops {
             long required=(old.getBooleanOr("established",false)?2:8)*DAY;
             if((season(now)!=1&&season(now)!=2)||old.getLongOr("growth",0)<required)event.getDrops().removeIf(drop->drop.getItem().is(Items.SWEET_BERRIES)||drop.getItem().is(Items.GLOW_BERRIES));
         }
-        if((id.equals("sugar_cane")||id.contains("mushroom"))&&!old.isEmpty()){
+        // What was planted, or grew from what was planted, has to be waited for. What was found growing wild is there
+        // to be cut, and a joint of cane that grew out of a ripe one is itself the harvest.
+        if((id.equals("sugar_cane")||id.contains("mushroom"))&&!old.isEmpty()&&!old.getBooleanOr("wild",false)&&!old.getBooleanOr("harvestableStage",false)){
             long required=(id.equals("sugar_cane")?6:4)*DAY;
             if(old.getLongOr("growth",0)<required)event.getDrops().clear();
         }
         Schedule definition=schedule(BuiltInRegistries.BLOCK.getKey(event.getState().getBlock()).toString());boolean frost=!WorldEnvironment.active(level)&&definition!=null&&definition.frost&&season(now)==3;
         if(frost&&(id.equals("rice_crop")||old.getLongOr("growth",0)<definition.days*DAY))event.getDrops().clear();
-        boolean practice=harvestReady(level,event.getPos(),event.getState());Skill practiced=harvestSkill(level,event.getPos(),event.getState());
-        all.remove(key);save(level,all);
+        if(!old.isEmpty()){all.remove(key);save(level,all);}
         // Practice belongs to the timed work transaction; a raw block-destruction event carries no labor credit.
         if(!id.endsWith("_crop")||!event.getState().hasProperty(CropBlock.AGE))return;
         if(frost)return;
@@ -213,6 +213,8 @@ public final class SeasonalCrops {
         if(id.equals("sweet_berry_bush")||id.startsWith("cave_vines"))initializeWildBerry(state,data,now);
         String type=BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
         if(!data.getStringOr("type",type).equals(type)){data=new CompoundTag();}
+        // Nothing on record when it is first looked at: it was not sown or grown from anything sown, so it is wild and already established.
+        if(data.isEmpty())data.putBoolean("wild",true);
         long last=data.getLongOr("last",now);long growth=data.getLongOr("growth",0);long duration=rule.days*DAY;
         if(data.getBooleanOr("fruited",false)&&(id.contains("melon_stem")||id.contains("pumpkin_stem")))duration=(id.contains("melon")?3:4)*DAY;
         boolean berries=id.equals("sweet_berry_bush")||id.startsWith("cave_vines");

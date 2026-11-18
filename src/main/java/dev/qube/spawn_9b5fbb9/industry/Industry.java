@@ -298,7 +298,10 @@ public final class Industry {
         }
         RECIPES=Collections.unmodifiableMap(replacement);
     }
-    public static void init(){NeoForge.EVENT_BUS.addListener(Industry::interact);NeoForge.EVENT_BUS.addListener(Industry::commands);}
+    public static void init(){NeoForge.EVENT_BUS.addListener(Industry::interact);NeoForge.EVENT_BUS.addListener(Industry::commands);NeoForge.EVENT_BUS.addListener(Industry::died);NeoForge.EVENT_BUS.addListener(Industry::loggedOut);NeoForge.EVENT_BUS.addListener(Industry::demolish);}
+    /** The dead hold no place at a works. Once the body is gone the works cannot tell a dead hand from one out of sight, and the place would stay taken for good. */
+    private static void died(net.neoforged.neoforge.event.entity.living.LivingDeathEvent event){if(!event.getEntity().level().isClientSide())leave(event.getEntity());}
+    private static void loggedOut(net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event){leave(event.getEntity());}
 
     // ---- Controller-neutral operations ---------------------------------------------------------------
     private static ActionResult ok(String text){return new ActionResult(true,text);}
@@ -333,9 +336,10 @@ public final class Industry {
         String invalid=reach(actor,works);if(!invalid.isEmpty())return fail(invalid);
         Recipe recipe=RECIPES.get(recipeId);if(recipe==null)return fail("Unknown industrial recipe");
         if(!recipe.station.equals(works.station()))return fail("That recipe belongs to a "+recipe.station.replace('_',' '));
-        if(works.active)return fail("A batch is in progress; let it finish before retooling");
-        works.recipe=recipeId;works.progress=0;works.setChanged();
-        if(actor.level() instanceof ServerLevel level)works.survey(level,recipe);
+        // A batch of something that is no longer made here (a recipe a data pack took away) can never finish, and must not hold the works for good.
+        if(works.active&&RECIPES.get(works.recipe)!=null)return fail("A batch is in progress; let it finish before retooling");
+        boolean retooled=!recipeId.equals(works.recipe);works.active=false;works.recipe=recipeId;works.progress=0;works.setChanged();
+        if(retooled&&actor.level() instanceof ServerLevel level)works.inspect(level,recipe);
         return ok("Set to "+recipeId+": needs "+describe(recipe.inputs)+" per batch"+(recipe.burnsFuel()?", burns fuel":"")+(recipe.electric()?", draws "+recipe.load+" kW":"")+(recipe.attended?", attended by "+(recipe.skill==null?"any worker":recipe.skill.label().toLowerCase(Locale.ROOT)+" "+recipe.minimumSkill+"+"):", unattended")+". "+siteLine(works));
     }
     private static String describe(Map<String,Integer> bill){var out=new StringJoiner(", ");bill.forEach((id,count)->out.add(count+" "+(id.startsWith("#")?"any "+id.substring(id.indexOf(':')+1):id.substring(id.indexOf(':')+1))));return out.toString();}
@@ -352,19 +356,22 @@ public final class Industry {
             if(recipe==null||!recipe.station.equals(works.station()))return fail("Nothing made here uses that material");
         }
         if(ingredientFor(recipe,id)==null)return fail("The selected recipe ("+works.recipe+") does not use that; it needs "+describe(recipe.inputs));
+        String unfit=Ledger.unfit(held);if(!unfit.isEmpty())return fail(unfit);
         long moved=held.getCount();Ledger.add(works.stock,id,moved);held.setCount(0);
         if(everything&&actor instanceof Player player)for(int slot=0;slot<player.getInventory().getContainerSize();slot++){
-            ItemStack other=player.getInventory().getItem(slot);if(!other.isEmpty()&&!other.isDamaged()&&Ledger.id(other).equals(id)){moved+=other.getCount();Ledger.add(works.stock,id,other.getCount());other.setCount(0);}
+            ItemStack other=player.getInventory().getItem(slot);if(!other.isEmpty()&&!other.isDamaged()&&Ledger.id(other).equals(id)&&Ledger.unfit(other).isEmpty()){moved+=other.getCount();Ledger.add(works.stock,id,other.getCount());other.setCount(0);}
         }
         works.setChanged();return ok("Delivered "+moved+"; "+progressLine(works,recipe));
     }
     /** Moves every unit a works can use out of a cargo ledger (a wagon, truck or rail wagon alongside). */
     public static long depositFrom(WorksEntity works,Map<String,Long> cargo){
-        Recipe recipe=RECIPES.get(works.recipe);if(recipe==null)return 0;long moved=0;
+        // A power station makes nothing and so has no recipe; it burns, and a wagon of coal drawn up to it is its supply.
+        Recipe recipe=RECIPES.get(works.recipe);boolean station=works.station().equals("power_station");if(recipe==null&&!station)return 0;long moved=0;
         for(var iterator=cargo.entrySet().iterator();iterator.hasNext();){
-            var entry=iterator.next();boolean fuel=recipe.burnsFuel()&&fuelValue(new ItemStack(Ledger.item(entry.getKey())))>0&&ingredientFor(recipe,entry.getKey())==null&&(fuelValue(new ItemStack(Ledger.item(entry.getKey())))==8000||!works.station().equals("foundry"));
-            if(fuel){long units=Math.min(entry.getValue(),Math.max(0,(works.fuelLimit()-works.fuel)/fuelValue(new ItemStack(Ledger.item(entry.getKey())))));if(units<=0)continue;works.fuel+=units*fuelValue(new ItemStack(Ledger.item(entry.getKey())));moved+=units;if(units==entry.getValue())iterator.remove();else entry.setValue(entry.getValue()-units);continue;}
-            if(ingredientFor(recipe,entry.getKey())==null)continue;
+            var entry=iterator.next();int heat=fuelValue(new ItemStack(Ledger.item(entry.getKey())));
+            boolean fuel=(recipe==null||recipe.burnsFuel())&&heat>0&&(recipe==null||ingredientFor(recipe,entry.getKey())==null)&&(heat==8000||!works.station().equals("foundry"));
+            if(fuel){long units=Math.min(entry.getValue(),Math.max(0,(works.fuelLimit()-works.fuel)/heat));if(units<=0)continue;works.fuel+=units*heat;moved+=units;if(units==entry.getValue())iterator.remove();else entry.setValue(entry.getValue()-units);continue;}
+            if(recipe==null||ingredientFor(recipe,entry.getKey())==null)continue;
             Ledger.add(works.stock,entry.getKey(),entry.getValue());moved+=entry.getValue();iterator.remove();
         }
         if(moved>0)works.setChanged();return moved;
@@ -403,6 +410,12 @@ public final class Industry {
         if(!recipe.attended)return fail("This process runs unattended");
         if(recipe.skill!=null&&SkillApi.level(actor,recipe.skill)<recipe.minimumSkill)return fail("Requires "+recipe.skill.label().toLowerCase(Locale.ROOT)+" level "+recipe.minimumSkill);
         String id=actor.getUUID().toString();
+        // A place is held by standing at the work. One who has wandered off, or died, gives it up to whoever comes
+        // for it; one who is merely out of sight of the server (asleep in an unloaded house) keeps it.
+        if(!works.workers.contains(id)&&works.workers.size()>=recipe.maxWorkers&&actor.level() instanceof ServerLevel level)for(String holder:new ArrayList<>(works.workers)){
+            net.minecraft.world.entity.Entity found;try{found=level.getEntity(java.util.UUID.fromString(holder));}catch(IllegalArgumentException malformed){works.workers.remove(holder);continue;}
+            if(found instanceof LivingEntity absent&&(!absent.isAlive()||absent.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(works.getBlockPos()))>64)){works.workers.remove(holder);absent.getPersistentData().remove("survivalWorksPos");}
+        }
         if(!works.workers.contains(id)&&works.workers.size()>=recipe.maxWorkers)return fail("Only "+recipe.maxWorkers+" can work this job at once");
         leave(actor);works.workers.add(id);actor.getPersistentData().putLong("survivalWorksPos",works.getBlockPos().asLong());works.setChanged();
         return ok("Working "+works.recipe+" ("+works.workers.size()+"/"+recipe.maxWorkers+" hands). Stay within eight blocks; "+progressLine(works,recipe));
@@ -427,7 +440,7 @@ public final class Industry {
             String fault=Facility.stationFault(level,works);int generators=Facility.generators(level,works);
             return "power station | "+(fault.isEmpty()?"running":fault)+" | generators "+generators+" (capacity "+Facility.GENERATOR_KW*generators+" kW) | load now "+(level.getGameTime()/20==works.loadStamp?works.loadUsed:0)+" kW | fuel "+works.fuel+" ("+works.fuel/8000+" sacks)";
         }
-        if(recipe!=null&&works.getLevel() instanceof ServerLevel level)works.survey(level,recipe);
+        // Asking after a works does not run it. The works reads its own site every five seconds, and that reading is what is reported.
         return works.station().replace('_',' ')+" | "+(recipe==null?"no recipe":works.recipe+" | "+progressLine(works,recipe))+" | stock: "+Ledger.describe(works.stock)+" | finished: "+Ledger.describe(works.products)
             +(works.usesFuel()?" | fuel "+works.fuel:"")+" | workers "+works.workers.size()+" | batches "+works.batches+(recipe==null?"":" | "+siteLine(works))+(recipe!=null&&recipe.needs.contains("cleanroom")?" | cleanliness "+Math.round(works.cleanliness)+"%":"");
     }
@@ -464,14 +477,24 @@ public final class Industry {
         for(var input:source.inputs.entrySet())expand(input.getKey(),batches*input.getValue(),totals,depth+1);
     }
 
+    /** A works knocked down spills at most fifty-four stacks of each thing it holds, and no vehicle at all: more than
+     * that would bury the server in loose items. So it is not knocked down while it holds more; it is emptied first. */
+    private static void demolish(net.neoforged.neoforge.event.level.block.BreakBlockEvent event){
+        if(!(event.getLevel() instanceof ServerLevel level)||!(level.getBlockEntity(event.getPos()) instanceof WorksEntity works))return;
+        boolean lost=works.pendingVehicle();
+        for(var ledger:List.of(works.stock,works.products))for(var entry:ledger.entrySet())if(!entry.getKey().startsWith("vehicle:")&&entry.getValue()>54L*new ItemStack(Ledger.item(entry.getKey())).getMaxStackSize())lost=true;
+        if(!lost)return;
+        event.setCanceled(true);event.setNotifyClient(true);
+        if(event.getPlayer() instanceof net.minecraft.server.level.ServerPlayer player)player.sendOverlayMessage(Component.literal("This works holds more than would survive pulling it down: withdraw its stock and collect what it has made first"));
+    }
     // ---- Player interaction --------------------------------------------------------------------------
-    private static void interact(PlayerInteractEvent.RightClickBlock event){
+    private static void interact(PlayerInteractEvent.RightClickBlock event){if(event.getEntity().isSpectator())return;
         if(!(event.getLevel() instanceof ServerLevel level)||!(level.getBlockEntity(event.getPos()) instanceof WorksEntity works))return;
         event.setCanceled(true);if(event.getHand()!=InteractionHand.MAIN_HAND)return;
         Player player=event.getEntity();ItemStack held=event.getItemStack();ActionResult result;
         Recipe recipe=RECIPES.get(works.recipe);
         if(held.isEmpty()&&player.isShiftKeyDown())result=works.stock.isEmpty()?leave(player):withdraw(player,works);
-        else if(held.isEmpty())result=!works.products.isEmpty()?collect(player,works):recipe!=null&&recipe.attended&&!works.workers.contains(player.getUUID().toString())?operate(player,works):ok(status(works));
+        else if(held.isEmpty())result=!works.products.keySet().stream().allMatch(product->product.startsWith("vehicle:"))?collect(player,works):recipe!=null&&recipe.attended&&!works.workers.contains(player.getUUID().toString())?operate(player,works):ok(status(works));
         else if(works.usesFuel()&&fuelValue(held)>0&&(recipe==null||ingredientFor(recipe,Ledger.id(held))==null))result=fuel(player,works,InteractionHand.MAIN_HAND);
         else result=deposit(player,works,InteractionHand.MAIN_HAND,player.isShiftKeyDown());
         player.sendOverlayMessage(Component.literal(result.message()));

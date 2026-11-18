@@ -308,7 +308,64 @@ saw it discarded and tried again every tick; and nothing dropped ever left the w
 organic litter weathered to plant fibre and fibre weathered to fresh fibre. Fibre and spoiled food
 left in the open now rot away after the same spell again; rock, metal scrap and shards stay.
 
-157 GameTests pass. Three added with the server-load fixes check that no biome offers the spawner a
+Playing the whole of a life through with protocol bots, as ordinary survival players, turned up
+more, also fixed. A nested fertilized egg was tossed like any dropped item and, having no weight,
+drifted ten blocks into the air and never incubated, so no chick could ever hatch in play. The
+resource survey judged sight by a ray to the heart of each block, which on level ground lies behind
+its neighbours' edges, so it saw only the few blocks underfoot; it also looked at every block in
+range before keeping sixty-four. A dead worker's place at a works stayed taken for good once the body
+was gone. A dying animal could still mate, lay and give birth, and was counted for room. Bodies were
+put through the night's catch-up and counted as unsuited in a cleanroom. A dead draught animal or
+crewman stayed on a vehicle's books when it could not be found. A dead commander's soldiers served on
+under his name. And the dead came back: a player who died respawned with all he had learned. Death is
+now permanent. The one who returns is a spectator, shut out of clicks, commands and chat, and only an
+operator's `/survival revive` puts them back, as a new person.
+
+A last review of every subsystem before release, read file by file and then played, found more. The
+worst was a crash: a draught animal that starved in harness died in the middle of its team being
+fed, and the death took it out of the list being read. Next were the vanilla recipes the mod strikes
+out: NeoForge ships its own versions of the game's tool, armour, bucket and shears recipes, its data
+was loaded above the mod's, and so fifty-nine of them had never been struck out at all. Every actor's
+whole body was sent to every player within 128 blocks every second, ten thousand packets a second
+for a hundred people in one settlement, each telling its reader a neighbour's illness and skill. What
+was made at a station was stamped with the moment of making, so cloth never stacked and no garment
+could be begun; sticks and fibre that had lain seconds on the ground did not stack either. A dead
+worker's station job could not be taken up, and his ghost could go on working it. A works paid hunger
+and skill for seconds in which a cold hearth let nothing be done, cleaned its room each time someone
+asked how it was, and lost what it held beyond fifty-four stacks when knocked down. A soldier with an
+unreachable goal searched for a path every tick; one struck by his own commander turned on him; the
+last cartridge was spent and never fired; another's gun could be laid from anywhere; rations counted
+a beetroot as a meal. A musket ball was traced through unloaded country, loading it. Jobs went on in
+the worker's sleep, and ore could be mined through three blocks of rock by anyone who knew where it
+was. A train sent to a place beside the line shuttled past it for ever, and `halt` did not stop one.
+The game's furnace still worked through a hopper. Loose fertilized eggs never rotted, and no dropped
+item ever joined another. Predators with an odd entity number never broke off at a fire, and none
+gave up quarry it could not reach. All are fixed.
+
+180 GameTests pass. Sixteen added with that review check that a starved horse dies out of its team
+with the feeding run to its end; that spoiled food is not cargo; that a full works is not pulled
+down; that rations go by nutrition; that a man away when his commander fell is released when next
+seen; that a commander's blow marks no enemy and a stranger's does; that buried stone is not mined
+until a face is opened; that a job is held to its tool only where the tool does the work; that the
+game's wooden pickaxe, iron pickaxe, bucket, shears, chestplate and stone sword are not on offer;
+that nobody works asleep; that plain goods stack and food still carries its age; that a loose
+fertilized egg rots and loose ore can still merge; that a dead potter's firing is taken up where it
+stood; that a beginner is told the fire he really needs; that a furnace stays cold; and that a wound
+bleeds on through sleep and a painkiller needs pain. The bots package gained twelve tests of its own,
+for replies, pacing, disconnection and the operator console.
+
+164 GameTests passed before that review. Seven added with the lifecycle work check that a dead worker frees its place at a works; a
+dead commander's men are released and another's are not; a dead horse leaves the harness and another
+can take it; two hens paired give one fertilized egg, which hatches on warm hay at four days, not a
+tick sooner and never in the cold; a nested egg is still on its hay three seconds later; a sow farrows
+two to four piglets and a ewe one lamb on their day, and a dying ewe does not lamb; and a survey of
+open sand lists the sixty-four nearest blocks in sight, nearest first, and says it was cut short. The
+respawn test now checks the opposite of what it did: nothing learned is carried on, the returning
+player is marked dead, a creative player is not, and revival gives a new person. `bots/test/lifecycle.js`
+plays the same life against a running server, including what a GameTest cannot reach: the switch to
+spectator, and the refusal of a dead player's commands and chat.
+
+Three added with the server-load fixes check that no biome offers the spawner a
 forbidden creature while plains still offer sheep; that the crop calendar answers per block exactly
 as its rules do and leaves vanilla random ticking alone; and that a sapling left out rots to fibre
 and then away, a fish spoils and then rots away, and coal stays. Twelve added for weather, illness,

@@ -1,9 +1,0 @@
-{
-  "type": "minecraft:crafting_shapeless",
-  "ingredients": [
-    "minecraft:bedrock"
-  ],
-  "result": {
-    "id": "minecraft:stick"
-  }
-}

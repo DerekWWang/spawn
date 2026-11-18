@@ -18,9 +18,14 @@ const MOD_CHANNELS = {
  * @param options.registryFile path of a registry export other than the bundled one
  * @param options.strictRegistry end the bot when the server's ids disagree with the export (default true)
  * @param options.commandTimeout milliseconds to wait for a /survival reply (default 5000)
+ * @param options.commandSettle milliseconds to wait before sending a command, so earlier packets land first (default 150)
+ * @param options.commandLimit pacing that keeps the bot inside the server's command spam limit: false where the
+ *   server has none, or an object with any of `ceiling`, `drainPerSecond`, `safety`, `fallbackTicksPerSecond`
+ *   (see lib/survival.js). A setting that cannot work throws here.
  */
 function createBot (options = {}) {
-  const { registryFile, strictRegistry = true, commandTimeout, ...rest } = options
+  const { registryFile, strictRegistry = true, commandTimeout, commandSettle, commandLimit, ...rest } = options
+  survival.readLimit(commandLimit) // a setting that cannot work throws here, before anything connects
   const data = registry.load(registryFile)
   const bot = mineflayer.createBot({ auth: 'offline', ...rest, version: VERSION })
   // With an explicit version the data tables exist as soon as createBot returns, before any plugin loads.
@@ -39,7 +44,7 @@ function createBot (options = {}) {
     if (strictRegistry) bot.end('registry mismatch')
   })
   bot._client.on('neoforge_failed', reason => bot.emit('error', new Error('The server refused the channel list: ' + reason)))
-  survival.install(bot, { commandTimeout })
+  survival.install(bot, { commandTimeout, commandSettle, commandLimit })
   return bot
 }
 

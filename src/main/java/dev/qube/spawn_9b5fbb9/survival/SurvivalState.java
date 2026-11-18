@@ -105,7 +105,7 @@ public final class SurvivalState {
     public boolean treat(String item){
         switch(item){
             case "bandage" -> {if(bleeding<=0)return false;bleeding=0;}
-            case "painkiller" -> {if(painkillerTicks>0)return false;painkillerTicks=rules.ticks("painkillerTicks");}
+            case "painkiller" -> {if(bleeding<=0||painkillerTicks>0)return false;painkillerTicks=rules.ticks("painkillerTicks");}
             case "antitoxin" -> {if(poisonTicks<=0)return false;poisonTicks=0;}
             case "antiseptic" -> {if(!woundInfection)return false;woundInfection=false;}
             case "antibiotic" -> {

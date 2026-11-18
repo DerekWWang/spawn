@@ -49,8 +49,19 @@ public final class SurvivalGameTests {
         var old=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);var fresh=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);
         var body=SurvivalApi.state(old);body.skills.setLevel(SkillSet.Skill.SMITHING,12);body.skills.setLevel(SkillSet.Skill.FARMING,4);body.injure(SurvivalState.Part.LEFT_ARM,90,false);SurvivalApi.save(old,body);
         SurvivalEvents.clone(new net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone(fresh,old,true));
-        var returned=SurvivalApi.state(fresh);h.assertTrue(returned.skills.level(SkillSet.Skill.SMITHING)==12&&returned.skills.level(SkillSet.Skill.FARMING)==4,"respawn must retain independent learned skills");
-        h.assertTrue(returned.anatomy[0]==100,"respawn must reset injuries without resetting learned competence");h.succeed();
+        // Death is permanent: the one who comes back carries nothing of the old life and only watches.
+        var returned=SurvivalApi.state(fresh);h.assertTrue(returned.skills.level(SkillSet.Skill.SMITHING)==0&&returned.skills.level(SkillSet.Skill.FARMING)==0,"what the dead learned is not carried into another life");
+        h.assertTrue(SurvivalEvents.dead(fresh)&&!SurvivalEvents.dead(old),"the player who comes back after dying is marked dead");
+        var again=h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);SurvivalEvents.clone(new net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone(again,fresh,true));
+        h.assertTrue(SurvivalEvents.dead(again),"a spectator's death does not undo the first");
+        var visitor=h.makeMockServerPlayer(net.minecraft.world.level.GameType.CREATIVE);var next=h.makeMockServerPlayer(net.minecraft.world.level.GameType.CREATIVE);
+        var craft=SurvivalApi.state(visitor);craft.skills.setLevel(SkillSet.Skill.SMITHING,7);SurvivalApi.save(visitor,craft);
+        SurvivalEvents.clone(new net.neoforged.neoforge.event.entity.player.PlayerEvent.Clone(next,visitor,true));
+        h.assertTrue(!SurvivalEvents.dead(next)&&SurvivalApi.state(next).skills.level(SkillSet.Skill.SMITHING)==7,"a creative player was never part of the simulation and is not ended by dying");
+        // The switch to spectator needs a real connection and is checked by the protocol-bot run (bots/test/lifecycle.js).
+        var marked=SurvivalApi.state(fresh);marked.skills.setLevel(SkillSet.Skill.FARMING,9);SurvivalApi.save(fresh,marked);
+        h.assertTrue(SurvivalEvents.newLife(fresh)&&!SurvivalEvents.dead(fresh)&&SurvivalApi.state(fresh).skills.level(SkillSet.Skill.FARMING)==0,"an operator can return the dead to the world as a new person, with nothing learned");
+        h.assertTrue(!SurvivalEvents.newLife(fresh),"only the dead can be revived");h.succeed();
     }
     private static void skillsNativeHunt(GameTestHelper h){
         var hunter=h.spawn(EntityTypes.VILLAGER,1,2,1);hunter.setNoAi(true);var quarry=h.spawn(EntityTypes.COW,2,2,1);

@@ -66,6 +66,79 @@ public final class ContentGameTests {
             serializeAnimal(h,hen);clock.at(clock.start+8*24000L);husbandryTick(hen);h.assertTrue(countItem(h,hen,Items.EGG)==first+2,"Unloaded catch-up may lay one due egg, not a burst of missed days");husbandryTick(hen);h.assertTrue(countItem(h,hen,Items.EGG)==first+2,"Catch-up/reload cannot repeatedly claim the same due egg");hen.discard();
         }h.succeed();
     }
+    private static void itemTick(net.minecraft.world.entity.item.ItemEntity item){item.tickCount=20;NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(item));}
+    /** Two hens paired give one fertilized egg; on hay by a fire it hatches at four days and not before, and never in the cold. */
+    public static void henEggHatches(GameTestHelper h){
+        try(var clock=new CalendarScope(h)){
+            var level=h.getLevel();var eggItem=dev.qube.spawn_9b5fbb9.content.SurvivalContent.item("fertilized_egg");
+            var hen=h.spawn(EntityTypes.CHICKEN,new BlockPos(1,2,1));var mate=h.spawn(EntityTypes.CHICKEN,new BlockPos(2,2,1));hen.setNoAi(true);mate.setNoAi(true);livestockSupplies(h,hen,true);livestockSupplies(h,mate,true);husbandryTick(hen);husbandryTick(mate);
+            var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(1,2,2));actor.setNoAi(true);SurvivalApi.enroll(actor);actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.WHEAT_SEEDS,2));
+            Husbandry.action(actor,mate);String said=Husbandry.action(actor,hen);
+            var laid=level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,hen.getBoundingBox().inflate(3),drop->drop.getItem().is(eggItem));
+            h.assertTrue(laid.size()==1&&said.contains("Fertilized egg"),"Feeding two supplied hens must give exactly one fertilized egg: "+said);
+            h.assertTrue(actor.getMainHandItem().isEmpty(),"Pairing consumes both portions of seed");
+            BlockPos warm=h.absolutePos(new BlockPos(1,2,4)),cold=h.absolutePos(new BlockPos(1,2,9));
+            level.setBlock(warm,Blocks.HAY_BLOCK.defaultBlockState(),3);level.setBlock(warm.east(),Blocks.CAMPFIRE.defaultBlockState(),3);level.setBlock(cold,Blocks.HAY_BLOCK.defaultBlockState(),3);
+            actor.setItemInHand(InteractionHand.MAIN_HAND,laid.getFirst().getItem().copy());laid.getFirst().discard();
+            actor.setPos(Vec3.atBottomCenterOf(warm.north()));h.assertTrue(Husbandry.nest(actor,warm).contains("placed"),"A fertilized egg is set on a hay nest");
+            actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(eggItem));actor.setPos(Vec3.atBottomCenterOf(cold.north()));h.assertTrue(Husbandry.nest(actor,cold).contains("placed"),"A second egg is set on hay with no fire");
+            java.util.function.Function<BlockPos,List<net.minecraft.world.entity.item.ItemEntity>> eggs=at->level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(at).inflate(1.5),drop->drop.getItem().is(eggItem));
+            java.util.function.Function<BlockPos,Integer> chicks=at->level.getEntitiesOfClass(net.minecraft.world.entity.animal.chicken.Chicken.class,new net.minecraft.world.phys.AABB(at).inflate(2),bird->bird.isBaby()).size();
+            h.assertTrue(eggs.apply(warm).size()==1&&eggs.apply(cold).size()==1,"Each nest holds its egg");
+            var warmEgg=eggs.apply(warm).getFirst();var coldEgg=eggs.apply(cold).getFirst();itemTick(warmEgg);itemTick(coldEgg);
+            clock.at(clock.start+4*24000L-1);itemTick(warmEgg);itemTick(coldEgg);
+            h.assertTrue(chicks.apply(warm)==0&&warmEgg.isAlive(),"An egg cannot hatch a tick short of four warm days");
+            clock.at(clock.start+4*24000L);itemTick(warmEgg);itemTick(coldEgg);
+            h.assertTrue(chicks.apply(warm)==1&&!warmEgg.isAlive(),"Four warm days on hay hatch one chick and use up the egg");
+            clock.at(clock.start+12*24000L);itemTick(coldEgg);
+            h.assertTrue(chicks.apply(cold)==0&&coldEgg.isAlive(),"An egg with no heat never hatches");
+            for(var bird:level.getEntitiesOfClass(net.minecraft.world.entity.animal.chicken.Chicken.class,new net.minecraft.world.phys.AABB(warm).inflate(12)))bird.discard();
+            for(var drop:level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(warm).inflate(12)))drop.discard();
+            actor.discard();
+        }h.succeed();
+    }
+    /** A nested egg must still be on its hay after real time has passed, or it can never incubate. */
+    public static void nestedEggStays(GameTestHelper h){
+        var level=h.getLevel();var eggItem=dev.qube.spawn_9b5fbb9.content.SurvivalContent.item("fertilized_egg");BlockPos nest=h.absolutePos(new BlockPos(1,2,1));
+        level.setBlock(nest,Blocks.HAY_BLOCK.defaultBlockState(),3);
+        var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(1,2,3));actor.setNoAi(true);SurvivalApi.enroll(actor);actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(eggItem));
+        h.assertTrue(Husbandry.nest(actor,nest).contains("placed"),"A fertilized egg is set on a hay nest");
+        h.runAfterDelay(60,()->{
+            var eggs=level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class,new net.minecraft.world.phys.AABB(nest).inflate(24),drop->drop.getItem().is(eggItem));
+            h.assertTrue(eggs.size()==1,"The nest holds one egg, found "+eggs.size());
+            var egg=eggs.getFirst();
+            h.assertTrue(egg.blockPosition().below().equals(nest),"Three seconds on, the egg is still on its hay; it is at "+egg.position()+" and the nest is "+nest);
+            egg.discard();actor.discard();h.succeed();
+        });
+    }
+    /** A sow farrows a litter of two to four and a ewe drops one lamb, each on its day; a dam that is dying delivers nothing. */
+    public static void litterLambAndDyingDam(GameTestHelper h){
+        try(var clock=new CalendarScope(h)){
+            var level=h.getLevel();
+            var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(1,2,2));actor.setNoAi(true);SurvivalApi.enroll(actor);
+            var sow=h.spawn(EntityTypes.PIG,new BlockPos(1,2,1));var boar=h.spawn(EntityTypes.PIG,new BlockPos(2,2,1));sow.setNoAi(true);boar.setNoAi(true);livestockSupplies(h,sow,true);livestockSupplies(h,boar,true);husbandryTick(sow);husbandryTick(boar);
+            actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.CARROT,2));Husbandry.action(actor,boar);String said=Husbandry.action(actor,sow);
+            long due=sow.getPersistentData().getLongOr("pregnantUntil",0);int litter=sow.getPersistentData().getIntOr("litter",0);
+            h.assertTrue(due==clock.start+8*24000L&&litter>=2&&litter<=4,"A sow carries two to four piglets for eight days: "+said);
+            h.assertTrue(boar.getPersistentData().getLongOr("pregnantUntil",0)==0,"Only the animal fed second conceives");
+            clock.at(due);livestockSupplies(h,sow,true);husbandryTick(sow);
+            var piglets=level.getEntitiesOfClass(net.minecraft.world.entity.animal.pig.Pig.class,sow.getBoundingBox().inflate(3),pig->pig.isBaby());
+            h.assertTrue(piglets.size()==litter,"The whole litter is born on the day: "+piglets.size()+" of "+litter);
+            for(var pig:level.getEntitiesOfClass(net.minecraft.world.entity.animal.pig.Pig.class,sow.getBoundingBox().inflate(6)))pig.discard();
+            long start=due;
+            var ewe=h.spawn(EntityTypes.SHEEP,new BlockPos(1,2,1));var ram=h.spawn(EntityTypes.SHEEP,new BlockPos(2,2,1));ewe.setNoAi(true);ram.setNoAi(true);livestockSupplies(h,ewe,true);livestockSupplies(h,ram,true);husbandryTick(ewe);husbandryTick(ram);
+            actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.WHEAT,2));Husbandry.action(actor,ram);said=Husbandry.action(actor,ewe);
+            long lambing=ewe.getPersistentData().getLongOr("pregnantUntil",0);
+            h.assertTrue(lambing==start+8*24000L&&ewe.getPersistentData().getIntOr("litter",0)==1,"A ewe carries one lamb for eight days: "+said);
+            clock.at(lambing);livestockSupplies(h,ewe,true);float health=ewe.getHealth();ewe.setHealth(0);husbandryTick(ewe);
+            java.util.function.Supplier<Integer> lambs=()->level.getEntitiesOfClass(net.minecraft.world.entity.animal.sheep.Sheep.class,ewe.getBoundingBox().inflate(3),sheep->sheep.isBaby()).size();
+            h.assertTrue(lambs.get()==0&&ewe.getPersistentData().getLongOr("pregnantUntil",0)==lambing,"A dying ewe does not lamb");
+            ewe.setHealth(health);husbandryTick(ewe);
+            h.assertTrue(lambs.get()==1&&ewe.getPersistentData().getLongOr("pregnantUntil",-1)==0,"The same ewe, alive, lambs once");
+            for(var sheep:level.getEntitiesOfClass(net.minecraft.world.entity.animal.sheep.Sheep.class,ewe.getBoundingBox().inflate(6)))sheep.discard();
+            actor.discard();
+        }h.succeed();
+    }
     public static void gestationDelivery(GameTestHelper h){
         try(var clock=new CalendarScope(h)){
             var mother=h.spawn(EntityTypes.COW,new BlockPos(1,2,1));var mate=h.spawn(EntityTypes.COW,new BlockPos(2,2,1));mother.setNoAi(true);mate.setNoAi(true);livestockSupplies(h,mother,true);livestockSupplies(h,mate,true);husbandryTick(mother);husbandryTick(mate);
@@ -149,5 +222,74 @@ public final class ContentGameTests {
         var animal=h.spawn(EntityTypes.COW,new BlockPos(1,2,1));animal.setBaby(true);long now=SurvivalApi.calendar(h.getLevel());animal.getPersistentData().putLong("husbandryBorn",now);animal.getPersistentData().putDouble("nutrition",40);
         var actor=h.makeMockPlayer(GameType.SURVIVAL);actor.setPos(animal.position().add(0,0,1));actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.WHEAT,2));int age=animal.getAge();var event=new PlayerInteractEvent.EntityInteract(actor,InteractionHand.MAIN_HAND,animal,Vec3.ZERO);NeoForge.EVENT_BUS.post(event);
         h.assertTrue(event.isCanceled(),"Husbandry must replace vanilla feeding behavior");h.assertTrue(animal.getAge()==age&&animal.isBaby(),"Feeding cannot instantly mature a juvenile");h.assertTrue(actor.getMainHandItem().getCount()==1,"Feeding must consume one real supply");h.assertFalse(Husbandry.mature(animal,now+27*24000L),"Cow maturity must require all 28 days");h.succeed();
+    }
+    private static net.minecraft.world.entity.LivingEntity potter(GameTestHelper h,int x,int z){h.setBlock(x,1,z,Blocks.STONE);var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(x,2,z));actor.setNoAi(true);SurvivalApi.enroll(actor);return actor;}
+    private static WorkstationEntity kiln(GameTestHelper h,int x,int z){var pos=h.absolutePos(new BlockPos(x,2,z));h.setBlock(x,1,z,Blocks.STONE);h.getLevel().setBlock(pos,SurvivalContent.KILN.get().defaultBlockState(),3);return (WorkstationEntity)h.getLevel().getBlockEntity(pos);}
+    /** Only what can go off carries an age: iron, cloth and sticks are plain goods that stack with their like. */
+    public static void plainGoodsStack(GameTestHelper h){
+        var ingot=new ItemStack(Items.IRON_INGOT);ItemAging.inherit(ingot,List.of(new ItemStack(Items.RAW_IRON,3)),h.getLevel());
+        h.assertTrue(!ingot.has(DataComponents.CUSTOM_DATA)&&ItemStack.isSameItemSameComponents(ingot,new ItemStack(Items.IRON_INGOT)),"What is made that is not food is not stamped with the moment of making");
+        var bread=new ItemStack(Items.BREAD);ItemAging.inherit(bread,List.of(new ItemStack(Items.WHEAT,3)),h.getLevel());
+        h.assertTrue(ItemAging.data(bread).contains("freshTick"),"Food is");
+        var stick=new ItemStack(Items.STICK,2);var tag=ItemAging.data(stick);tag.putLong("weatherTick",SurvivalApi.calendar(h.getLevel()));tag.putDouble("weatherAge",37);ItemAging.data(stick,tag);
+        ItemAging.update(stick,h.getLevel(),1);
+        h.assertTrue(!stick.has(DataComponents.CUSTOM_DATA),"A stick picked up after seconds on the ground is a stick like any other");
+        var old=new ItemStack(Items.STICK);tag=ItemAging.data(old);tag.putDouble("weatherAge",2.5*24000);ItemAging.data(old,tag);ItemAging.update(old,h.getLevel(),1);
+        h.assertTrue(ItemAging.data(old).getDoubleOr("weatherAge",0)==2*24000d,"Days in the open are still counted, in whole days");
+        h.succeed();
+    }
+    /** An egg off its nest rots like anything else, and loose rock is kept without being barred from joining a like heap. */
+    public static void looseEggRots(GameTestHelper h){try(var clock=new CalendarScope(h)){
+        var level=h.getLevel();h.setBlock(1,1,1,Blocks.STONE);var at=h.absoluteVec(new Vec3(1.5,2,1.5));
+        var egg=new ItemStack(SurvivalContent.item("fertilized_egg"));var tag=ItemAging.data(egg);tag.putLong("weatherTick",clock.start-5*24000L);ItemAging.data(egg,tag);
+        var loose=new net.minecraft.world.entity.item.ItemEntity(level,at.x,at.y,at.z,egg,0,0,0);level.addFreshEntity(loose);ItemAging.weather(loose);
+        h.assertTrue(loose.isRemoved(),"A fertilized egg left lying off a nest is gone after its days in the open");
+        var carried=new ItemStack(SurvivalContent.item("fertilized_egg"));tag=ItemAging.data(carried);tag.putBoolean("nest",true);tag.putLong("incubated",3*24000L);tag.putLong("nestLast",clock.start);ItemAging.data(carried,tag);
+        ItemAging.update(carried,level,1);
+        h.assertTrue(!ItemAging.data(carried).contains("nest")&&!ItemAging.data(carried).contains("incubated"),"An egg taken off the nest has lost its sitting");
+        var ore=new net.minecraft.world.entity.item.ItemEntity(level,at.x,at.y,at.z,new ItemStack(SurvivalContent.item("hematite"),10),0,0,0);level.addFreshEntity(ore);ItemAging.weather(ore);
+        h.assertTrue(ore.isAlive()&&ore.getAge()<0&&ore.getAge()>-32768&&!ore.getItem().has(DataComponents.CUSTOM_DATA),"Loose ore is kept from the sweep and can still join another heap: age "+ore.getAge());
+        ore.discard();h.succeed();
+    }}
+    /** A dead worker's job is taken up where it stands by the next hand that can do it. */
+    public static void deadWorkersJobIsTakenUp(GameTestHelper h){
+        var kiln=kiln(h,2,2);kiln.fuel=16000;var first=potter(h,1,2);var second=potter(h,3,2);
+        first.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.CLAY_BALL,8));
+        String begun=Production.start(first,kiln,"fire_pot");
+        h.assertTrue(begun.startsWith("Started")&&kiln.worker.equals(first.getUUID().toString()),"The first potter begins the firing: "+begun);
+        h.assertTrue(Production.start(second,kiln,"fire_pot").equals("Workstation occupied."),"While he lives the kiln is his");
+        kiln.elapsed=700;first.hurtServer(h.getLevel(),h.getLevel().damageSources().genericKill(),Float.MAX_VALUE);
+        h.assertTrue(kiln.worker.isEmpty()&&!kiln.input.isEmpty()&&kiln.elapsed==700,"His death frees the kiln and leaves the work as it stood");
+        String taken=Production.start(second,kiln,"fire_pot");
+        h.assertTrue(taken.startsWith("Took up")&&kiln.worker.equals(second.getUUID().toString())&&kiln.elapsed==700,"The next potter takes it up where it was: "+taken);
+        second.discard();h.succeed();
+    }
+    /** The fire burns by the clock and the work goes at the worker's pace: a slow hand is told the fire he really needs. */
+    public static void slowHandNeedsMoreFire(GameTestHelper h){
+        var kiln=kiln(h,2,2);var novice=potter(h,1,2);novice.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.CLAY_BALL,8));
+        kiln.fuel=2000;String cold=Production.start(novice,kiln,"fire_pot");
+        h.assertTrue(cold.contains("at your pace")&&kiln.input.isEmpty()&&novice.getMainHandItem().getCount()==8,"The bare two thousand is not enough for a beginner, and nothing is taken: "+cold);
+        kiln.fuel=8000;String lit=Production.start(novice,kiln,"fire_pot");
+        h.assertTrue(lit.startsWith("Started"),"With a full charge of charcoal he begins: "+lit);
+        novice.discard();h.succeed();
+    }
+    /** The game's furnace does no work, fed by hand or by hopper. */
+    public static void furnaceStaysCold(GameTestHelper h){
+        h.setBlock(1,1,1,Blocks.STONE);h.setBlock(1,2,1,Blocks.FURNACE);var pos=h.absolutePos(new BlockPos(1,2,1));
+        var furnace=(net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity)h.getLevel().getBlockEntity(pos);
+        furnace.setItem(0,new ItemStack(Items.OAK_LOG,4));furnace.setItem(1,new ItemStack(Items.COAL,4));
+        for(int tick=0;tick<260;tick++)net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity.serverTick(h.getLevel(),pos,h.getLevel().getBlockState(pos),furnace);
+        h.assertTrue(furnace.getItem(2).isEmpty()&&furnace.getItem(1).getCount()==4&&furnace.getItem(0).getCount()==4,"Thirteen seconds on, nothing has burned and nothing has cooked");
+        h.succeed();
+    }
+    /** A painkiller is for pain, and a wound bleeds on through sleep without shaking the sleeper awake. */
+    public static void sleepAndPain(GameTestHelper h){
+        var actor=potter(h,1,1);var body=SurvivalApi.state(actor);
+        h.assertTrue(!body.treat("painkiller"),"With no pain there is nothing for a painkiller to do");
+        body.bleeding=5;h.assertTrue(body.treat("painkiller"),"With a wound there is");
+        body=SurvivalApi.state(actor);body.bleeding=5;SurvivalApi.save(actor,body);actor.setSleepingPos(actor.blockPosition());float before=actor.getHealth();
+        actor.tickCount=20;NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(actor));
+        h.assertTrue(actor.isSleeping()&&actor.getHealth()<before,"He bleeds and sleeps on: health "+before+" to "+actor.getHealth()+", sleeping "+actor.isSleeping());
+        actor.discard();h.succeed();
     }
 }

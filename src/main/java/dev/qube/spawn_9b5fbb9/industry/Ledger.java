@@ -91,7 +91,15 @@ public final class Ledger {
     public static boolean has(Map<String,Long> ledger,Map<String,Integer> requirements){
         for(var need:requirements.entrySet())if(count(ledger,need.getKey())<need.getValue())return false;return true;
     }
-    /** Takes one real stack (at most a full stack) of the first stored item. */
+    /** Why this stack cannot go into a bulk account, or nothing. An account knows a kind and a number: what comes
+     * out is new stock of that kind, so food already spoiled would come out sound and a filled vessel empty. */
+    public static String unfit(ItemStack stack){
+        if(dev.qube.spawn_9b5fbb9.content.ItemAging.spoiled(stack)&&!id(stack).endsWith("spoiled_food"))return "Spoiled food is not cargo: it would have to be sorted from the sound";
+        var inside=stack.get(DataComponents.CONTAINER);var data=dev.qube.spawn_9b5fbb9.content.ItemAging.data(stack);
+        if(inside!=null&&inside.nonEmptyItems().iterator().hasNext()||data.getIntOr("water",0)>0||data.getBooleanOr("sealed",false))return "Empty the vessel first: bulk stowage keeps the vessel, not what is in it";
+        return "";
+    }
+    /** Takes one real stack (at most a full stack) of the given item. */
     public static ItemStack withdrawStack(Map<String,Long> ledger,String itemId){
         long stored=ledger.getOrDefault(itemId,0L);Item item=item(itemId);if(stored<=0||item==Items.AIR){ledger.remove(itemId);return ItemStack.EMPTY;}
         int count=(int)Math.min(stored,new ItemStack(item).getMaxStackSize());take(ledger,itemId,count);return new ItemStack(item,count);

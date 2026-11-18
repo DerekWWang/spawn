@@ -30,7 +30,8 @@ public final class ItemAging {
         RULES=replacement;
     }
     public static CompoundTag data(ItemStack stack) { return stack.getOrDefault(DataComponents.CUSTOM_DATA,CustomData.EMPTY).copyTag(); }
-    public static void data(ItemStack stack,CompoundTag data) { stack.set(DataComponents.CUSTOM_DATA,CustomData.of(data)); }
+    /** An item with nothing recorded of it carries no record at all: an empty one would keep it from stacking with its like. */
+    public static void data(ItemStack stack,CompoundTag data) { if(data.isEmpty())stack.remove(DataComponents.CUSTOM_DATA);else stack.set(DataComponents.CUSTOM_DATA,CustomData.of(data)); }
     public static boolean isFood(ItemStack stack) { return stack.has(DataComponents.FOOD); }
     public static long shelfLife(ItemStack stack) {
         var key=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());String id=key.getPath();var rules=RULES;
@@ -49,7 +50,16 @@ public final class ItemAging {
     private static void update(ItemStack stack,ServerLevel level,double rate,boolean stored) {
         if(stack.isEmpty())return;
         long now=SurvivalApi.calendar(level);
-        if(stored){var tag=data(stack);if(tag.contains("weatherTick")){tag.remove("weatherTick");data(stack,tag);}}
+        if(stored){
+            var tag=data(stack);boolean changed=false;
+            if(tag.contains("weatherTick")){tag.remove("weatherTick");changed=true;}
+            // In the hand, weathering is counted in whole days: the few seconds a stick lay on the ground must not
+            // make it a different stick from the next, or nothing gathered would ever stack.
+            if(tag.contains("weatherAge")){double age=tag.getDoubleOr("weatherAge",0),whole=Math.floor(age/DAY)*DAY;if(whole!=age){if(whole<=0)tag.remove("weatherAge");else tag.putDouble("weatherAge",whole);changed=true;}}
+            // An egg taken off the nest has gone cold: its sitting is over, and time in a pack is not time by the fire.
+            if(tag.contains("nest")){tag.remove("nest");tag.remove("nestLast");tag.remove("incubated");changed=true;}
+            if(changed)data(stack,tag);
+        }
         if(stack.is(SurvivalContent.item("fired_pot"))) {
             CompoundTag pot=data(stack); double preservation=pot.getBooleanOr("sealed",false)?Pottery.preservationRate(stack):1;
             var contents=stack.getOrDefault(DataComponents.CONTAINER,ItemContainerContents.EMPTY);
@@ -58,6 +68,9 @@ public final class ItemAging {
         }
         if(!isFood(stack) && !stack.is(Items.WHEAT))return;
         CompoundTag tag=data(stack); long last=tag.getLongOr("freshTick",now);
+        // Looked at again within the second, it is left as it is: an open chest asks after every slot every tick,
+        // and each new stamp made the food a changed item to be sent to everyone looking in.
+        if(tag.contains("freshTick")&&now>=last&&now-last<20)return;
         double age=tag.getDoubleOr("foodAge",0)+Math.max(0,now-last)*rate;
         tag.putLong("freshTick",now);tag.putDouble("foodAge",age);data(stack,tag);
         if(age>=shelfLife(stack) && !stack.is(SurvivalContent.item("spoiled_food"))) {
@@ -67,6 +80,9 @@ public final class ItemAging {
     }
     public static boolean spoiled(ItemStack stack){return data(stack).getBooleanOr("spoiled",false)||stack.is(SurvivalContent.item("spoiled_food"));}
     public static void inherit(ItemStack output,Iterable<ItemStack> inputs,ServerLevel level) {
+        // Only what can go off is given an age. Stamped on cloth or iron, the moment of making kept every batch from
+        // stacking with the last, and a recipe that wants four cloths in one hand could never be started.
+        if(!isFood(output)&&!output.is(Items.WHEAT))return;
         double oldest=0;boolean spoiled=false;
         for(ItemStack input:inputs){ update(input,level,1);oldest=Math.max(oldest,data(input).getDoubleOr("foodAge",0));spoiled|=spoiled(input); }
         var tag=data(output);tag.putDouble("foodAge",oldest);tag.putLong("freshTick",SurvivalApi.calendar(level));tag.putBoolean("spoiled",spoiled);data(output,tag);
@@ -80,22 +96,31 @@ public final class ItemAging {
     private static final java.util.Set<String> INERT=java.util.Set.of("hematite","malachite","cassiterite","galena","pyrite","salt","fluorite","bauxite","wolframite","oil_sand","borax","coal","charcoal","coke","clay_ball","brick","flint","quicklime","limestone","sulfur","pig_iron");
     public static void weather(ItemEntity entity) {
         if(!(entity.level() instanceof ServerLevel level))return;
-        entity.setUnlimitedLifetime();
+        // Kept from the five-minute sweep by being made young again each second, not by being marked everlasting:
+        // an everlasting item never joins another, and every part-stack a miner left lay as its own entity for good.
+        entity.setExtendedLifetime();
         var rules=RULES;double exposure=(level.isRainingAt(entity.blockPosition())?rules.rainMultiplier:1)*(level.getBiome(entity.blockPosition()).value().getBaseTemperature()>=1.5f?rules.hotMultiplier:1);
         ItemStack stack=entity.getItem(); exposed(stack,level,exposure);
         // Sound food keeps to its shelf life; once spoiled it lies out like any other organic litter.
-        if(stack.is(SurvivalContent.item("fertilized_egg"))||isFood(stack)&&!spoiled(stack))return;
+        boolean egg=stack.is(SurvivalContent.item("fertilized_egg")),nested=egg&&data(stack).getBooleanOr("nest",false)&&level.getBlockState(entity.blockPosition().below()).is(net.minecraft.world.level.block.Blocks.HAY_BLOCK);
+        // An egg is kept only while it sits on its nest. One dropped anywhere else, or whose hay has gone, lies out and rots like any other.
+        if(egg&&!nested&&entity.isNoGravity())entity.setNoGravity(false);
+        if(nested||isFood(stack)&&!spoiled(stack))return;
         CompoundTag tag=data(stack);long now=SurvivalApi.calendar(level);long last=tag.getLongOr("weatherTick",now);
         String id=net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
         // Rock does not rot: broken ore, coal, clay, brick and lime lie where they fell.
-        if(INERT.contains(id)||id.startsWith("crushed_")||id.startsWith("roasted_"))return;
-        boolean durable=id.contains("ingot")||id.contains("stone")||id.contains("pot")||id.contains("scrap")||id.contains("copper")||id.contains("bronze")||id.contains("iron")||id.contains("gold")||id.contains("diamond")||id.contains("ceramic")||id.contains("obsidian");
+        if(INERT.contains(id)||id.startsWith("crushed_")||id.startsWith("roasted_")||id.endsWith("stone")||id.endsWith("_stones"))return;
+        // By what the thing is, not by letters in its name: "pot" is also in potato, and stone is not metal.
+        boolean ceramic=id.endsWith("_pot")||id.startsWith("pot_")||id.contains("ceramic");
+        boolean metal=id.contains("ingot")||id.contains("scrap")||id.contains("copper")||id.contains("bronze")||id.contains("iron")||id.contains("steel")||id.contains("gold")||id.contains("diamond")||id.contains("obsidian");
+        boolean stone=!metal&&!ceramic&&id.contains("stone"),durable=ceramic||metal||stone;
         double age=tag.getDoubleOr("weatherAge",0)+Math.max(0,now-last)*exposure;
         tag.putLong("weatherTick",now);tag.putDouble("weatherAge",age);data(stack,tag);
         boolean weathered=age>DAY*(durable?rules.durableWeatherDays:rules.organicWeatherDays);
         // Fibre is what organic litter rots down to, and spoiled food is already rot: a second spell in the open
         // and nothing is left. Without an end, every egg and sapling a loaded area ever dropped stays in it for good.
-        if(weathered&&(id.equals("plant_fiber")||spoiled(stack))){entity.discard();return;}
-        if(weathered && !id.equals("ceramic_shard")&&!id.equals("metal_scrap")) entity.setItem(new ItemStack(SurvivalContent.item(durable?"metal_scrap":"plant_fiber"),Math.min(4,stack.getCount())));
+        if(weathered&&(id.equals("plant_fiber")||spoiled(stack)||id.endsWith("egg"))){entity.discard();return;}
+        // Metal leaves scrap, fired clay its sherds, a stone tool the stone when the haft has gone, and the rest fibre.
+        if(weathered && !id.equals("ceramic_shard")&&!id.equals("metal_scrap")) entity.setItem(new ItemStack(SurvivalContent.item(metal?"metal_scrap":ceramic?"ceramic_shard":stone?"loose_stone":"plant_fiber"),Math.min(4,stack.getCount())));
     }
 }

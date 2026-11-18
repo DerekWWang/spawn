@@ -96,6 +96,15 @@ public final class SurvivalContent {
         TESTS.register("content_repeat_fruit",()->ContentGameTests::repeatFruit);
         TESTS.register("content_daily_eggs",()->ContentGameTests::dailyEggs);
         TESTS.register("content_gestation_delivery",()->ContentGameTests::gestationDelivery);
+        TESTS.register("content_hen_egg_hatches",()->ContentGameTests::henEggHatches);
+        TESTS.register("content_nested_egg_stays",()->ContentGameTests::nestedEggStays);
+        TESTS.register("content_plain_goods_stack",()->ContentGameTests::plainGoodsStack);
+        TESTS.register("content_loose_egg_rots",()->ContentGameTests::looseEggRots);
+        TESTS.register("content_dead_workers_job_taken_up",()->ContentGameTests::deadWorkersJobIsTakenUp);
+        TESTS.register("content_slow_hand_needs_more_fire",()->ContentGameTests::slowHandNeedsMoreFire);
+        TESTS.register("content_furnace_stays_cold",()->ContentGameTests::furnaceStaysCold);
+        TESTS.register("survival_sleep_and_pain",()->ContentGameTests::sleepAndPain);
+        TESTS.register("content_litter_lamb_dying_dam",()->ContentGameTests::litterLambAndDyingDam);
         TESTS.register("content_product_recovery",()->ContentGameTests::productRecovery);
         TESTS.register("content_supplied_maturation",()->ContentGameTests::suppliedMaturation);
         TESTS.register("content_station_fuel_catchup",()->ContentGameTests::stationFuelCatchup);
@@ -118,6 +127,7 @@ public final class SurvivalContent {
         TESTS.register("ecology_single_source",()->dev.qube.spawn_9b5fbb9.controllers.EcologyGameTests::singleSource);
         TESTS.register("ecology_rocks",()->dev.qube.spawn_9b5fbb9.controllers.EcologyGameTests::rocksAreRocks);
         TESTS.register("geology_old_veins",()->dev.qube.spawn_9b5fbb9.world.GeologyGameTests::oldVeinsDisabled);
+        TESTS.register("resources_nearest_first_bounded",()->dev.qube.spawn_9b5fbb9.controllers.ResourceActionGameTests::nearestFirstAndBounded);
         TESTS.register("resources_visible_evidence",()->dev.qube.spawn_9b5fbb9.controllers.ResourceActionGameTests::visibleEvidence);
         TESTS.register("resources_two_actor_chain",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::twoActorMineralChain);
         TESTS.register("reviewfix_flax_bootstrap",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::flaxBootstrap);
@@ -162,6 +172,6 @@ public final class SurvivalContent {
     private static void tests(RegisterGameTestsEvent event) {
         Holder<TestEnvironmentDefinition<?>> env = event.registerEnvironment(Identifier.fromNamespaceAndPath(MODID,"living_world"), new TestEnvironmentDefinition.AllOf(List.of()));
         var data = new TestData<Holder<TestEnvironmentDefinition<?>>>(env,net.minecraft.world.level.Level.OVERWORLD,Identifier.fromNamespaceAndPath("spawn_9b5fbb9","test_arena"), 100,0,true,Rotation.NONE,false,1,1,true,8);
-        TESTS.getEntries().forEach(test -> event.registerTest(test.getId(), new FunctionGameTestInstance(test.getKey(), data)));
+        TESTS.getEntries().forEach(test -> event.registerTest(test.getId(), new FunctionGameTestInstance(test.unwrapKey().orElseThrow(), data)));
     }
 }

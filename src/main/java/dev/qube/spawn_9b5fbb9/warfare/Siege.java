@@ -4,7 +4,6 @@ import java.util.*;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import dev.qube.spawn_9b5fbb9.content.SurvivalContent;
 import dev.qube.spawn_9b5fbb9.industry.IndustrialContent;
 import dev.qube.spawn_9b5fbb9.industry.Ledger;
 import dev.qube.spawn_9b5fbb9.survival.*;
@@ -53,8 +52,13 @@ public final class Siege {
     public static final ResourceKey<DamageType> ARTILLERY=ResourceKey.create(Registries.DAMAGE_TYPE,Identifier.fromNamespaceAndPath(IndustrialContent.MODID,"artillery"));
     private static final String M="spawn_9b5fbb9:";
     /** Accumulated structural damage per world, keyed by block position. */
-    private static final Map<ResourceKey<Level>,Map<Long,Double>> BATTERED=new HashMap<>();
-    public static void init(){NeoForge.EVENT_BUS.addListener(Siege::commands);}
+    private static final Map<ResourceKey<Level>,Map<Long,Batter>> BATTERED=new HashMap<>();
+    /** The damage, and the block that took it: what is rebuilt in the same place starts whole. */
+    private record Batter(double done,BlockState state){}
+    public static void init(){
+        NeoForge.EVENT_BUS.addListener(Siege::commands);
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.server.ServerStoppedEvent event)->BATTERED.clear());
+    }
     public static boolean isMunition(ItemStack stack){String id=Ledger.id(stack);return id.equals(M+"powder_charge")||id.equals(M+"round_shot")||id.equals(M+"stone_shot")||id.equals(M+"explosive_shell");}
     public static DamageSource source(ServerLevel level,Entity shot,Entity gunner){return new DamageSource(level.registryAccess().lookupOrThrow(Registries.DAMAGE_TYPE).getOrThrow(ARTILLERY),shot,gunner);}
 
@@ -77,8 +81,9 @@ public final class Siege {
         Military.shock(level,at,7,3);
         if(shot.explosive){burst(level,shot,at);return true;}
         BlockState state=level.getBlockState(pos);double resistance=resistance(level,pos,state);
-        var ledger=BATTERED.computeIfAbsent(level.dimension(),key->new HashMap<>());if(ledger.size()>20000)ledger.clear();
-        double done=ledger.getOrDefault(pos.asLong(),0d),left=resistance-done;
+        // Bounded by letting the oldest marks go, one at a time, rather than by forgetting a whole siege at once.
+        var ledger=BATTERED.computeIfAbsent(level.dimension(),key->new LinkedHashMap<Long,Batter>(){@Override protected boolean removeEldestEntry(Map.Entry<Long,Batter> eldest){return size()>20000;}});
+        Batter before=ledger.get(pos.asLong());double done=before!=null&&before.state()==state?before.done():0,left=resistance-done;
         level.sendParticles(ParticleTypes.POOF,at.x,at.y,at.z,12,.4,.4,.4,.03);
         level.playSound(null,at.x,at.y,at.z,SoundEvents.GENERIC_EXPLODE,SoundSource.BLOCKS,1.2f,1.5f);
         if(shot.power>=left){
@@ -86,11 +91,15 @@ public final class Siege {
             level.destroyBlock(pos,level.getRandom().nextFloat()<.3f,shot.ownerEntity());
             return shot.power<.75;
         }
-        double total=done+shot.power;ledger.put(pos.asLong(),total);shot.power=0;
+        if(Double.isInfinite(resistance)){shot.power=0;return true;}
+        double total=done+shot.power;ledger.put(pos.asLong(),new Batter(total,state));shot.power=0;
         level.destroyBlockProgress(pos.hashCode(),pos,Mth.clamp((int)(total/resistance*9),0,9));
         return true;
     }
-    public static double battered(ServerLevel level,BlockPos pos){var ledger=BATTERED.get(level.dimension());return ledger==null?0:ledger.getOrDefault(pos.asLong(),0d);}
+    public static double battered(ServerLevel level,BlockPos pos){
+        var ledger=BATTERED.get(level.dimension());Batter mark=ledger==null?null:ledger.get(pos.asLong());
+        return mark!=null&&mark.state()==level.getBlockState(pos)?mark.done():0;
+    }
     public static void burst(ServerLevel level,ShotEntity shot,Vec3 at){
         Military.shock(level,at,10,6);
         level.explode(shot,source(level,shot,shot.ownerEntity()),null,at.x,at.y,at.z,2.8f,false,Level.ExplosionInteraction.TNT);
@@ -133,7 +142,10 @@ public final class Siege {
     private static ActionResult ok(String text){return new ActionResult(true,text);}
     private static ActionResult fail(String text){return new ActionResult(false,text);}
     private static boolean capable(LivingEntity actor){
-        if(!actor.isAlive()||!SurvivalApi.isHumanoid(actor))return false;if(SurvivalApi.exempt(actor))return true;
+        if(!actor.isAlive()||!SurvivalApi.isHumanoid(actor))return false;
+        // The dead look on. A creative operator may serve a piece; a ghost may not.
+        if(actor instanceof net.minecraft.world.entity.player.Player player&&(player.isSpectator()||SurvivalEvents.dead(player)))return false;
+        if(SurvivalApi.exempt(actor))return true;
         var body=SurvivalApi.state(actor);return body.manipulation()>=.15&&body.mental()>.05;
     }
     private static List<LivingEntity> serving(VehicleEntity gun,ServerLevel level){
@@ -142,7 +154,7 @@ public final class Siege {
         for(var iterator=gun.crew.iterator();iterator.hasNext();){
             String id=iterator.next();Entity found;try{found=level.getEntity(UUID.fromString(id));}catch(IllegalArgumentException malformed){iterator.remove();continue;}
             if(found==null)continue;
-            if(!(found instanceof LivingEntity actor)||!actor.isAlive()){iterator.remove();continue;}
+            if(!(found instanceof LivingEntity actor)||!actor.isAlive()||actor instanceof net.minecraft.world.entity.player.Player player&&SurvivalEvents.dead(player)){iterator.remove();continue;}
             if(!present.contains(actor)&&actor.distanceToSqr(gun)<=25&&capable(actor))present.add(actor);
         }
         return present;

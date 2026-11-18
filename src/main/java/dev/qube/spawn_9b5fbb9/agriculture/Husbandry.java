@@ -77,12 +77,12 @@ public final class Husbandry {
         return Math.min(elapsed,fed+Math.min(Math.max(0,watered-supplied),reserve));
     }
     private static boolean graze(ServerLevel level,Animal animal){return level.getBlockState(animal.blockPosition().below()).is(Blocks.GRASS_BLOCK)||level.getBlockState(animal.blockPosition()).is(Blocks.SHORT_GRASS)||level.getBlockState(animal.blockPosition().below()).is(Blocks.HAY_BLOCK);}
-    private static boolean space(ServerLevel level,Animal animal,int count){return level.getEntitiesOfClass(Animal.class,animal.getBoundingBox().inflate(4)).size()+count<=10&&level.isEmptyBlock(animal.blockPosition().above());}
+    private static boolean space(ServerLevel level,Animal animal,int count){return level.getEntitiesOfClass(Animal.class,animal.getBoundingBox().inflate(4),Animal::isAlive).size()+count<=10&&level.isEmptyBlock(animal.blockPosition().above());}
     private static void pre(EntityTickEvent.Pre event){if(event.getEntity().level().isClientSide())return;if(event.getEntity() instanceof Chicken chicken)chicken.eggTime=6000;}
     private static void tick(EntityTickEvent.Post event){
         if(!(event.getEntity().level() instanceof ServerLevel level)||event.getEntity().tickCount%20!=0)return;
         if(event.getEntity() instanceof ItemEntity item&&item.getItem().is(SurvivalContent.item("fertilized_egg"))){incubate(item,level);return;}
-        if(!(event.getEntity() instanceof Animal animal)||!managed(animal))return;
+        if(!(event.getEntity() instanceof Animal animal)||!animal.isAlive()||!managed(animal))return;
         long now=SurvivalApi.calendar(level);CompoundTag data=state(animal,now);long last=data.getLongOr("husbandryLast",now);long elapsed=Math.max(0,now-last);boolean drinking=water(level,animal.blockPosition());
         boolean naturalDrinking=naturalWater(level,animal.blockPosition());
         long watered=naturalDrinking?elapsed:consumeProvision(level,animal.blockPosition(),elapsed,"water",1);
@@ -126,14 +126,15 @@ public final class Husbandry {
         if(due>0&&now>=due&&nutrition>=50&&drinking&&space(level,animal,litter)){
             // Clear before spawning: reload cannot duplicate a delivery.
             data.putLong("pregnantUntil",0);data.putLong("breedAt",now+DAY*definition(animal).breedingCooldownDays);data.putLong("calvedAt",now);data.putDouble("nutrition",nutrition-20);
-            for(int i=0;i<litter;i++){AgeableMob baby=animal.getBreedOffspring(level,animal);if(baby!=null){baby.setBaby(true);baby.setPos(animal.position().add((i%2)*.6,0,(i/2)*.6));baby.getPersistentData().putLong("husbandryBorn",due);baby.getPersistentData().putLong("husbandryLast",now);baby.getPersistentData().putDouble("nutrition",75);level.addFreshEntity(baby);}}
+            for(int i=0;i<litter;i++){AgeableMob baby=animal.getBreedOffspring(level,animal);if(baby!=null){baby.setBaby(true);baby.setPos(animal.position().add((i%2)*.6,0,(i/2)*.6));baby.getPersistentData().putLong("husbandryBorn",now);baby.getPersistentData().putLong("husbandryLast",now);baby.getPersistentData().putDouble("nutrition",75);level.addFreshEntity(baby);}}
         }
     }
     private static void vanillaBirth(BabyEntitySpawnEvent event){if(managed(event.getParentA()))event.setCanceled(true);}
-    private static void interact(PlayerInteractEvent.EntityInteract event){
-        if(!(event.getLevel() instanceof ServerLevel)||!(event.getTarget() instanceof Animal animal)||!managed(animal)||event.getHand()!=net.minecraft.world.InteractionHand.MAIN_HAND)return;
+    private static void interact(PlayerInteractEvent.EntityInteract event){if(event.getEntity().isSpectator())return;
+        if(!(event.getLevel() instanceof ServerLevel)||!(event.getTarget() instanceof Animal animal)||!managed(animal))return;
         var held=event.getItemStack();if(!held.is(Items.BUCKET)&&!held.is(Items.SHEARS)&&!animal.isFood(held))return;
-        event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal(action(event.getEntity(),animal)));
+        // Either hand is stopped; the main hand does the work. A bucket in the other hand used to reach the game's own milking, with no calf, feed or rest asked for.
+        event.setCanceled(true);if(event.getHand()==net.minecraft.world.InteractionHand.MAIN_HAND)event.getEntity().sendOverlayMessage(Component.literal(action(event.getEntity(),animal)));
     }
     public static String action(LivingEntity actor,Animal animal){
         if(!(actor.level() instanceof ServerLevel level)||animal.level()!=level||!actor.isAlive()||!animal.isAlive()||!managed(animal)||!SurvivalApi.isHumanoid(actor)||actor.distanceToSqr(animal)>16)return "Stand within four blocks of a living farm animal.";
@@ -148,7 +149,7 @@ public final class Husbandry {
             else if(data.getLongOr("pregnantUntil",0)>0)message="Pregnancy due in "+Math.max(0,(data.getLongOr("pregnantUntil",0)-now)/DAY)+" days.";
             else if(now<data.getLongOr("breedAt",0)||!water(level,animal.blockPosition()))message="Breeding requires recovery and drinking water.";
             else {
-                Animal mate=level.getEntitiesOfClass(Animal.class,animal.getBoundingBox().inflate(4),other->other!=animal&&other.getType()==animal.getType()&&mature(other,now)&&state(other,now).getLongOr("fedAt",-DAY)>=now-1000&&state(other,now).getLongOr("breedAt",0)<=now&&state(other,now).getLongOr("pregnantUntil",0)==0).stream().findFirst().orElse(null);
+                Animal mate=level.getEntitiesOfClass(Animal.class,animal.getBoundingBox().inflate(4),other->other!=animal&&other.isAlive()&&other.getType()==animal.getType()&&mature(other,now)&&state(other,now).getLongOr("fedAt",-DAY)>=now-1000&&state(other,now).getLongOr("breedAt",0)<=now&&state(other,now).getLongOr("pregnantUntil",0)==0).stream().findFirst().orElse(null);
                 if(mate!=null&&space(level,animal,animal instanceof Pig?4:1)){
                     data.putLong("breedAt",now+(gestation(animal)+definition(animal).breedingCooldownDays)*DAY);state(mate,now).putLong("breedAt",now+(gestation(animal)+definition(animal).breedingCooldownDays)*DAY);
                     if(animal instanceof Chicken){ItemStack egg=new ItemStack(SurvivalContent.item("fertilized_egg"));Block.popResource(level,animal.blockPosition(),egg);message="Fertilized egg laid. Place on warm hay to incubate for "+gestation(animal)+" days.";}
@@ -160,11 +161,12 @@ public final class Husbandry {
         if(held.getDamageValue()!=initialDamage||held.getCount()<initialCount&&(!feeding||usefulFeed))dev.qube.spawn_9b5fbb9.survival.SkillApi.award(actor,dev.qube.spawn_9b5fbb9.survival.SkillSet.Skill.ANIMALS,25);
         return message.isEmpty()?"Hold feed, a bucket, or shears.":message;
     }
-    private static void nest(PlayerInteractEvent.RightClickBlock event){if(!(event.getLevel() instanceof ServerLevel)||!event.getItemStack().is(SurvivalContent.item("fertilized_egg")))return;event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal(nest(event.getEntity(),event.getPos())));}
+    private static void nest(PlayerInteractEvent.RightClickBlock event){if(event.getEntity().isSpectator())return;if(!(event.getLevel() instanceof ServerLevel)||!event.getItemStack().is(SurvivalContent.item("fertilized_egg")))return;event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal(nest(event.getEntity(),event.getPos())));}
     public static String nest(LivingEntity actor,BlockPos at){
         if(!(actor.level() instanceof ServerLevel level)||!actor.isAlive()||!SurvivalApi.isHumanoid(actor)||actor.distanceToSqr(Vec3.atCenterOf(at))>16||!actor.getMainHandItem().is(SurvivalContent.item("fertilized_egg")))return "Hold a fertilized egg beside a hay nest.";
         if(!level.getBlockState(at).is(Blocks.HAY_BLOCK))return "An incubation nest needs hay.";
-        ItemStack egg=actor.getMainHandItem().split(1);var tag=ItemAging.data(egg);tag.putLong("incubated",0);tag.putLong("nestLast",SurvivalApi.calendar(level));tag.putBoolean("nest",true);ItemAging.data(egg,tag);var item=new ItemEntity(level,at.getX()+.5,at.getY()+1.1,at.getZ()+.5,egg);item.setUnlimitedLifetime();item.setNoGravity(true);level.addFreshEntity(item);return "Fertilized egg placed; "+RULES.get("chicken").gestationDays+" days of warm incubation are required.";
+        ItemStack egg=actor.getMainHandItem().split(1);var tag=ItemAging.data(egg);tag.putLong("incubated",0);tag.putLong("nestLast",SurvivalApi.calendar(level));tag.putBoolean("nest",true);ItemAging.data(egg,tag);// Set down, not tossed: an item is normally thrown up as it appears, and with no gravity it would drift off the nest for good.
+        var item=new ItemEntity(level,at.getX()+.5,at.getY()+1.1,at.getZ()+.5,egg,0,0,0);item.setUnlimitedLifetime();item.setNoGravity(true);item.setPickUpDelay(60);level.addFreshEntity(item);return "Fertilized egg placed; "+RULES.get("chicken").gestationDays+" days of warm incubation are required.";
     }
     private static void incubate(ItemEntity item,ServerLevel level){var tag=ItemAging.data(item.getItem());if(!tag.getBooleanOr("nest",false))return;long now=SurvivalApi.calendar(level),last=tag.getLongOr("nestLast",now);BlockPos pos=item.blockPosition();boolean warm=false;
         for(BlockPos p:BlockPos.betweenClosed(pos.offset(-2,-1,-2),pos.offset(2,1,2)))if(Pottery.heat(level,p))warm=true;

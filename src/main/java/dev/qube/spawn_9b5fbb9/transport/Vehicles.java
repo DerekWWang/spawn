@@ -79,7 +79,13 @@ public final class Vehicles {
         // Rifled steel breech-loader of the 1870s: an 8 kg shell at 455 m/s over two kilograms of black powder, relaid after every round.
         spec(new Spec("field_gun",Kind.ARTILLERY,1.9f,1.7f,3.4f,1,300,1200,4,6,.12,2.5f,80,new Artillery(22.75,600,6,.15,30,8,false,4,Set.of(M+"explosive_shell"),0,-5,18,.000143)));
     }
-    public static void init(){NeoForge.EVENT_BUS.addListener(Vehicles::commands);}
+    public static void init(){NeoForge.EVENT_BUS.addListener(Vehicles::commands);NeoForge.EVENT_BUS.addListener(Vehicles::died);}
+    /** The dead leave the harness and the crew of the vehicles around them, so the place can be filled again once the body is gone. */
+    private static void died(net.neoforged.neoforge.event.entity.living.LivingDeathEvent event){
+        var dead=event.getEntity();if(!(dead.level() instanceof net.minecraft.server.level.ServerLevel level))return;
+        for(VehicleEntity vehicle:level.getEntitiesOfClass(VehicleEntity.class,dead.getBoundingBox().inflate(24))){vehicle.team.remove(dead.getUUID());vehicle.crew.remove(dead.getUUID().toString());}
+        dead.getPersistentData().remove("survivalHitched");
+    }
 
     public static VehicleEntity spawn(ServerLevel level,String kind,Vec3 pos,float yaw){
         Spec spec=SPECS.get(kind);if(spec==null)return null;
@@ -106,6 +112,14 @@ public final class Vehicles {
 
     private static ActionResult ok(String text){return new ActionResult(true,text);}
     private static ActionResult fail(String text){return new ActionResult(false,text);}
+    /** Stops a vehicle under way. A train does not stop for being told to: the driver brakes it to a stand, and nobody on the lineside can. */
+    public static ActionResult halt(LivingEntity actor,VehicleEntity vehicle){
+        if(vehicle==null)return fail("No vehicle within six blocks");
+        if(vehicle.getFirstPassenger()!=null&&actor.getVehicle()!=vehicle)return fail("Only those aboard can stop it");
+        boolean rolling=vehicle.spec().rail()&&Math.abs(vehicle.velocity)>.02&&vehicle.getFirstPassenger()!=null;
+        vehicle.destination=rolling?vehicle.position():null;vehicle.throttle=0;
+        return ok(rolling?"Braking to a stand":"Halted");
+    }
     private static String reach(LivingEntity actor,VehicleEntity vehicle){
         if(vehicle==null||!vehicle.isAlive())return "No vehicle within six blocks";
         if(!(actor.level() instanceof ServerLevel)||vehicle.level()!=actor.level()||!actor.isAlive()||!SurvivalApi.isHumanoid(actor))return "A living humanoid in the same world is required";
@@ -123,11 +137,13 @@ public final class Vehicles {
         String invalid=reach(actor,vehicle);if(!invalid.isEmpty())return fail(invalid);
         ItemStack held=actor.getItemInHand(hand);if(held.isEmpty())return fail("Hold the goods to load");
         if(held.isDamaged()||held.getMaxStackSize()==1&&held.isDamageableItem())return fail("Bulk cargo is for goods and materials, not worn equipment");
+        // A load is counted by kind and comes off as new stock of that kind, so nothing goes aboard that is more than its kind.
+        String unfit=Ledger.unfit(held);if(!unfit.isEmpty())return fail(unfit);
         String id=Ledger.id(held);double each=Ledger.mass(id),room=vehicle.spec().capacity()-Ledger.mass(vehicle.cargo);
         if(room<each)return fail("The "+vehicle.kind().replace('_',' ')+" cannot carry more ("+Math.round(Ledger.mass(vehicle.cargo))+" of "+vehicle.spec().capacity()+" kg aboard)");
         long moved=(long)Math.min(Math.floor(room/each),held.getCount());Ledger.add(vehicle.cargo,id,moved);held.shrink((int)moved);room-=moved*each;
         if(everything&&actor instanceof Player player)for(int slot=0;slot<player.getInventory().getContainerSize()&&room>=each;slot++){
-            ItemStack other=player.getInventory().getItem(slot);if(other.isEmpty()||other.isDamaged()||!Ledger.id(other).equals(id))continue;
+            ItemStack other=player.getInventory().getItem(slot);if(other.isEmpty()||other.isDamaged()||!Ledger.id(other).equals(id)||!Ledger.unfit(other).isEmpty())continue;
             long part=(long)Math.min(Math.floor(room/each),other.getCount());Ledger.add(vehicle.cargo,id,part);other.shrink((int)part);moved+=part;room-=part*each;
         }
         return ok("Loaded "+moved+"; cargo "+Math.round(Ledger.mass(vehicle.cargo))+"/"+vehicle.spec().capacity()+" kg");
@@ -243,7 +259,7 @@ public final class Vehicles {
         node.then(literal("board").executes(c->{var a=actor.get(c);return say(c.getSource(),board(a,nearest(a)));}));
         node.then(literal("leave").executes(c->{var a=actor.get(c);a.stopRiding();return say(c.getSource(),ok("Dismounted"));}));
         node.then(literal("drive").then(argument("pos",BlockPosArgument.blockPos()).executes(c->{var a=actor.get(c);return say(c.getSource(),drive(a,nearest(a),Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos"))));})));
-        node.then(literal("halt").executes(c->{var v=nearest(actor.get(c));if(v!=null){v.destination=null;v.throttle=0;}return say(c.getSource(),v==null?fail("No vehicle within six blocks"):ok("Halted"));}));
+        node.then(literal("halt").executes(c->{var a=actor.get(c);return say(c.getSource(),halt(a,nearest(a)));}));
         node.then(literal("couple").executes(c->{var a=actor.get(c);return say(c.getSource(),Railway.couple(a,nearest(a)));}));
         node.then(literal("uncouple").executes(c->{var a=actor.get(c);return say(c.getSource(),Railway.uncouple(a,nearest(a)));}));
     }

@@ -72,6 +72,10 @@ public final class WorldActions {
         TESTS.register("controller_forge_blocks_work",()->ControllerGameTests::forgeBlocksWorldWork);
         TESTS.register("controller_native_planting",()->ControllerGameTests::nativePlantingSubstrates);
         TESTS.register("controller_mining_cost_once",()->ControllerGameTests::miningCostOnce);
+        TESTS.register("controller_buried_block_needs_digging",()->ControllerGameTests::buriedBlockNeedsDigging);
+        TESTS.register("controller_tool_held_only_where_needed",()->ControllerGameTests::toolHeldOnlyWhereNeeded);
+        TESTS.register("controller_struck_recipes_not_offered",()->ControllerGameTests::struckRecipesAreNotOffered);
+        TESTS.register("controller_no_work_asleep",()->ControllerGameTests::noWorkAsleep);
         TESTS.register("controller_adventure_permissions",()->ControllerGameTests::adventurePermissions);
         TESTS.register("controller_planning_bounded",()->ControllerGameTests::planningBounded);
         TESTS.register("controller_farm_adapters",()->ControllerGameTests::farmAdapters);
@@ -92,7 +96,7 @@ public final class WorldActions {
     private static void tests(RegisterGameTestsEvent event){
         var env=event.registerEnvironment(Identifier.fromNamespaceAndPath(SurvivalContent.MODID,"controller_actions"),new TestEnvironmentDefinition.AllOf(List.of()));
         var data=new TestData<Holder<TestEnvironmentDefinition<?>>>(env,net.minecraft.world.level.Level.OVERWORLD,Identifier.fromNamespaceAndPath("spawn_9b5fbb9","test_arena"),100,0,true,Rotation.NONE,false,1,1,true,8);
-        TESTS.getEntries().forEach(t->event.registerTest(t.getId(),new FunctionGameTestInstance(t.getKey(),data)));
+        TESTS.getEntries().forEach(t->event.registerTest(t.getId(),new FunctionGameTestInstance(t.unwrapKey().orElseThrow(),data)));
     }
     public static void init(){
         NeoForge.EVENT_BUS.addListener(WorldActions::onTick);NeoForge.EVENT_BUS.addListener(WorldActions::death);NeoForge.EVENT_BUS.addListener(WorldActions::commands);NeoForge.EVENT_BUS.addListener(WorldActions::nativeResource);NeoForge.EVENT_BUS.addListener(WorldActions::resourceSpeed);
@@ -143,6 +147,8 @@ public final class WorldActions {
                 if(state.isAir()||state.getDestroySpeed(level,pos)<0||!state.getFluidState().isEmpty())return "Target cannot be mined";
                 if(level.getBlockEntity(pos)!=null)return "Empty and dismantle containers or workstations through their interaction";
                 if(state.requiresCorrectToolForDrops()&&!held.isCorrectToolForDrops(state))return "A correct harvest tool is required";
+                // What is walled in by rock on every side is reached by digging to it, not by knowing where it is.
+                if(!ResourceActions.exposed(level,pos))return "That block is buried: dig your way to a face of it first";
                 return "";
             }
             case "till":return hoe(held)&&(state.is(Blocks.DIRT)||state.is(Blocks.GRASS_BLOCK)||state.is(Blocks.DIRT_PATH))&&level.isEmptyBlock(pos.above())?"":"Hold a hoe beside unobstructed dirt or grass";
@@ -180,7 +186,7 @@ public final class WorldActions {
     private static BlockPos plantingSupport(BlockPos pos,BlockState state){return state.getBlock() instanceof CocoaBlock?pos.relative(state.getValue(CocoaBlock.FACING)):state.getBlock() instanceof CaveVinesBlock?pos.above():pos.below();}
     public static SurvivalApi.ActionResult forage(LivingEntity actor,BlockPos target){return start(actor,"gather",target);}
     public static SurvivalApi.ActionResult hunt(LivingEntity actor,Animal target){
-        String invalid=actorError(actor);if(!invalid.isEmpty())return result(false,invalid);
+        String invalid=actorError(actor);if(invalid.isEmpty()&&actor.isSleeping())invalid="Asleep: work waits for waking";if(!invalid.isEmpty())return result(false,invalid);
         if(actor.getPersistentData().contains(KEY)||LaborGuard.forgeBusy(actor)||LaborGuard.gridBusy(actor))return result(false,"Finish the current manual job before hunting");
         if(capacity(actor)<=.05)return result(false,"Manipulation or mental capacity prevents hunting");
         if(!quarry(actor,target))return result(false,"Target a living natural animal within sixteen loaded blocks");
@@ -193,7 +199,7 @@ public final class WorldActions {
     public static SurvivalApi.ActionResult start(LivingEntity actor,String operation,BlockPos target){return start(actor,operation,target,InteractionHand.MAIN_HAND);}
     public static SurvivalApi.ActionResult start(LivingEntity actor,String operation,BlockPos target,InteractionHand hand){
         if(operation.equals("forage"))operation="gather";
-        String invalid=actorError(actor);if(!invalid.isEmpty())return result(false,invalid);
+        String invalid=actorError(actor);if(invalid.isEmpty()&&actor.isSleeping())invalid="Asleep: work waits for waking";if(!invalid.isEmpty())return result(false,invalid);
         if(hand==null||hand!=InteractionHand.MAIN_HAND&&!operation.equals("sow")&&!operation.equals("till")&&!operation.equals("harvest"))return result(false,"Use the main hand for this action; sowing, tilling and harvesting also accept the offhand");
         if(LaborGuard.forgeBusy(actor)||LaborGuard.gridBusy(actor))return result(false,"Finish or leave the current manual forge or crafting grid before starting another job");
         if(actor.getPersistentData().contains(KEY))return result(false,"Already working; inspect jobs or cancel first");
@@ -204,7 +210,9 @@ public final class WorldActions {
         var state=level.getBlockState(target);double ticks=switch(operation){case "gather"->40;case "harvest","irrigate"->60;case "till"->100;case "sow"->60;case "lay_track"->dev.qube.spawn_9b5fbb9.transport.Railway.LAY_TICKS;default->Math.max(30,Math.ceil(state.getDestroySpeed(level,target)*30/Math.max(1,seed.getDestroySpeed(state))));};
         var job=baseJob(actor,operation,target,ticks);job.putString("block",blockId(state));job.putString("hand",hand.name());
         Skill skill=operation.equals("gather")?Skill.FORAGING:operation.equals("till")||operation.equals("sow")||operation.equals("irrigate")?Skill.FARMING:operation.equals("harvest")?SeasonalCrops.harvestSkill(level,target,state):operation.equals("mine")&&miningMaterial(state)?Skill.MINING:operation.equals("lay_track")?Skill.CONSTRUCTION:null;if(skill!=null)job.putString("skill",skill.name());
-        if(operation.equals("mine")||operation.equals("till")){job.putString("tool",BuiltInRegistries.ITEM.getKey(seed.getItem()).toString());job.putInt("damage",seed.getDamageValue());}
+        // The tool is held to only where it does the work: tilling, a block that needs one, or one it speeds. Sand dug
+        // bare-handed is no reason to cancel when the digger eats, and the same pick a little more worn is the same pick.
+        if(operation.equals("till")||operation.equals("mine")&&(state.requiresCorrectToolForDrops()||seed.getDestroySpeed(state)>1))job.putString("tool",BuiltInRegistries.ITEM.getKey(seed.getItem()).toString());
         if(operation.equals("sow"))putStack(actor,job,"seed",seed.split(1));
         if(operation.equals("irrigate"))putStack(actor,job,"vessel",seed.split(1));
         actor.getPersistentData().put(KEY,job);return result(true,"Started "+operation+"; "+(long)ticks+" base loaded work ticks");
@@ -229,9 +237,11 @@ public final class WorldActions {
         if(!operation.equals("craft")){
             if(!job.getStringOr("block","").equals(blockId(level.getBlockState(pos))))invalid="Target block changed";
             else invalid=validate(actor,operation,pos,operation.equals("sow")?stack(actor,job,"seed"):operation.equals("irrigate")?stack(actor,job,"vessel"):actor.getItemInHand(jobHand(job)),jobHand(job));
-            if(job.contains("tool")&&(!job.getStringOr("tool","").equals(BuiltInRegistries.ITEM.getKey(actor.getItemInHand(jobHand(job)).getItem()).toString())||job.getIntOr("damage",0)!=actor.getItemInHand(jobHand(job)).getDamageValue()))invalid="Tool changed";
+            if(job.contains("tool")&&!job.getStringOr("tool","").equals(BuiltInRegistries.ITEM.getKey(actor.getItemInHand(jobHand(job)).getItem()).toString()))invalid="Tool changed";
         }
         if(!invalid.isEmpty()){cancel(actor,invalid);return;}
+        // Nobody works in his sleep: the job waits, as it does for a body that cannot.
+        if(actor.isSleeping()){job.putString("status","paused: asleep");actor.getPersistentData().put(KEY,job);return;}
         double capacity=capacity(actor);if(capacity<=.05){job.putString("status","paused: physiological capacity");actor.getPersistentData().put(KEY,job);return;}
         job.putString("status","working");double worked=Math.min(jobRate(actor,job),job.getDoubleOr("required",1)-job.getDoubleOr("progress",0));job.putDouble("progress",job.getDoubleOr("progress",0)+worked);
         if(worked>0)job.putLong("activeTicks",Math.min(1000000,job.getLongOr("activeTicks",0)+1));
@@ -338,7 +348,14 @@ public final class WorldActions {
     }
     private static void addContainer(List<Supply> out,Container c){for(int i=0;i<c.getContainerSize();i++){final int slot=i;out.add(new Supply(()->c.getItem(slot),s->{c.setItem(slot,s);c.setChanged();}));}}
     private static CraftingRecipe recipe(ServerLevel level,String id){
-        try{return level.recipeAccess().byKey(ResourceKey.create(Registries.RECIPE,Identifier.parse(id))).map(RecipeHolder::value).filter(CraftingRecipe.class::isInstance).map(CraftingRecipe.class::cast).orElse(null);}catch(IllegalArgumentException invalid){return null;}
+        // Whatever was typed: a name that is no identifier at all is simply not a recipe.
+        var key=Identifier.tryParse(id);if(key==null)return null;
+        return level.recipeAccess().byKey(ResourceKey.create(Registries.RECIPE,key)).map(RecipeHolder::value).filter(CraftingRecipe.class::isInstance).map(CraftingRecipe.class::cast).filter(recipe->!struck(recipe)).orElse(null);
+    }
+    /** A recipe the mod has struck out. The game will not let one it knows of be absent, so each is kept as a recipe
+     * that asks for bedrock, which nobody has; it is not a way of making anything and is not offered as one. */
+    private static boolean struck(CraftingRecipe recipe){
+        var bedrock=new ItemStack(net.minecraft.world.item.Items.BEDROCK);for(var ingredient:recipe.placementInfo().ingredients())if(ingredient.test(bedrock))return true;return false;
     }
     private static boolean assign(List<Ingredient> ingredients,List<Supply> supplies,int[] used,int[] choices,int cursor,int[] budget){
         if(cursor==ingredients.size())return true;if(--budget[0]<0)return false;
@@ -350,7 +367,7 @@ public final class WorldActions {
     private static BlockPos workTable(LivingEntity actor){for(var pos:BlockPos.betweenClosed(actor.blockPosition().offset(-4,-3,-4),actor.blockPosition().offset(4,3,4)))if(reachable(actor,pos)&&actor.level().getBlockState(pos).is(Blocks.CRAFTING_TABLE))return pos.immutable();return null;}
     public static long craftTicks(CraftingRecipe recipe){return (long)CraftingGuard.REQUIRED;}
     public static SurvivalApi.ActionResult craft(LivingEntity actor,String recipeId){
-        String invalid=actorError(actor);if(!invalid.isEmpty())return result(false,invalid);
+        String invalid=actorError(actor);if(invalid.isEmpty()&&actor.isSleeping())invalid="Asleep: work waits for waking";if(!invalid.isEmpty())return result(false,invalid);
         if(LaborGuard.forgeBusy(actor)||LaborGuard.gridBusy(actor))return result(false,"Finish or leave the current manual forge or crafting grid before handcrafting");
         if(actor.getPersistentData().contains(KEY))return result(false,"Already working; cancel or finish first");
         if(capacity(actor)<=.05)return result(false,"Manipulation or mental capacity prevents crafting");
@@ -359,6 +376,8 @@ public final class WorldActions {
         int width=width(recipe),height=height(recipe);if(width<1||height<1||width>3||height>3)return result(false,"Recipe exceeds the manual three by three work area");
         boolean needsTable=width>2||height>2;BlockPos table=needsTable?workTable(actor):null;if(needsTable&&table==null)return result(false,"This recipe requires an actual crafting table within four blocks");
         var ingredients=recipe.placementInfo().ingredients();var supplies=supplies(actor);var choices=new int[ingredients.size()];
+        // An ingredient nothing in reach answers to settles it at once, before the search that would try every way of laying out the rest.
+        for(var ingredient:ingredients){boolean any=false;for(var supply:supplies)if(ingredient.test(supply.get.get())){any=true;break;}if(!any)return result(false,"Missing actual recipe supplies in inventory, hands, or reachable containers/drops");}
         if(!assign(ingredients,supplies,new int[supplies.size()],choices,0,new int[]{100000}))return result(false,"Missing actual recipe supplies in inventory, hands, or reachable containers/drops");
         var grid=new ArrayList<ItemStack>(Collections.nCopies(width*height,ItemStack.EMPTY));var mapping=recipe.placementInfo().slotsToIngredientIndex();
         for(int i=0;i<mapping.size();i++)if(mapping.getInt(i)>=0)grid.set(i,supplies.get(choices[mapping.getInt(i)]).get.get().copyWithCount(1));
@@ -400,7 +419,7 @@ public final class WorldActions {
         var cropPage=new JsonArray();int cropCursor=Math.min(Math.max(0,cropOffset),crops.size());json.addProperty("cropOffset",cropCursor);json.addProperty("totalCrops",crops.size());
         while(cropCursor<crops.size()&&cropPage.size()<64){cropPage.add(crops.get(cropCursor));if(cropPage.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8).length>8000){cropPage.remove(cropPage.size()-1);break;}cropCursor++;}
         json.add("crops",cropPage);json.addProperty("nextCropOffset",cropCursor<crops.size()?cropCursor:-1);
-        var catalog=new ArrayList<PlanEntry>();for(var holder:level.recipeAccess().getRecipes())if(holder.value() instanceof CraftingRecipe recipe&&!recipe.isSpecial()&&!recipe.placementInfo().isImpossibleToPlace()&&width(recipe)<=3&&height(recipe)<=3)catalog.add(new PlanEntry(holder.id().identifier().toString(),recipe,null,null));
+        var catalog=new ArrayList<PlanEntry>();for(var holder:level.recipeAccess().getRecipes())if(holder.value() instanceof CraftingRecipe recipe&&!recipe.isSpecial()&&!recipe.placementInfo().isImpossibleToPlace()&&!struck(recipe)&&width(recipe)<=3&&height(recipe)<=3)catalog.add(new PlanEntry(holder.id().identifier().toString(),recipe,null,null));
         Production.RECIPES.forEach((id,r)->catalog.add(new PlanEntry(SurvivalContent.MODID+":process/"+id,null,r,id)));
         catalog.sort(Comparator.comparingInt((PlanEntry e)->e.id.startsWith(SurvivalContent.MODID+":")?0:1).thenComparing(PlanEntry::id));
         int cursor=Math.min(Math.max(0,offset),catalog.size()),shown=0;json.addProperty("offset",cursor);json.addProperty("totalRecipes",catalog.size());json.addProperty("pageSizeLimit",64);json.addProperty("byteLimit",PLANNING_BYTE_LIMIT);json.addProperty("nextOffset",-1);var recipes=new JsonArray();var processes=new JsonArray();json.add("craftingRecipes",recipes);json.add("processRecipes",processes);
@@ -429,10 +448,10 @@ public final class WorldActions {
         if(bytes(info)>PLANNING_BYTE_LIMIT){info.remove("ingredientSlots");info.addProperty("detailsTruncated",true);}if(bytes(info)>PLANNING_BYTE_LIMIT){invalid.addProperty("error","Recipe definition exceeds the response budget");return invalid;}return info;
     }
     public static SurvivalApi.ActionResult livestock(LivingEntity actor,net.minecraft.world.entity.animal.Animal animal){
-        String invalid=actorError(actor);if(!invalid.isEmpty())return result(false,invalid);if(animal==null)return result(false,"Living farm animal required");if(capacity(actor)<=.05)return result(false,"Physiological incapacity prevents livestock work");int count=actor.getMainHandItem().getCount(),damage=actor.getMainHandItem().getDamageValue();String message=Husbandry.action(actor,animal);return result(count!=actor.getMainHandItem().getCount()||damage!=actor.getMainHandItem().getDamageValue(),message);
+        String invalid=actorError(actor);if(invalid.isEmpty()&&actor.isSleeping())invalid="Asleep: work waits for waking";if(!invalid.isEmpty())return result(false,invalid);if(animal==null)return result(false,"Living farm animal required");if(capacity(actor)<=.05)return result(false,"Physiological incapacity prevents livestock work");int count=actor.getMainHandItem().getCount(),damage=actor.getMainHandItem().getDamageValue();String message=Husbandry.action(actor,animal);return result(count!=actor.getMainHandItem().getCount()||damage!=actor.getMainHandItem().getDamageValue(),message);
     }
-    public static SurvivalApi.ActionResult nest(LivingEntity actor,BlockPos pos){String invalid=actorError(actor);if(!invalid.isEmpty())return result(false,invalid);if(capacity(actor)<=.05)return result(false,"Physiological incapacity prevents nesting work");int count=actor.getMainHandItem().getCount();String message=Husbandry.nest(actor,pos);return result(count>actor.getMainHandItem().getCount(),message);}
-    public static SurvivalApi.ActionResult trough(LivingEntity actor,BlockPos pos){String invalid=actorError(actor);if(!invalid.isEmpty())return result(false,invalid);if(capacity(actor)<=.05)return result(false,"Physiological incapacity prevents trough work");if(!actor.level().hasChunkAt(pos)||!(actor.level().getBlockEntity(pos) instanceof WorkstationEntity station))return result(false,"Target an actual nearby trough");double feed=station.getPersistentData().getDoubleOr("feed",0),water=station.getPersistentData().getDoubleOr("water",0);String message=Production.stockTrough(actor,station);return result(station.getPersistentData().getDoubleOr("feed",0)>feed||station.getPersistentData().getDoubleOr("water",0)>water,message);}
+    public static SurvivalApi.ActionResult nest(LivingEntity actor,BlockPos pos){String invalid=actorError(actor);if(invalid.isEmpty()&&actor.isSleeping())invalid="Asleep: work waits for waking";if(!invalid.isEmpty())return result(false,invalid);if(capacity(actor)<=.05)return result(false,"Physiological incapacity prevents nesting work");int count=actor.getMainHandItem().getCount();String message=Husbandry.nest(actor,pos);return result(count>actor.getMainHandItem().getCount(),message);}
+    public static SurvivalApi.ActionResult trough(LivingEntity actor,BlockPos pos){String invalid=actorError(actor);if(invalid.isEmpty()&&actor.isSleeping())invalid="Asleep: work waits for waking";if(!invalid.isEmpty())return result(false,invalid);if(capacity(actor)<=.05)return result(false,"Physiological incapacity prevents trough work");if(!actor.level().hasChunkAt(pos)||!(actor.level().getBlockEntity(pos) instanceof WorkstationEntity station))return result(false,"Target an actual nearby trough");double feed=station.getPersistentData().getDoubleOr("feed",0),water=station.getPersistentData().getDoubleOr("water",0);String message=Production.stockTrough(actor,station);return result(station.getPersistentData().getDoubleOr("feed",0)>feed||station.getPersistentData().getDoubleOr("water",0)>water,message);}
 
     private static void commands(RegisterCommandsEvent event){
         var root=literal("survival");addActions(root);var control=literal("control").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS));var actor=argument("actor",EntityArgument.entity());
@@ -450,8 +469,13 @@ public final class WorldActions {
         node.then(literal("planning").executes(c->json(c.getSource(),planning(actor.get(c))))
             .then(argument("offset",IntegerArgumentType.integer(0)).executes(c->json(c.getSource(),planning(actor.get(c),IntegerArgumentType.getInteger(c,"offset"))))
                 .then(argument("cropOffset",IntegerArgumentType.integer(0)).executes(c->json(c.getSource(),planning(actor.get(c),IntegerArgumentType.getInteger(c,"offset"),IntegerArgumentType.getInteger(c,"cropOffset")))))));
-        node.then(literal("recipeinfo").then(argument("recipe",StringArgumentType.word()).executes(c->json(c.getSource(),recipeInfo(actor.get(c),StringArgumentType.getString(c,"recipe"),0)))
-            .then(argument("alternativeOffset",IntegerArgumentType.integer(0)).executes(c->json(c.getSource(),recipeInfo(actor.get(c),StringArgumentType.getString(c,"recipe"),IntegerArgumentType.getInteger(c,"alternativeOffset")))))));
+        // The whole of what follows is read, because a recipe's name has a colon in it and a bare word cannot:
+        // `recipeinfo <recipe> [alternativeOffset]`, with the names exactly as `planning` prints them.
+        node.then(literal("recipeinfo").then(argument("recipe",StringArgumentType.greedyString()).executes(c->{
+            String[] words=StringArgumentType.getString(c,"recipe").trim().split("\\s+");int offset=0;
+            if(words.length>1)try{offset=Math.max(0,Integer.parseInt(words[1]));}catch(NumberFormatException notANumber){offset=0;}
+            return json(c.getSource(),recipeInfo(actor.get(c),words[0],offset));
+        })));
         node.then(literal("livestock").then(argument("animal",EntityArgument.entity()).executes(c->reply(c.getSource(),livestock(actor.get(c),animal(EntityArgument.getEntity(c,"animal")))))));
         node.then(literal("hunt").then(argument("animal",EntityArgument.entity()).executes(c->reply(c.getSource(),hunt(actor.get(c),animal(EntityArgument.getEntity(c,"animal")))))));
         node.then(literal("nest").then(argument("pos",BlockPosArgument.blockPos()).executes(c->reply(c.getSource(),nest(actor.get(c),BlockPosArgument.getLoadedBlockPos(c,"pos"))))));

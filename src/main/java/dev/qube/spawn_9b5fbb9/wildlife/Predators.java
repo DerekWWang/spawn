@@ -73,11 +73,18 @@ public final class Predators {
         NeoForge.EVENT_BUS.addListener(Predators::join);NeoForge.EVENT_BUS.addListener(Predators::tick);
         NeoForge.EVENT_BUS.addListener(Predators::hurt);NeoForge.EVENT_BUS.addListener(Predators::kill);NeoForge.EVENT_BUS.addListener(Predators::carcass);
     }
-    public static Species species(Entity entity){return SPECIES.get(BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());}
+    public static Species species(Entity entity){return SPECIES.get(key(entity));}
     /** Teeth and claws: its wounds bleed and fester. */
     public static boolean predator(LivingEntity entity){return species(entity)!=null;}
     private static boolean tame(Mob mob){return mob instanceof TamableAnimal pet&&pet.isTame();}
-    private static String key(Entity entity){return BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString();}
+    // Asked of every animal once a second and of every candidate a hunter looks over, so the name is worked out once per kind.
+    private static final Map<net.minecraft.world.entity.EntityType<?>,String> KEYS=new java.util.concurrent.ConcurrentHashMap<>();
+    private static String key(Entity entity){return KEYS.computeIfAbsent(entity.getType(),type->BuiltInRegistries.ENTITY_TYPE.getKey(type).toString());}
+    private static final String BALKED="spawnBalked",BALKED_UNTIL="spawnBalkedUntil";
+    /** Quarry it could not come to grips with is left alone for a minute. */
+    private static boolean balked(Mob mob,Entity quarry){
+        var data=mob.getPersistentData();return data.getLongOr(BALKED_UNTIL,0)>mob.level().getGameTime()&&data.getStringOr(BALKED,"").equals(quarry.getUUID().toString());
+    }
 
     // ---- hunger
     public static long fedAt(Mob mob,Species species,long now){
@@ -138,16 +145,19 @@ public final class Predators {
         for(LivingEntity person:level.getEntitiesOfClass(LivingEntity.class,mob.getBoundingBox().inflate(range),e->e.isAlive()&&SurvivalApi.isHumanoid(e)&&!SurvivalApi.exempt(e)&&mob.canAttack(e))){
             double distance=mob.distanceTo(person);
             boolean startled=species.surprise()>0&&distance<=species.surprise()&&mob.hasLineOfSight(person);
-            if(!startled&&(denned||!abroad||pack<species.pack()||!wants(species,person,hungry,starving)||deterred(level,person,species)))continue;
+            if(!startled&&(denned||!abroad||pack<species.pack()||!wants(species,person,hungry,starving)||balked(mob,person)||deterred(level,person,species)))continue;
             if(distance<nearest){nearest=distance;best=person;}
         }
         if(best!=null||!hungry||denned||!abroad)return best;
+        var flock=new ArrayList<PathfinderMob>();
         for(PathfinderMob prey:level.getEntitiesOfClass(PathfinderMob.class,mob.getBoundingBox().inflate(range),e->e.isAlive()&&e!=mob&&mob.canAttack(e))){
-            String id=key(prey);
-            if(!species.prey().contains(id)&&!(species.herd().contains(id)&&pack>=species.pack())||fire(level,prey.blockPosition(),6))continue;
-            double distance=mob.distanceTo(prey);if(distance<nearest){nearest=distance;best=prey;}
+            String id=key(prey);if((species.prey().contains(id)||species.herd().contains(id)&&pack>=species.pack())&&!balked(mob,prey))flock.add(prey);
         }
-        return best;
+        // Nearest first, and a fire is looked for only until one is found that no fire guards: a penned flock by a
+        // campfire would otherwise have every animal's surroundings searched, every second, by every hungry mouth.
+        flock.sort(Comparator.comparingDouble(prey->mob.distanceToSqr(prey)));
+        for(PathfinderMob prey:flock)if(!fire(level,prey.blockPosition(),6))return prey;
+        return null;
     }
 
     // ---- goals
@@ -165,18 +175,26 @@ public final class Predators {
         mob.targetSelector.addGoal(2,new HuntGoal(mob,species));
     }
     public static final class HuntGoal extends TargetGoal {
-        private final Species species;private LivingEntity quarry;
+        private final Species species;private LivingEntity quarry;private double closest;private long pressedAt;
         public HuntGoal(PathfinderMob mob,Species species){super(mob,false);this.species=species;setFlags(EnumSet.of(Flag.TARGET));}
         @Override public boolean canUse(){
             if(mob.getRandom().nextInt(reducedTickDelay(20))!=0||mob.getTarget()!=null&&mob.getTarget().isAlive())return false;
             quarry=choose((PathfinderMob)mob,species,getServerLevel(mob));return quarry!=null;
         }
-        @Override public void start(){mob.setTarget(quarry);super.start();}
+        @Override public void start(){mob.setTarget(quarry);closest=Double.MAX_VALUE;pressedAt=mob.level().getGameTime();super.start();}
+        @Override public void stop(){quarry=null;super.stop();}
         @Override public boolean canContinueToUse(){
             LivingEntity target=mob.getTarget();if(target==null||!target.isAlive()||routed(mob))return false;
             double range=mob.getAttributeValue(Attributes.FOLLOW_RANGE)*1.5;if(mob.distanceToSqr(target)>range*range)return false;
             // The quarry that reaches a fire or its companions is let go, unless the animal is already on it.
-            if(mob.tickCount%20==0&&SurvivalApi.isHumanoid(target)&&mob.distanceTo(target)>species.surprise()+3&&deterred(getServerLevel(mob),target,species))return false;
+            // Goals are only asked this on every other tick, and which one depends on the animal's number: counting
+            // by the tick alone would never come round for half of them.
+            if((mob.tickCount+mob.getId())%20==0&&SurvivalApi.isHumanoid(target)&&mob.distanceTo(target)>species.surprise()+3&&deterred(getServerLevel(mob),target,species))return false;
+            // Quarry behind a fence, up a rock or simply faster is given up: ten seconds without closing on it or
+            // drawing blood, and the animal looks elsewhere for a minute.
+            long now=mob.level().getGameTime();double distance=mob.distanceTo(target);
+            if(distance<closest-1||mob.getLastHurtMob()==target&&mob.tickCount-mob.getLastHurtMobTimestamp()<200){closest=Math.min(closest,distance);pressedAt=now;}
+            else if(now-pressedAt>200){var data=mob.getPersistentData();data.putString(BALKED,target.getUUID().toString());data.putLong(BALKED_UNTIL,now+1200);return false;}
             return true;
         }
     }
@@ -231,7 +249,7 @@ public final class Predators {
         if(meat==null)return;
         if(nearest>6){mob.getNavigation().moveTo(meat,1);return;}
         int eaten=Math.min(species.mealItems(),meat.getItem().getCount());
-        meat.getItem().shrink(eaten);if(meat.getItem().isEmpty())meat.discard();
+        var left=meat.getItem().copy();left.shrink(eaten);if(left.isEmpty())meat.discard();else meat.setItem(left);
         feed(mob,species,now,(double)eaten/species.mealItems());
     }
     private static void hurt(LivingDamageEvent.Post event){

@@ -119,8 +119,8 @@ interested 100%, burning 150%); it does not create materials or grant work
 permission. Learning slows after 4,000 net XP per skill per day. Skills at level
 10 and above gradually decay, with a buffer after losing a level. Passions
 start at none (a 35% learning rate) and are assigned only by an operator; there are no backstories or
-permanent profession classes. Learning survives respawn and existing six-skill
-saves migrate to the new scale.
+permanent profession classes. Learning dies with the learner (see Death under
+World rules); existing six-skill saves migrate to the new scale.
 
 | Skill | Default requirements and effects |
 | --- | --- |
@@ -152,6 +152,10 @@ food stacks or water portions; existing unmarked jars keep their previous fine
 quality. A loom consumes four yarn or three cordage per cloth, then 4 cloth for
 a shirt/pants, 6 for a jacket, or 2 for shoes, plus the binding supply. Looms and
 anvils use manual work without fuel; heated stages consume fuel while working.
+The fire burns by the clock and the work goes at the worker's pace, so a job
+is refused until the fire holds enough for that worker: a beginner needs about
+twice the bare figure. A job left by a worker who died stays in the station as
+it stood and is taken up by the next person able to do it.
 
 Open **Skills** from the H health screen, or use `/survival skills`, for a
 scrollable skill page with levels, XP, passions, daily learning and decay.
@@ -200,8 +204,8 @@ than four fifths sound. Worn right through, it falls apart.
 Bandages stop excessive bleeding. Painkillers temporarily relieve pain without
 repairing injuries. Antitoxin treats poisoning, antiseptic treats infected wounds,
 and antibiotic treats systemic/respiratory infection. Destroyed eyes remain
-blind for that life. A recovered body develops strain-specific immunity. A new
-body on respawn resets bodily injuries and immunity.
+blind for that life. A recovered body develops strain-specific immunity. There
+is no second body: death is permanent.
 
 Right-click treatment to use it; interact with a nearby humanoid while holding
 medicine to treat them. Sneak-interact with food or clothing to feed or clothe a
@@ -268,6 +272,37 @@ bone.
 
 ## World rules
 
+**Vanilla shortcuts stay shut.** The game's furnace, blast furnace and smoker
+do no work, fed by hand or by hopper. The game's own recipes for tools, armour,
+buckets, shears, shields and crossbows are struck out, and are neither listed
+by `planning` nor accepted by `craft`. The mod's data is loaded above
+NeoForge's, which ships its own versions of those recipes, so that they stay
+struck out.
+
+**What a client is told.** A player's client is sent that player's own body
+every second. Of anyone else it is sent only what they wear, when that changes
+or comes into view; another's needs, illness and skills are learned by
+`/survival inspect`, within eight blocks in the same world.
+
+**What lies on the ground.** Nothing dropped vanishes after five minutes; it
+weathers. Rock, ore, coal, clay and brick lie where they fell. Organic litter
+rots to fibre and the fibre to nothing; metal leaves scrap, fired clay its
+sherds, and a stone tool the stone. A fertilized egg keeps only on its nest:
+taken up, or left lying anywhere else, it is an egg like any other and rots.
+
+**Death is permanent.** A player who dies does not return to the world. They
+come back only as a spectator: they can watch, but they cannot touch a block,
+use an item, run a command or speak in chat, and the simulation no longer
+counts them. Leaving and rejoining changes nothing. What they had learned is
+gone with them, their soldiers are released, and their place at a works, in a
+gun crew or as a station's worker is given up. A creative or spectating
+operator was never part of the simulation and is not ended by dying.
+`/survival revive <players>` (operators) returns a dead player to the world as
+a new person, in survival mode where they stand, with a fresh body and nothing
+learned. Dead villagers, soldiers and animals leave the world as they always
+did, and nothing keeps a place for them: a dead draught animal is out of the
+harness and a dying animal neither mates, lays nor gives birth.
+
 New terrain generates without structures, dungeons, or ruined portals. Natural
 caves, trees, ores, clay, animals, and resource patches remain. Fantasy entities
 are rejected from spawning/loading, and supernatural items/progression are
@@ -289,6 +324,8 @@ or a currency economy is not included.
 `/survival resources [radius]` lists nearby visible evidence. `/survival prospect`
 inspects a nearby exposed face or a held mineral sample. These read actual
 blocks/items and never disclose hidden generated reserves or award mining XP.
+A block counts as seen when any face turned towards the eye can be reached
+through open air; the survey lists the 64 nearest such blocks, nearest first.
 
 All item definitions have localized names and icons: 16x16 icons for goods
 and blocks, block-built models for the eleven vehicles and siege pieces;
@@ -347,7 +384,13 @@ borax, silver, rubber, lenses, lead chambers, coke, glass) and a computer
 cannot be built.
 
 **Site rules.** A works checks its surroundings every five seconds and reports
-what is missing in `/survival works status`. Working floor is counted in roofed
+what is missing in `/survival works status`; asking reads the last check and
+does not run the works. A place at a job is given up to the next comer by
+walking more than eight blocks away. Hunger, skill and the risk of injury fall
+only on hands that are at the work when it is done, and only for seconds in
+which fuel and power let it be done. A works holding more than fifty-four
+stacks of any one thing, or a finished vehicle, cannot be pulled down until it
+is emptied. Working floor is counted in roofed
 square metres around the works. Chimney stacks must be open to the sky. Fuel
 burns at real rates: a furnace hearth 25 kg an hour, a still 12, the boiler of
 a shop engine 100. A generator turned by its own stationary engine gives 35 kW;
@@ -405,16 +448,26 @@ Soldiers fight with what they are handed. `equip <target>`, or sneak-interacting
 with your own soldier while holding kit, puts armour on, a shield in the off
 hand and anything else in the weapon hand; food, arrows, paper cartridges and
 spare flints go into the pack. A replaced item comes back to the giver, and
-issued kit drops on death. Soldiers draw rations from any supply vehicle within
-eight blocks, refill a canteen at water, and break ranks to forage when both
-run out.
+issued kit drops on death. What a soldier carried in the pack (arrows,
+cartridges, flints) falls where he stands when he dies or leaves the service.
+A ration is four points of nutrition, whatever the food is. Soldiers draw
+rations from any supply vehicle within eight blocks, refill a canteen at water,
+and break ranks to forage when either runs out.
 
 `/survival military order <soldiers> ...`: `hold`, `follow`, `retreat`,
 `move <pos> [line|column|square]`, `guard <pos> [radius]`, `attack|charge|fire <target>`,
 `mount <animal or vehicle>`, `dismount`, `crew <siege piece>`, `drive <vehicle> <pos>`,
-`work <pos>` (labour at a works) and `bombard <piece> <pos>`. `hostile <target>`
-marks another commander's side for guards; `roster` lists morale, orders, kit
-and supply. Every command exists under `/survival control <actor> military ...`,
+`work <pos>` (labour at a works) and `bombard <piece> <pos>`. `<soldiers>` is
+one soldier's name or UUID, or `all` for every soldier of yours within
+ninety-six blocks; a selector such as `@e` needs operator rights. A soldier
+mounts only a tamed, saddled, riderless horse or a vehicle with a free seat.
+`bombard` is given standing at the piece, as `siege lay` is. A soldier who
+cannot reach the place he was sent holds where he is and says so. `hostile <target>`
+marks another commander's side for guards, who keep the list while their
+commander is away; `roster` lists morale, orders, kit and supply. A commander's
+own blow does not make him his men's enemy. Men whose commander died while
+they were out of the loaded world are released when they are next seen. A
+player who enlisted leaves with `/survival military resign`. Every command exists under `/survival control <actor> military ...`,
 and server code may call `Military.recruit/conscript/equip/order`.
 
 - Melee uses the weapon's real damage and speed, the soldier's manipulation and
@@ -473,6 +526,12 @@ movement keys. Sneak-click with goods to load, with an empty hand to unload.
 `/survival vehicle status|load|unload|deliver|pickup|hitch|unhitch|board|leave|drive|halt|couple|uncouple`
 (and the `control` forms) cover everything; `deliver` and `pickup` move bulk
 cargo straight between a vehicle and a works drawn up within six blocks.
+Bulk cargo is counted by kind and comes off as new stock, so spoiled food and
+filled or sealed vessels are not taken aboard. `halt` is for those aboard: a
+road vehicle stops being driven, and a train under way is braked to a stand
+by its driver. A train ordered to a place stops abreast of it, measured along
+the line, and stops at the last rail if the place lies beyond it; driven by
+hand it runs off the end.
 
 **Railways** are laid, not placed. Each metre of line takes 2 metres of steel
 rail, 2 sleepers, 2 cubic metres of gravel ballast and 8 spikes, a firm bed
@@ -580,7 +639,13 @@ own actions. `planning` returns paged crop windows and recipe requirements;
 hands, inventory, nearby containers, and ground items. It pauses or cancels when
 its actor, tools, range, permissions, or target no longer qualify. Crafting a
 3×3 recipe requires a nearby crafting table. Relogging and sleeping grant no
-manual labor. `cancel` returns reserved materials.
+manual labor: a sleeper starts no work, and work in hand waits for waking.
+`cancel` returns reserved materials. Mining needs a block with at least one
+face that is not hard against solid rock; what is buried has to be dug to. A
+job is held to its tool only where the tool does the work (tilling, or a block
+that needs a tool or is sped by one): putting that tool away cancels it, wear
+on it does not. `recipeinfo <recipe> [alternativeOffset]` takes names exactly
+as `planning` prints them, colon included.
 
 Trusted server-side code can call:
 

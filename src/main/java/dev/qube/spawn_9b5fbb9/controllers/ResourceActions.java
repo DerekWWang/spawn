@@ -10,6 +10,7 @@ import net.minecraft.commands.*;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -28,14 +29,32 @@ public final class ResourceActions {
     private record Observation(BlockPos pos,String identity,String kind,String host,boolean ready,String method){}
     public static void init(){NeoForge.EVENT_BUS.addListener(ResourceActions::commands);}
     private static boolean observer(LivingEntity actor){return actor!=null&&actor.isAlive()&&actor.level() instanceof ServerLevel&&SurvivalApi.isHumanoid(actor)&&!SurvivalApi.state(actor).blind();}
+    private static boolean covered(net.minecraft.world.level.Level level,BlockPos beside){return level.hasChunkAt(beside)&&level.getBlockState(beside).isCollisionShapeFullBlock(level,beside);}
+    /** Has at least one face that is not hard against a solid block. */
+    public static boolean exposed(net.minecraft.world.level.Level level,BlockPos pos){for(Direction face:Direction.values())if(!covered(level,pos.relative(face)))return true;return false;}
     public static boolean visible(LivingEntity actor,BlockPos pos){
         if(!actor.level().hasChunkAt(pos))return false;
-        var eye=actor.getEyePosition();var target=Vec3.atCenterOf(pos);
+        // Walled in on every side it shows no face to anyone, and six looks at its neighbours spare the rays: under
+        // a turf there are thousands of such blocks in range of every survey.
+        if(!exposed(actor.level(),pos))return false;
+        var eye=actor.getEyePosition();
+        if(sighted(actor,eye,Vec3.atCenterOf(pos),pos))return true;
+        // The heart of a block is hidden behind its neighbours' edges on level ground, where only the few underfoot would
+        // ever count as seen. A block is in sight if any face turned towards the eye can be reached through open air.
+        for(Direction face:Direction.values()){
+            Vec3 out=new Vec3(pos.getX()+.5+face.getStepX()*.51,pos.getY()+.5+face.getStepY()*.51,pos.getZ()+.5+face.getStepZ()*.51);
+            if((eye.x-out.x)*face.getStepX()+(eye.y-out.y)*face.getStepY()+(eye.z-out.z)*face.getStepZ()<=0||covered(actor.level(),pos.relative(face)))continue;
+            if(sighted(actor,eye,out,null))return true;
+        }
+        return false;
+    }
+    /** One ray: true if it reaches the target through open air, or ends on the block it was aimed at. */
+    private static boolean sighted(LivingEntity actor,Vec3 eye,Vec3 target,BlockPos aim){
         // Bound every traversed chunk before invoking the world's ray tracer.
         int samples=(int)Math.ceil(eye.distanceTo(target)*2);
         for(int i=0;i<=samples;i++)if(!actor.level().hasChunkAt(BlockPos.containing(eye.lerp(target,samples==0?0:i/(double)samples))))return false;
         var hit=actor.level().clip(new ClipContext(eye,target,ClipContext.Block.OUTLINE,ClipContext.Fluid.NONE,actor));
-        return hit.getType()==HitResult.Type.MISS||hit.getBlockPos().equals(pos);
+        return hit.getType()==HitResult.Type.MISS||aim!=null&&hit.getBlockPos().equals(aim);
     }
     private static Observation observe(LivingEntity actor,BlockPos pos){
         var state=actor.level().getBlockState(pos);var block=state.getBlock();
@@ -51,12 +70,18 @@ public final class ResourceActions {
     public static JsonObject discover(LivingEntity actor,int radius){
         var result=new JsonObject();var resources=new JsonArray();result.addProperty("schemaVersion",1);result.add("resources",resources);
         if(!observer(actor)||radius<1||radius>16){result.addProperty("error","A sighted living server humanoid and radius 1–16 are required");return result;}
-        var found=new ArrayList<Observation>();var center=actor.blockPosition();
+        var candidates=new ArrayList<Observation>();var center=actor.blockPosition();
         for(var mutable:BlockPos.betweenClosed(center.offset(-radius,-Math.min(8,radius),-radius),center.offset(radius,Math.min(8,radius),radius))){
             var pos=mutable.immutable();if(pos.distSqr(center)>radius*radius||!actor.level().hasChunkAt(pos))continue;
-            var observation=observe(actor,pos);if(observation!=null&&visible(actor,pos))found.add(observation);
+            var observation=observe(actor,pos);if(observation!=null)candidates.add(observation);
         }
-        found.sort(Comparator.comparingDouble(o->o.pos.distSqr(center)));result.addProperty("radius",radius);result.addProperty("truncated",found.size()>64);
+        // Sight is the dear part, a ray through the world for each block, and a beach has thousands of sand blocks in
+        // range. Take the nearest first and stop at the sixty-fifth seen: that is all the report shows, or needs to
+        // know it was cut short. The answer is the same as looking at every one.
+        candidates.sort(Comparator.comparingDouble(o->o.pos.distSqr(center)));
+        var found=new ArrayList<Observation>();
+        for(var observation:candidates)if(visible(actor,observation.pos)){found.add(observation);if(found.size()>64)break;}
+        result.addProperty("radius",radius);result.addProperty("truncated",found.size()>64);
         for(var observation:found.subList(0,Math.min(64,found.size()))){
             var entry=new JsonObject();entry.addProperty("identity",observation.identity);entry.addProperty("kind",observation.kind);entry.addProperty("host",observation.host);entry.addProperty("x",observation.pos.getX());entry.addProperty("y",observation.pos.getY());entry.addProperty("z",observation.pos.getZ());entry.addProperty("harvestReady",observation.ready);entry.addProperty("method",observation.method);resources.add(entry);
         }

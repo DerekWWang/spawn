@@ -9,6 +9,21 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 
 public final class ResourceActionGameTests {
+    /** A survey of open ground lists the sixty-four nearest things in sight, nearest first, and says when there were more. */
+    public static void nearestFirstAndBounded(GameTestHelper h){
+        for(int x=0;x<13;x++)for(int z=0;z<13;z++)h.setBlock(x,1,z,Blocks.SAND);
+        var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(6,2,6));actor.setNoAi(true);SurvivalApi.enroll(actor);
+        var center=actor.blockPosition();var report=ResourceActions.discover(actor,16);var entries=report.getAsJsonArray("resources");
+        h.assertTrue(entries.size()==64&&report.get("truncated").getAsBoolean(),"A field of sand fills the list and is marked as cut short: "+entries.size());
+        double last=-1;
+        for(var value:entries){var entry=value.getAsJsonObject();double distance=new BlockPos(entry.get("x").getAsInt(),entry.get("y").getAsInt(),entry.get("z").getAsInt()).distSqr(center);
+            h.assertTrue(distance>=last,"The list runs from nearest to farthest");last=distance;
+            h.assertTrue(ResourceActions.visible(actor,new BlockPos(entry.get("x").getAsInt(),entry.get("y").getAsInt(),entry.get("z").getAsInt())),"Everything listed is in sight");}
+        var first=entries.get(0).getAsJsonObject();
+        h.assertTrue(new BlockPos(first.get("x").getAsInt(),first.get("y").getAsInt(),first.get("z").getAsInt()).equals(center.below()),"The sand underfoot comes first");
+        h.assertTrue(last<=16*16,"Nothing beyond the radius is listed");
+        actor.discard();h.succeed();
+    }
     public static void visibleEvidence(GameTestHelper h){
         var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(1,2,1));actor.setNoAi(true);SurvivalApi.enroll(actor);
         var exposed=h.absolutePos(new BlockPos(2,2,1));var hidden=h.absolutePos(new BlockPos(4,2,1));

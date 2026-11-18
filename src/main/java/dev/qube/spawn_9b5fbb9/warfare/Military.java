@@ -8,7 +8,6 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import dev.qube.spawn_9b5fbb9.content.ItemAging;
-import dev.qube.spawn_9b5fbb9.content.Pottery;
 import dev.qube.spawn_9b5fbb9.content.SurvivalContent;
 import dev.qube.spawn_9b5fbb9.industry.Industry;
 import dev.qube.spawn_9b5fbb9.industry.Ledger;
@@ -71,8 +70,8 @@ public final class Military {
 
     // ---- Service record -------------------------------------------------------------------------------
     public static boolean serving(Entity actor){return actor instanceof LivingEntity&&actor.getPersistentData().contains(KEY);}
-    private static CompoundTag record(LivingEntity actor){return actor.getPersistentData().getCompoundOrEmpty(KEY);}
-    private static void save(LivingEntity actor,CompoundTag service){actor.getPersistentData().put(KEY,service);}
+    static CompoundTag record(LivingEntity actor){return actor.getPersistentData().getCompoundOrEmpty(KEY);}
+    static void save(LivingEntity actor,CompoundTag service){actor.getPersistentData().put(KEY,service);}
     public static String commander(Entity actor){return serving(actor)?record((LivingEntity)actor).getStringOr("commander",""):"";}
     public static double morale(LivingEntity actor){return record(actor).getDoubleOr("morale",0);}
     public static String order(LivingEntity actor){return record(actor).getStringOr("order","");}
@@ -98,20 +97,45 @@ public final class Military {
         if(SurvivalApi.state(recruit).mental()<.3)return "Too ill or injured to serve";
         return "";
     }
-    private static void enlist(LivingEntity commander,LivingEntity recruit,boolean volunteer,int rations){
-        var service=new CompoundTag();service.putString("commander",commander.getUUID().toString());service.putString("commanderName",commander.getName().getString());
-        service.putString("kind",volunteer?"volunteer":"conscript");service.putDouble("morale",volunteer?70:35);service.putInt("rations",rations);service.putString("order","follow");
-        service.putLong("since",SurvivalApi.calendar((ServerLevel)commander.level()));save(recruit,service);
+    private static void enlist(LivingEntity commander,LivingEntity recruit,boolean volunteer,int nutrition){
+        var service=new CompoundTag();service.putString("commander",commander.getUUID().toString());
+        service.putString("kind",volunteer?"volunteer":"conscript");service.putDouble("morale",volunteer?70:35);service.putInt("rations",0);stock(service,nutrition);service.putString("order","follow");
+        service.putLong("since",clock((ServerLevel)commander.level()));save(recruit,service);
+        // A commander who is not a player leaves no body behind to say he fell, so he is marked as one whose death is to be recorded.
+        if(!(commander instanceof Player))commander.getPersistentData().putBoolean(COMMANDS,true);
         if(recruit instanceof Mob mob){mob.setPersistenceRequired();mob.getNavigation().stop();}
+    }
+    // ---- The fallen ------------------------------------------------------------------------------------
+    // A commander's death releases the men who can be found. Those in country nobody has loaded, or in another
+    // world, learn of it when they are next seen: the time each commander fell is kept, and a man sworn before it
+    // serves nobody. One sworn after it serves whoever bears that name now, so a revived player starts with none.
+    private static final net.minecraft.resources.Identifier FALLEN=net.minecraft.resources.Identifier.fromNamespaceAndPath(SurvivalContent.MODID,"fallen_commanders");
+    private static final String COMMANDS="survivalCommander";
+    private static long clock(ServerLevel level){return level.getServer().overworld().getGameTime();}
+    private static void fell(ServerLevel level,LivingEntity commander){
+        var storage=level.getServer().getCommandStorage();var fallen=storage.get(FALLEN).copy();fallen.putLong(commander.getUUID().toString(),clock(level));storage.set(FALLEN,fallen);
+    }
+    private static boolean orphaned(ServerLevel level,CompoundTag service,LivingEntity commander){
+        if(commander instanceof Player player&&SurvivalEvents.dead(player))return true;
+        return service.getLongOr("since",Long.MAX_VALUE)<=level.getServer().getCommandStorage().get(FALLEN).getLongOr(service.getStringOr("commander",""),Long.MIN_VALUE);
     }
     /** Voluntary enlistment: the recruit takes the commander's rations as bounty and keeps them in the pack. */
     public static ActionResult recruit(LivingEntity commander,LivingEntity recruit){
         String invalid=candidate(commander,recruit);if(!invalid.isEmpty())return fail(invalid);
         ItemStack bounty=commander.getMainHandItem();var food=bounty.get(DataComponents.FOOD);
-        if(food==null||ItemAging.spoiled(bounty)||rationValue(bounty)*bounty.getCount()<4)return fail("Offer at least four rations of sound food in your main hand as enlistment bounty");
+        if(food==null||ItemAging.spoiled(bounty)||nutrition(bounty)<16)return fail("Offer at least four rations of sound food in your main hand as enlistment bounty");
         if(recruit instanceof Player&&!recruit.isShiftKeyDown())return fail("A player enlists by crouching to accept");
-        int rations=rationValue(bounty)*bounty.getCount();bounty.setCount(0);enlist(commander,recruit,true,rations);
+        // A player carries his own food: the bounty goes into his hands, not into a pack only a villager has.
+        if(recruit instanceof Player){SurvivalApi.give(recruit,bounty.copy());bounty.setCount(0);enlist(commander,recruit,true,0);return ok(recruit.getName().getString()+" enlisted as a volunteer and took the bounty");}
+        int rations=nutrition(bounty)/4;enlist(commander,recruit,true,nutrition(bounty));bounty.setCount(0);
         return ok(recruit.getName().getString()+" enlisted as a volunteer with "+rations+" rations");
+    }
+    /** A soldier who is his own master gives notice and goes. Only a player can: a villager serves until discharged, deserted or dead. */
+    public static ActionResult resign(LivingEntity soldier){
+        if(!serving(soldier))return fail("Not in anyone's service");
+        if(!(soldier instanceof Player))return fail("Only a player may give notice");
+        if(soldier.level() instanceof ServerLevel level)notify(entity(level,commander(soldier)),soldier.getName().getString()+" has left your service");
+        release(soldier);return ok("You have left the service");
     }
     /** Impressment: an armed commander with an armed escort, or facing an unarmed subject, compels service. */
     public static ActionResult conscript(LivingEntity commander,LivingEntity target){
@@ -128,7 +152,7 @@ public final class Military {
         release(soldier);return ok(soldier.getName().getString()+" discharged");
     }
     private static void release(LivingEntity soldier){
-        var service=record(soldier);soldier.getPersistentData().remove(KEY);
+        var service=record(soldier);spill(soldier,service);soldier.getPersistentData().remove(KEY);
         if(soldier.level() instanceof ServerLevel level){
             VehicleEntity gun=vehicle(level,service.getStringOr("target",""));if(gun!=null)gun.crew.remove(soldier.getUUID().toString());
             Industry.leave(soldier);
@@ -140,7 +164,19 @@ public final class Military {
         String id=commander.getUUID().toString();
         return commander.level().getEntitiesOfClass(LivingEntity.class,commander.getBoundingBox().inflate(range),e->e.isAlive()&&serving(e)&&commander(e).equals(id));
     }
-    private static int rationValue(ItemStack food){var properties=food.get(DataComponents.FOOD);return properties==null?0:Math.max(1,(int)Math.round(properties.nutrition()/4d));}
+    private static int nutrition(ItemStack food){var properties=food.get(DataComponents.FOOD);return properties==null?0:properties.nutrition()*food.getCount();}
+    /** Four points of nutrition make a ration, one meal. What is left over is kept towards the next, so small food is worth what it is and no more. */
+    private static int stock(CompoundTag service,int nutrition){
+        int crumbs=service.getIntOr("crumbs",0)+nutrition,added=crumbs/4;service.putInt("crumbs",crumbs%4);service.putInt("rations",service.getIntOr("rations",0)+added);return added;
+    }
+    /** What a villager soldier carried in the pack falls where he stands when he leaves the service or dies. */
+    private static void spill(LivingEntity soldier,CompoundTag service){
+        if(!(soldier instanceof Mob)||!(soldier.level() instanceof ServerLevel level))return;
+        drop(level,soldier,new ItemStack(Items.ARROW),service.getIntOr("arrows",0));drop(level,soldier,new ItemStack(Items.FLINT),service.getIntOr("flints",0));
+        drop(level,soldier,new ItemStack(SurvivalContent.item("paper_cartridge")),service.getIntOr("cartridges",0));
+        service.remove("arrows");service.remove("flints");service.remove("cartridges");
+    }
+    private static void drop(ServerLevel level,LivingEntity from,ItemStack kind,int count){for(;count>0;count-=kind.getMaxStackSize())from.spawnAtLocation(level,kind.copyWithCount(Math.min(kind.getMaxStackSize(),count)));}
     /** Hands the held item to a soldier: armour is worn, a shield goes to the off hand, anything else
      * becomes the weapon in hand, and food, arrows and cartridges go into the pack. */
     public static ActionResult equip(LivingEntity giver,LivingEntity soldier,InteractionHand hand){
@@ -152,7 +188,7 @@ public final class Military {
         var service=record(soldier);
         if(held.has(DataComponents.FOOD)){
             if(ItemAging.spoiled(held))return fail("Rotten food is no ration");
-            int added=rationValue(held)*held.getCount();service.putInt("rations",service.getIntOr("rations",0)+added);held.setCount(0);save(soldier,service);return ok("Issued "+added+" rations (pack "+service.getIntOr("rations",0)+")");
+            int added=stock(service,nutrition(held));held.setCount(0);save(soldier,service);return ok("Issued "+added+" rations (pack "+service.getIntOr("rations",0)+")");
         }
         if(held.is(ItemTags.ARROWS)){service.putInt("arrows",service.getIntOr("arrows",0)+held.getCount());held.setCount(0);save(soldier,service);return ok("Quiver: "+service.getIntOr("arrows",0)+" arrows");}
         if(held.is(Items.FLINT)){service.putInt("flints",service.getIntOr("flints",0)+held.getCount());held.setCount(0);save(soldier,service);return ok("Spare flints: "+service.getIntOr("flints",0));}
@@ -168,7 +204,10 @@ public final class Military {
     /** Declares another commander (or an unattached individual) an enemy: guards engage them on sight. */
     public static ActionResult hostile(LivingEntity commander,Entity other,boolean enemy){
         String id=serving(other)?commander(other):other.getUUID().toString();if(id.equals(commander.getUUID().toString()))return fail("Those are your own");
-        var set=hostiles(commander);if(enemy)set.add(id);else set.remove(id);commander.getPersistentData().putString("survivalHostile",String.join(",",set));
+        var set=hostiles(commander);if(enemy)set.add(id);else set.remove(id);
+        // Sixty-four standing quarrels is a great many; the oldest is forgotten for the newest.
+        while(set.size()>64)set.remove(set.iterator().next());
+        commander.getPersistentData().putString("survivalHostile",String.join(",",set));
         return ok(enemy?"Declared hostile: guards will engage":"No longer hostile");
     }
     /** Issues one order to every listed soldier of this commander. Formation orders give each a place in the ranks. */
@@ -178,13 +217,14 @@ public final class Military {
         if((type.equals("attack")||type.equals("charge")||type.equals("fire")||type.equals("mount")||type.equals("crew")||type.equals("drive"))&&target==null)return fail("That order needs a target");
         if((type.equals("move")||type.equals("guard")||type.equals("drive")||type.equals("work"))&&position==null)return fail("That order needs a position");
         if((type.equals("crew")||type.equals("drive"))&&!(target instanceof VehicleEntity))return fail("That order needs a vehicle or siege piece");
+        if(type.equals("mount")&&!(target instanceof AbstractHorse)&&!(target instanceof VehicleEntity))return fail("A soldier mounts a horse or a vehicle, nothing else");
         String id=commander.getUUID().toString();var obeying=new ArrayList<LivingEntity>();
         for(Entity entity:soldiers)if(entity instanceof LivingEntity soldier&&soldier.isAlive()&&serving(soldier)&&commander(soldier).equals(id))obeying.add(soldier);
         if(obeying.isEmpty())return fail("None of those are in your service");
         Vec3 facing=Vec3.directionFromRotation(0,commander.getYRot()),right=new Vec3(-facing.z,0,facing.x);int index=0;
         for(LivingEntity soldier:obeying){
             var service=record(soldier);VehicleEntity old=vehicle(level,service.getStringOr("target",""));if(old!=null&&!type.equals("crew"))old.crew.remove(soldier.getUUID().toString());
-            service.putString("order",type);service.remove("target");service.putLong("issued",level.getGameTime());service.putInt("slot",index);service.putInt("pursuit",0);
+            service.putString("order",type);service.remove("target");service.remove("stranded");service.putInt("slot",index);
             if(target!=null)service.putString("target",target.getUUID().toString());
             if(position!=null){
                 Vec3 place=position;
@@ -223,16 +263,17 @@ public final class Military {
         var service=record(soldier);
         if(soldier.tickCount%100==0){upkeep(soldier,level,service);if(!serving(soldier))return;}
         if(soldier instanceof Mob mob&&!mob.isNoAi())execute(mob,level,service);
-        save(soldier,service);
     }
     private static void upkeep(LivingEntity soldier,ServerLevel level,CompoundTag service){
+        LivingEntity commander=entity(level,service.getStringOr("commander",""));
+        if(orphaned(level,service,commander)){release(soldier);return;}
         SurvivalState body=SurvivalApi.state(soldier);boolean changed=false;
         boolean conscript=service.getStringOr("kind","").equals("conscript");double morale=service.getDoubleOr("morale",50);
         if(soldier instanceof Mob){
             // Draw rations from a supply vehicle when the pack runs low: an army marches on its wagons.
             if(service.getIntOr("rations",0)<4)for(VehicleEntity wagon:level.getEntitiesOfClass(VehicleEntity.class,soldier.getBoundingBox().inflate(8))){
                 boolean drew=false;
-                for(String id:new ArrayList<>(wagon.cargo.keySet())){ItemStack sample=new ItemStack(Ledger.item(id));if(!sample.has(DataComponents.FOOD)||id.endsWith("spoiled_food"))continue;Ledger.take(wagon.cargo,id,1);service.putInt("rations",service.getIntOr("rations",0)+rationValue(sample));drew=true;break;}
+                for(String id:new ArrayList<>(wagon.cargo.keySet())){ItemStack sample=new ItemStack(Ledger.item(id));if(!sample.has(DataComponents.FOOD)||id.endsWith("spoiled_food"))continue;Ledger.take(wagon.cargo,id,1);stock(service,nutrition(sample));drew=true;break;}
                 if(drew)break;
             }
             if(body.hunger<60&&service.getIntOr("rations",0)>0){service.putInt("rations",service.getIntOr("rations",0)-1);body.feed(20);changed=true;}
@@ -240,7 +281,6 @@ public final class Military {
             if(body.thirst<60&&service.getIntOr("canteen",0)>0){service.putInt("canteen",service.getIntOr("canteen",0)-1);SurvivalApi.hydrate(soldier,body,25,false);changed=true;}
         }
         if(changed){SurvivalApi.save(soldier,body);SurvivalApi.syncFood(soldier,body);}
-        LivingEntity commander=entity(level,service.getStringOr("commander",""));
         boolean led=commander!=null&&commander.isAlive()&&commander.distanceToSqr(soldier)<=32*32;
         if(body.hunger<25)morale-=1.5;if(body.thirst<25)morale-=1.5;if(body.bleeding>0)morale-=1;
         if(led)morale+=.25;else morale-=conscript?.5:.1;
@@ -257,7 +297,7 @@ public final class Military {
         LivingEntity victim=event.getEntity();if(!(victim.level() instanceof ServerLevel level)||event.getHealthDamage()<=0)return;
         Entity attacker=event.getSource().getEntity();float damage=event.getHealthDamage();
         // Fighting teaches fighting, for every humanoid.
-        if(attacker instanceof LivingEntity fighter&&SurvivalApi.isHumanoid(fighter)&&fighter!=victim&&(SurvivalApi.isHumanoid(victim)||victim instanceof Mob)){
+        if(attacker instanceof LivingEntity fighter&&SurvivalApi.isHumanoid(fighter)&&fighter!=victim&&(SurvivalApi.isHumanoid(victim)||victim instanceof Mob)&&!event.getSource().is(Firearms.GUNSHOT)){
             if(event.getSource().getDirectEntity() instanceof Projectile)SkillApi.award(fighter,Skill.MARKSMANSHIP,damage*12);
             else if(event.getSource().getDirectEntity()==fighter)SkillApi.award(fighter,Skill.MELEE,damage*12);
         }
@@ -269,29 +309,41 @@ public final class Military {
         if(!serving(victim))return;
         var service=record(victim);boolean conscript=service.getStringOr("kind","").equals("conscript");
         double morale=Math.max(0,service.getDoubleOr("morale",50)-damage*(conscript?1.8:1.2));service.putDouble("morale",morale);
-        if(attacker instanceof LivingEntity threat&&threat!=victim&&!commander(threat).equals(service.getStringOr("commander","?"))){service.putString("threat",threat.getUUID().toString());service.putLong("threatAt",level.getGameTime());}
+        if(attacker instanceof LivingEntity threat&&threat!=victim&&!side(threat).equals(service.getStringOr("commander","?"))){service.putString("threat",threat.getUUID().toString());service.putLong("threatAt",level.getGameTime());}
         if(morale<20&&service.getLongOr("routUntil",0)<=level.getGameTime()){
             service.putLong("routUntil",level.getGameTime()+400);
             LivingEntity commander=entity(level,service.getStringOr("commander",""));if(commander instanceof ServerPlayer player)player.sendSystemMessage(Component.literal(victim.getName().getString()+" has broken and is running"));
         }
-        save(victim,service);
     }
+    /** Whose man this is: his commander's, or his own. */
+    private static String side(Entity actor){return serving(actor)?commander(actor):actor.getUUID().toString();}
     private static void died(LivingDeathEvent event){
-        LivingEntity dead=event.getEntity();if(!(dead.level() instanceof ServerLevel level)||!serving(dead))return;
+        LivingEntity dead=event.getEntity();if(!(dead.level() instanceof ServerLevel level))return;
+        // A dead commander's men are nobody's soldiers: they go home rather than serve a name. Only a person commands,
+        // so the death of a hen does not send anyone looking through the world.
+        if(dead instanceof Player||dead.getPersistentData().getBooleanOr(COMMANDS,false)){
+            fell(level,dead);String fallen=dead.getUUID().toString();var orphans=new ArrayList<LivingEntity>();
+            for(ServerLevel world:level.getServer().getAllLevels())for(Entity entity:world.getAllEntities())if(entity instanceof LivingEntity soldier&&soldier!=dead&&soldier.isAlive()&&serving(soldier)&&commander(soldier).equals(fallen))orphans.add(soldier);
+            for(LivingEntity soldier:orphans)release(soldier);
+        }
+        // Nobody stays at war with the dead: the name comes off the list of every commander present.
+        if(SurvivalApi.isHumanoid(dead))for(ServerPlayer player:level.getServer().getPlayerList().getPlayers()){var set=hostiles(player);if(set.remove(dead.getUUID().toString()))player.getPersistentData().putString("survivalHostile",String.join(",",set));}
+        if(!serving(dead))return;
+        spill(dead,record(dead));
         String side=commander(dead);Entity killer=event.getSource().getEntity();String killerSide=killer==null?"":serving(killer)?commander(killer):killer.getUUID().toString();
         for(LivingEntity other:level.getEntitiesOfClass(LivingEntity.class,dead.getBoundingBox().inflate(16),e->e!=dead&&e.isAlive()&&serving(e))){
             var service=record(other);String theirs=service.getStringOr("commander","");double morale=service.getDoubleOr("morale",50);
             if(theirs.equals(side))morale-=8;else if(theirs.equals(killerSide))morale+=4;else continue;
-            service.putDouble("morale",Mth.clamp(morale,0,100));save(other,service);
+            service.putDouble("morale",Mth.clamp(morale,0,100));
         }
         VehicleEntity gun=vehicle(level,record(dead).getStringOr("target",""));if(gun!=null)gun.crew.remove(dead.getUUID().toString());
     }
     /** A practised hand strikes harder; a novice wastes much of the blow. */
     private static void incoming(LivingIncomingDamageEvent event){
-        if(event.getSource().getEntity() instanceof Player player&&event.getSource().getDirectEntity()==player&&player.level() instanceof ServerLevel&&!SurvivalApi.exempt(player))
+        if(event.getSource().getEntity() instanceof Player player&&event.getSource().getDirectEntity()==player&&!event.getSource().is(Firearms.GUNSHOT)&&player.level() instanceof ServerLevel&&!SurvivalApi.exempt(player))
             event.setAmount((float)(event.getAmount()*(.8+.4*SkillApi.level(player,Skill.MELEE)/20d)));
     }
-    private static void interact(PlayerInteractEvent.EntityInteract event){
+    private static void interact(PlayerInteractEvent.EntityInteract event){if(event.getEntity().isSpectator())return;
         if(!(event.getLevel() instanceof ServerLevel)||!(event.getTarget() instanceof LivingEntity soldier)||!event.getEntity().isShiftKeyDown())return;
         Player player=event.getEntity();ItemStack held=event.getItemStack();
         if(held.isEmpty()||!serving(soldier)||!commander(soldier).equals(player.getUUID().toString()))return;
@@ -304,7 +356,21 @@ public final class Military {
     // ---- Order execution ------------------------------------------------------------------------------
     private static void go(Mob soldier,Vec3 where,double speed){
         if(soldier.isPassenger()&&!(soldier.getVehicle() instanceof Mob))return;
-        if(soldier.tickCount%10==0||soldier.getNavigation().isDone())soldier.getNavigation().moveTo(where.x,where.y,where.z,speed);
+        // Twice a second is often enough to look for the way again. Asking whenever the last path has run out asks
+        // every tick of a man whose goal cannot be reached, and each asking is a search of the ground around him.
+        if(beat(soldier))soldier.getNavigation().moveTo(where.x,where.y,where.z,speed);
+    }
+    private static boolean beat(Mob soldier){return (soldier.tickCount+soldier.getId())%10==0;}
+    /** At the place: near it on the ground, whatever the height of the block that was named. */
+    private static boolean arrived(Mob soldier,Vec3 place,double within){
+        double dx=soldier.getX()-place.x,dz=soldier.getZ()-place.z;return dx*dx+dz*dz<=within&&Math.abs(soldier.getY()-place.y)<=3;
+    }
+    /** At the end of a road that does not lead where he was sent. */
+    private static boolean stranded(Mob soldier){
+        if(soldier.isPassenger()&&!(soldier.getVehicle() instanceof Mob))return false;
+        var path=soldier.getNavigation().getPath();if(path==null)return soldier.onGround()||soldier.isPassenger();
+        if(path.canReach())return false;var end=path.getEndNode();
+        return end==null||end.asBlockPos().distSqr(soldier.getRootVehicle().blockPosition())<=4;
     }
     private static void halt(Mob soldier){if(!soldier.getNavigation().isDone())soldier.getNavigation().stop();}
     private static Vec3 post(CompoundTag service,Entity fallback){return service.contains("x")?new Vec3(service.getDoubleOr("x",0),service.getDoubleOr("y",0),service.getDoubleOr("z",0)):fallback.position();}
@@ -332,7 +398,16 @@ public final class Military {
                 double keep=3+service.getIntOr("slot",0)%6*.8;
                 if(soldier.distanceToSqr(commander)>keep*keep*2.2)go(soldier,commander.position(),order.equals("retreat")?1.3:1.1);else{halt(soldier);if(order.equals("retreat"))service.putString("order","follow");}
             }
-            case "move"->{Vec3 place=post(service,soldier);if(soldier.position().distanceToSqr(place)>2.6)go(soldier,place,1.1);else{halt(soldier);service.putString("order","hold");}}
+            case "move"->{
+                Vec3 place=post(service,soldier);
+                if(arrived(soldier,place,2.6)){halt(soldier);service.putString("order","hold");service.remove("stranded");break;}
+                go(soldier,place,1.1);
+                // A place he cannot get to is not walked at for ever: after three seconds at the end of the road he holds there.
+                if(beat(soldier)){
+                    int tries=stranded(soldier)?service.getIntOr("stranded",0)+1:0;service.putInt("stranded",tries);
+                    if(tries>=6){halt(soldier);service.putString("order","hold");service.remove("stranded");notify(commander,soldier.getName().getString()+" cannot reach the ordered position and holds where he is");}
+                }
+            }
             case "hold"->{
                 LivingEntity threat=entity(level,service.getStringOr("threat",""));
                 if(threat!=null&&threat.isAlive()&&now-service.getLongOr("threatAt",0)<200&&soldier.distanceToSqr(threat)<36)fight(soldier,threat,level,service,body,"hold");else halt(soldier);
@@ -341,7 +416,7 @@ public final class Military {
                 Vec3 place=post(service,soldier);double radius=service.getDoubleOr("radius",12);LivingEntity foe=entity(level,service.getStringOr("foe",""));
                 if(foe!=null&&(!foe.isAlive()||foe.position().distanceToSqr(place)>radius*radius*2.25)){foe=null;service.remove("foe");}
                 if(foe==null&&now%20==soldier.getId()%20){foe=sight(soldier,level,service,commander,place,radius);if(foe!=null)service.putString("foe",foe.getUUID().toString());}
-                if(foe!=null)fight(soldier,foe,level,service,body,"attack");else if(soldier.position().distanceToSqr(place)>3)go(soldier,place,1.0);else halt(soldier);
+                if(foe!=null)fight(soldier,foe,level,service,body,"attack");else if(!arrived(soldier,place,3))go(soldier,place,1.0);else halt(soldier);
             }
             case "attack","charge","fire"->{
                 LivingEntity target=entity(level,service.getStringOr("target",""));
@@ -354,7 +429,9 @@ public final class Military {
                 if(soldier.getVehicle()==mount){service.putString("order","follow");break;}
                 if(soldier.distanceToSqr(mount)>9){go(soldier,mount.position(),1.1);break;}
                 if(mount instanceof AbstractHorse horse&&(!horse.isTamed()||!horse.isSaddled())){service.putString("order","hold");notify(commander,soldier.getName().getString()+" cannot ride an untamed or unsaddled animal");break;}
-                if(!soldier.startRiding(mount,true,true)){service.putString("order","hold");notify(commander,soldier.getName().getString()+" found no seat");}
+                // A horse carries one rider and a vehicle as many as it seats; nothing else is ridden, and nobody is unseated for him.
+                boolean horse=mount instanceof AbstractHorse;
+                if(!horse&&!(mount instanceof VehicleEntity)||horse&&!mount.getPassengers().isEmpty()||!soldier.startRiding(mount,horse,true)){service.putString("order","hold");notify(commander,soldier.getName().getString()+" found no seat");}
             }
             case "dismount"->{soldier.stopRiding();service.putString("order","hold");}
             case "crew"->{
@@ -379,7 +456,9 @@ public final class Military {
     private static void notify(LivingEntity commander,String message){if(commander instanceof ServerPlayer player)player.sendSystemMessage(Component.literal(message));}
     /** Guards engage declared enemies, and anyone who has just attacked one of their own. */
     private static LivingEntity sight(Mob soldier,ServerLevel level,CompoundTag service,LivingEntity commander,Vec3 place,double radius){
-        Set<String> enemies=commander==null?Set.of():hostiles(commander);String side=service.getStringOr("commander","");LivingEntity best=null;double nearest=Double.MAX_VALUE;
+        // The standing order is carried by the guard: a commander who has gone home, or to bed, has not made peace.
+        if(commander!=null)service.putString("enemies",commander.getPersistentData().getStringOr("survivalHostile",""));
+        Set<String> enemies=Set.of(service.getStringOr("enemies","").split(","));String side=service.getStringOr("commander","");LivingEntity best=null;double nearest=Double.MAX_VALUE;
         LivingEntity threat=entity(level,service.getStringOr("threat",""));if(threat!=null&&threat.isAlive()&&level.getGameTime()-service.getLongOr("threatAt",0)<600&&threat.position().distanceToSqr(place)<=radius*radius)return threat;
         for(LivingEntity other:level.getEntitiesOfClass(LivingEntity.class,new net.minecraft.world.phys.AABB(place,place).inflate(radius),e->e!=soldier&&e.isAlive()&&!SurvivalApi.exempt(e))){
             String theirs=serving(other)?commander(other):other.getUUID().toString();if(theirs.equals(side)||!enemies.contains(theirs))continue;
@@ -394,7 +473,7 @@ public final class Military {
     private static void fight(Mob soldier,LivingEntity target,ServerLevel level,CompoundTag service,SurvivalState body,String mode){
         ItemStack weapon=soldier.getMainHandItem();Weapon kind=kind(weapon);long now=level.getGameTime();double distance=soldier.distanceTo(target);
         soldier.getLookControl().setLookAt(target,30,30);
-        boolean ammunition=switch(kind){case BOW,CROSSBOW->service.getIntOr("arrows",0)>0;case MUSKET->Firearms.loaded(weapon)&&!Firearms.flintWorn(weapon)||service.getIntOr("cartridges",0)>0&&(!Firearms.flintWorn(weapon)||service.getIntOr("flints",0)>0);default->false;};
+        boolean ammunition=switch(kind){case BOW,CROSSBOW->service.getIntOr("arrows",0)>0;case MUSKET->Firearms.loaded(weapon)&&!Firearms.flintWorn(weapon)||(service.getIntOr("cartridges",0)>0||service.getBooleanOr("ramming",false))&&(!Firearms.flintWorn(weapon)||service.getIntOr("flints",0)>0);default->false;};
         if(kind!=Weapon.MELEE&&ammunition&&!mode.equals("charge")&&body.manipulation()>=.2){
             double range=switch(kind){case BOW->24;case CROSSBOW->40;default->48;};
             if(distance>range||!soldier.hasLineOfSight(target)){if(mode.equals("fire")||mode.equals("hold"))halt(soldier);else go(soldier,target.position(),1.1);return;}
@@ -447,7 +526,8 @@ public final class Military {
             }
         }
         if(target.hurtServer(level,soldier.damageSources().mobAttack(soldier),(float)base)){weapon.hurtAndBreak(1,level,soldier,item->{});soldier.setLastHurtMob(target);}
-        body.hunger=Math.max(0,body.hunger-.05);
+        // The blow may have taught him something, so the body is read again before the effort is charged to it.
+        var spent=SurvivalApi.state(soldier);spent.hunger=Math.max(0,spent.hunger-.05);SurvivalApi.save(soldier,spent);
     }
 
     // ---- Commands -------------------------------------------------------------------------------------
@@ -481,22 +561,30 @@ public final class Military {
                 c.getSource().sendSuccess(()->Component.literal(line),false);}
             return soldiers.size();
         }));
-        var soldiers=argument("soldiers",EntityArgument.entities());
-        for(String simple:new String[]{"hold","follow","retreat","dismount"})soldiers.then(literal(simple).executes(c->say(c.getSource(),order(actor.get(c),EntityArgument.getEntities(c,"soldiers"),simple,null,null,0,null))));
-        soldiers.then(literal("move").then(argument("pos",BlockPosArgument.blockPos()).executes(c->say(c.getSource(),order(actor.get(c),EntityArgument.getEntities(c,"soldiers"),"move",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,0,"line")))
-            .then(argument("formation",StringArgumentType.word()).suggests((c,b)->SharedSuggestionProvider.suggest(new String[]{"line","column","square"},b)).executes(c->say(c.getSource(),order(actor.get(c),EntityArgument.getEntities(c,"soldiers"),"move",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,0,StringArgumentType.getString(c,"formation")))))));
-        soldiers.then(literal("guard").then(argument("pos",BlockPosArgument.blockPos()).executes(c->say(c.getSource(),order(actor.get(c),EntityArgument.getEntities(c,"soldiers"),"guard",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,12,"line")))
-            .then(argument("radius",DoubleArgumentType.doubleArg(2,48)).executes(c->say(c.getSource(),order(actor.get(c),EntityArgument.getEntities(c,"soldiers"),"guard",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,DoubleArgumentType.getDouble(c,"radius"),"line"))))));
-        for(String aimed:new String[]{"attack","charge","fire","mount","crew"})soldiers.then(literal(aimed).then(argument("target",EntityArgument.entity()).executes(c->say(c.getSource(),order(actor.get(c),EntityArgument.getEntities(c,"soldiers"),aimed,null,EntityArgument.getEntity(c,"target"),0,null)))));
-        soldiers.then(literal("drive").then(argument("vehicle",EntityArgument.entity()).then(argument("pos",BlockPosArgument.blockPos()).executes(c->say(c.getSource(),order(actor.get(c),EntityArgument.getEntities(c,"soldiers"),"drive",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),EntityArgument.getEntity(c,"vehicle"),0,null))))));
-        soldiers.then(literal("work").then(argument("pos",BlockPosArgument.blockPos()).executes(c->say(c.getSource(),order(actor.get(c),EntityArgument.getEntities(c,"soldiers"),"work",Vec3.atCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,0,null)))));
+        // A selector needs an operator's rights, so a commander who has none names one soldier or calls on all within earshot.
+        var order=literal("order");
+        var named=argument("soldiers",EntityArgument.entities());orders(named,actor,c->EntityArgument.getEntities(c,"soldiers"));order.then(named);
+        var all=literal("all");orders(all,actor,c->roster(actor.get(c),96));order.then(all);
+        node.then(order);
+        node.then(literal("resign").executes(c->say(c.getSource(),resign(actor.get(c)))));
+    }
+    @FunctionalInterface private interface Squad{Collection<? extends Entity> get(CommandContext<CommandSourceStack> context)throws CommandSyntaxException;}
+    private static void orders(ArgumentBuilder<CommandSourceStack,?> soldiers,ActorLookup actor,Squad squad){
+        for(String simple:new String[]{"hold","follow","retreat","dismount"})soldiers.then(literal(simple).executes(c->say(c.getSource(),order(actor.get(c),squad.get(c),simple,null,null,0,null))));
+        soldiers.then(literal("move").then(argument("pos",BlockPosArgument.blockPos()).executes(c->say(c.getSource(),order(actor.get(c),squad.get(c),"move",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,0,"line")))
+            .then(argument("formation",StringArgumentType.word()).suggests((c,b)->SharedSuggestionProvider.suggest(new String[]{"line","column","square"},b)).executes(c->say(c.getSource(),order(actor.get(c),squad.get(c),"move",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,0,StringArgumentType.getString(c,"formation")))))));
+        soldiers.then(literal("guard").then(argument("pos",BlockPosArgument.blockPos()).executes(c->say(c.getSource(),order(actor.get(c),squad.get(c),"guard",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,12,"line")))
+            .then(argument("radius",DoubleArgumentType.doubleArg(2,48)).executes(c->say(c.getSource(),order(actor.get(c),squad.get(c),"guard",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,DoubleArgumentType.getDouble(c,"radius"),"line"))))));
+        for(String aimed:new String[]{"attack","charge","fire","mount","crew"})soldiers.then(literal(aimed).then(argument("target",EntityArgument.entity()).executes(c->say(c.getSource(),order(actor.get(c),squad.get(c),aimed,null,EntityArgument.getEntity(c,"target"),0,null)))));
+        soldiers.then(literal("drive").then(argument("vehicle",EntityArgument.entity()).then(argument("pos",BlockPosArgument.blockPos()).executes(c->say(c.getSource(),order(actor.get(c),squad.get(c),"drive",Vec3.atBottomCenterOf(BlockPosArgument.getBlockPos(c,"pos")),EntityArgument.getEntity(c,"vehicle"),0,null))))));
+        soldiers.then(literal("work").then(argument("pos",BlockPosArgument.blockPos()).executes(c->say(c.getSource(),order(actor.get(c),squad.get(c),"work",Vec3.atCenterOf(BlockPosArgument.getBlockPos(c,"pos")),null,0,null)))));
         soldiers.then(literal("bombard").then(argument("piece",EntityArgument.entity()).then(argument("pos",BlockPosArgument.blockPos()).executes(c->{
             LivingEntity commander=actor.get(c);Entity piece=EntityArgument.getEntity(c,"piece");if(!(piece instanceof VehicleEntity gun)||gun.spec().artillery()==null)return say(c.getSource(),fail("That is not a siege piece"));
-            var manned=order(commander,EntityArgument.getEntities(c,"soldiers"),"crew",null,gun,0,null);if(!manned.success())return say(c.getSource(),manned);
-            gun.fireTarget=Vec3.atCenterOf(BlockPosArgument.getBlockPos(c,"pos"));
+            // The piece is laid by the one who gives the order, standing at it, as with `siege lay`: nobody aims another's gun from afar.
+            var laid=Siege.lay(commander,gun,Vec3.atCenterOf(BlockPosArgument.getBlockPos(c,"pos")));if(!laid.success())return say(c.getSource(),laid);
+            var manned=order(commander,squad.get(c),"crew",null,gun,0,null);if(!manned.success())return say(c.getSource(),manned);
             return say(c.getSource(),ok(manned.message()+"; the piece will fire on "+BlockPosArgument.getBlockPos(c,"pos").toShortString()+" while ammunition lasts"));
         }))));
-        node.then(literal("order").then(soldiers));
     }
     private static int say(CommandSourceStack source,ActionResult result){
         if(result.success())source.sendSuccess(()->Component.literal(result.message()),false);else source.sendFailure(Component.literal(result.message()));return result.success()?1:0;

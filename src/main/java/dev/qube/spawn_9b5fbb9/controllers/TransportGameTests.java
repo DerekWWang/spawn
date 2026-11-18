@@ -1,6 +1,5 @@
 package dev.qube.spawn_9b5fbb9.controllers;
 
-import dev.qube.spawn_9b5fbb9.content.SurvivalContent;
 import dev.qube.spawn_9b5fbb9.industry.*;
 import dev.qube.spawn_9b5fbb9.survival.SkillSet.Skill;
 import dev.qube.spawn_9b5fbb9.survival.SurvivalApi;
@@ -45,6 +44,18 @@ public final class TransportGameTests {
         player.getInventory().clearContent();player.getInventory().add(new ItemStack(Items.COBBLESTONE,64));h.assertTrue(Ledger.carried(player)==0,"Building blocks in hand stay Minecraft's own convention");
         h.assertTrue(Ledger.mass("minecraft:carrot")==.3&&Ledger.mass("minecraft:wheat_seeds")<1&&Ledger.mass("minecraft:cobblestone")==1600,"A carrot or a seed is loose goods, not a cubic metre");
         cart.discard();h.succeed();
+    }
+    /** A draught animal that dies leaves the harness, so the place can be filled once the body is gone. */
+    public static void deadAnimalLeavesTeam(GameTestHelper h){
+        IndustrialGameTests.floor(h);var cart=Vehicles.spawn(h.getLevel(),"cart",at(h,3.5,2,8.5),-90);
+        var driver=IndustrialGameTests.worker(h,3,6,Skill.RIDING,0);
+        var horse=h.spawn(EntityTypes.HORSE,new BlockPos(5,2,6));horse.setAge(0);horse.setTamed(true);
+        h.assertTrue(Vehicles.hitch(driver,cart,horse).success()&&cart.team.contains(horse.getUUID()),"A tamed horse is harnessed");
+        horse.hurtServer(h.getLevel(),h.getLevel().damageSources().genericKill(),Float.MAX_VALUE);
+        h.assertTrue(!horse.isAlive()&&cart.team.isEmpty(),"The dead horse is out of the team at the moment of death");
+        var fresh=h.spawn(EntityTypes.HORSE,new BlockPos(5,2,7));fresh.setAge(0);fresh.setTamed(true);
+        h.assertTrue(Vehicles.hitch(driver,cart,fresh).success()&&cart.team.size()==1,"Another horse takes its place");
+        cart.releaseTeam();fresh.discard();cart.discard();driver.discard();h.succeed();
     }
     public static void teamRequired(GameTestHelper h){
         IndustrialGameTests.floor(h);var cart=Vehicles.spawn(h.getLevel(),"cart",at(h,3.5,2,8.5),-90);
@@ -135,5 +146,26 @@ public final class TransportGameTests {
         Ledger.add(shop.products,"spawn_9b5fbb9:sleeper",600);
         h.assertTrue(Vehicles.pickup(carter,wagon).success()&&wagon.cargo.get("spawn_9b5fbb9:sleeper")==22&&shop.products.get("spawn_9b5fbb9:sleeper")==578,"A two-tonne wagon takes on twenty-two 85 kg sleepers beside its fodder and leaves the rest: "+wagon.cargo);
         wagon.discard();carter.discard();h.succeed();
+    }
+    /** An animal that starves in harness dies in the middle of the team being fed; the feeding goes on and the server stands. */
+    public static void starvingTeamDies(GameTestHelper h){
+        IndustrialGameTests.floor(h);var cart=Vehicles.spawn(h.getLevel(),"cart",at(h,3.5,2,8.5),-90);
+        var driver=IndustrialGameTests.worker(h,3,6,Skill.RIDING,0);
+        var horse=h.spawn(EntityTypes.HORSE,new BlockPos(5,2,6));horse.setAge(0);horse.setTamed(true);
+        h.assertTrue(Vehicles.hitch(driver,cart,horse).success()&&cart.team.size()==1,"A horse is harnessed");
+        horse.setHealth(3);cart.teamHunger=60;cart.fedAt=dev.qube.spawn_9b5fbb9.survival.SurvivalApi.calendar(h.getLevel())-2400;cart.tickCount=20;cart.tick();
+        h.assertTrue(!horse.isAlive()&&cart.team.isEmpty(),"A missed feed costs four points; the horse starves in harness, is out of the team, and the feeding it died in runs to its end: health "+horse.getHealth()+", team "+cart.team.size());
+        cart.discard();driver.discard();h.succeed();
+    }
+    /** Bulk cargo is counted by kind and comes off as new stock, so spoiled food does not go aboard to come off sound. */
+    public static void spoiledFoodIsNotCargo(GameTestHelper h){
+        IndustrialGameTests.floor(h);var cart=Vehicles.spawn(h.getLevel(),"cart",at(h,3.5,2,8.5),-90);
+        var driver=IndustrialGameTests.worker(h,3,6,Skill.RIDING,0);
+        var rotten=new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BEEF,4);var tag=dev.qube.spawn_9b5fbb9.content.ItemAging.data(rotten);tag.putBoolean("spoiled",true);dev.qube.spawn_9b5fbb9.content.ItemAging.data(rotten,tag);
+        driver.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,rotten);
+        h.assertTrue(!Vehicles.load(driver,cart,net.minecraft.world.InteractionHand.MAIN_HAND,false).success()&&driver.getMainHandItem().getCount()==4&&cart.cargo.isEmpty(),"Rotten meat is refused and stays in the hand");
+        driver.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND,new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.BEEF,4));
+        h.assertTrue(Vehicles.load(driver,cart,net.minecraft.world.InteractionHand.MAIN_HAND,false).success()&&!cart.cargo.isEmpty(),"Sound meat is loaded");
+        cart.discard();driver.discard();h.succeed();
     }
 }

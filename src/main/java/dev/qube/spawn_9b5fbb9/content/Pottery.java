@@ -63,7 +63,7 @@ public final class Pottery {
             default -> {return "Vessel actions: fill, boil, seal, store, retrieve.";}
         }
     }
-    private static void use(PlayerInteractEvent.RightClickBlock event){
+    private static void use(PlayerInteractEvent.RightClickBlock event){if(event.getEntity().isSpectator())return;
         if(!(event.getLevel() instanceof ServerLevel level)||!isPot(event.getItemStack())||event.getHand()!=net.minecraft.world.InteractionHand.MAIN_HAND)return;
         Player player=event.getEntity();ItemStack pot=event.getItemStack();var tag=ItemAging.data(pot);
         if(player.isShiftKeyDown()){

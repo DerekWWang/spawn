@@ -25,7 +25,7 @@ public final class SurvivalNetwork {
     }
     public static void register(RegisterPayloadHandlersEvent event){
         event.registrar("4").playToClient(Snapshot.TYPE,Snapshot.CODEC,(payload,context)->context.enqueueWork(()->{
-            var decoded=SurvivalState.decode(payload.state);if(entityStates.size()>512)entityStates.clear();entityStates.put(payload.entityId,decoded);
+            var decoded=SurvivalState.decode(payload.state);if(entityStates.size()>4096)entityStates.clear();entityStates.put(payload.entityId,decoded);
             if(payload.entityId==context.player().getId()){
                 clientState=decoded;clientCalendar=payload.calendar;clientSeasonDays=Math.max(4,Math.min(112,payload.seasonDays));
                 clientHealth=payload.health;clientMaxHealth=payload.maxHealth;if(payload.open){if(payload.screenMode==1)openSkills=true;else openHealth=true;}
@@ -37,11 +37,28 @@ public final class SurvivalNetwork {
     }
     public static void sendSkills(ServerPlayer player,SurvivalState state){if(player.connection!=null&&player.connection.hasChannel(Snapshot.TYPE)){var current=snapshot(player,state,true);PacketDistributor.sendToPlayer(player,new Snapshot(current.entityId,current.state,current.calendar,current.seasonDays,current.health,current.maxHealth,true,1));}}
     public static Snapshot snapshot(net.minecraft.world.entity.LivingEntity actor,SurvivalState state,boolean open){return new Snapshot(actor.getId(),state.encode(),SurvivalApi.calendar((net.minecraft.server.level.ServerLevel)actor.level()),dev.qube.spawn_9b5fbb9.Config.SEASON_DAYS.get(),actor.getHealth(),actor.getMaxHealth(),open,0);}
-    public static void tracking(net.minecraft.world.entity.LivingEntity actor,SurvivalState state){
-        var payload=snapshot(actor,state,false);
-        for(ServerPlayer player:((net.minecraft.server.level.ServerLevel)actor.level()).players()){
-            if(player.connection!=null&&player.connection.hasChannel(Snapshot.TYPE)&&player.distanceToSqr(actor)<=128*128)
-                PacketDistributor.sendToPlayer(player,payload);
-        }
+    // Every actor's whole body used to go to every player within 128 blocks, every second: a hundred people in one
+    // settlement were ten thousand packets a second, and each told its reader a neighbour's hunger, illness and skill.
+    // A player is sent his own body. Of anyone else he is sent what they wear, when it changes or comes into view.
+    private static final java.util.Map<net.minecraft.world.entity.LivingEntity,String> SHOWN=new java.util.WeakHashMap<>();
+    private static boolean listening(ServerPlayer player){return player.connection!=null&&player.connection.hasChannel(Snapshot.TYPE);}
+    private static String worn(SurvivalState state){return String.join("|",state.clothing)+java.util.Arrays.toString(state.clothingColors);}
+    private static Snapshot appearance(net.minecraft.world.entity.LivingEntity actor,SurvivalState state){
+        var shown=new SurvivalState();System.arraycopy(state.clothing,0,shown.clothing,0,4);System.arraycopy(state.clothingColors,0,shown.clothingColors,0,4);
+        return new Snapshot(actor.getId(),shown.encode(),0,28,0,0,false,0);
     }
+    public static void tracking(net.minecraft.world.entity.LivingEntity actor,SurvivalState state){
+        if(actor instanceof ServerPlayer self)send(self,state,false);
+        String worn=worn(state);if(worn.equals(SHOWN.put(actor,worn)))return;
+        var payload=appearance(actor,state);
+        for(ServerPlayer player:((net.minecraft.server.level.ServerLevel)actor.level()).players())
+            if(player!=actor&&listening(player)&&player.distanceToSqr(actor)<=128*128)PacketDistributor.sendToPlayer(player,payload);
+    }
+    /** A player who comes within sight of an actor is shown what it wears; the unclothed need no telling. */
+    public static void appear(net.minecraft.world.entity.LivingEntity actor,ServerPlayer viewer){
+        if(viewer==actor||!listening(viewer)||!SurvivalApi.isHumanoid(actor)||!actor.getPersistentData().contains(SurvivalApi.KEY))return;
+        var state=SurvivalApi.state(actor);for(String garment:state.clothing)if(!garment.isEmpty()){PacketDistributor.sendToPlayer(viewer,appearance(actor,state));return;}
+    }
+    /** What the client held of the server it has left: entity numbers start again on the next one. */
+    public static void forget(){entityStates.clear();clientState=new SurvivalState();clientCalendar=0;clientHealth=20;clientMaxHealth=20;openHealth=false;openSkills=false;}
 }

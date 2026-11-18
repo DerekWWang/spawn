@@ -19,6 +19,16 @@ public final class EnvironmentApi {
         var local=new Terrain(pos.getY()-sea,terrain.relief(),terrain.temperature(),terrain.humidity(),terrain.continentalness(),terrain.rainShadow());
         return weather(level.getSeed(),pos.getX(),pos.getZ(),tick,local,WorldEnvironment.settings(level));
     }
+    // The game asks whether it is raining on everything alive, at its feet and its head, every tick. Rain is
+    // regional, so the answer is worked out once a second for each chunk and eight-block band of height (the
+    // height decides rain or snow), and under a roof it is not worked out at all.
+    private static final java.util.concurrent.ConcurrentHashMap<Long,Boolean> RAINING=new java.util.concurrent.ConcurrentHashMap<>();
+    private static volatile long rainSecond=Long.MIN_VALUE;private static volatile Object rainRules;
+    public static boolean raining(ServerLevel level,BlockPos pos){
+        long second=Math.floorDiv(SurvivalApi.calendar(level),20L);Object rules=WorldEnvironment.settings(level);
+        if(second!=rainSecond||rules!=rainRules){RAINING.clear();rainSecond=second;rainRules=rules;}
+        return RAINING.computeIfAbsent(BlockPos.asLong(pos.getX()>>4,pos.getY()>>3,pos.getZ()>>4),key->{var w=at(level,pos);return w.rain()>.15&&!w.snow();});
+    }
     public static Exposure exposure(ServerLevel level,BlockPos pos){
         boolean roof=roofed(level,pos),fire=false;int blocked=0;
         for(var direction:Direction.Plane.HORIZONTAL){for(int d=1;d<=4;d++){var p=pos.relative(direction,d);if(!level.hasChunkAt(p))break;if(level.getBlockState(p).isCollisionShapeFullBlock(level,p)||level.getBlockState(p.above()).isCollisionShapeFullBlock(level,p.above())){blocked++;break;}}}

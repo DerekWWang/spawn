@@ -88,8 +88,15 @@ function attach (client, modChannels = {}) {
         client.emit('neoforge_failed', session.failure)
         break
       case 'neoforge:frozen_registry': {
-        const { registry, ids } = decodeFrozenRegistry(packet.data)
-        session.registries.set(registry, ids)
+        // A payload that cannot be read is reported through the client's `error` event, which mineflayer
+        // passes on as the bot's. The registry stays out of `session.registries`, so the id check at
+        // the end of the sync reports it as not sent.
+        let decoded
+        try { decoded = decodeFrozenRegistry(packet.data) } catch (error) {
+          client.emit('error', new Error('Could not read a neoforge:frozen_registry payload from the server: ' + error.message, { cause: error }))
+          break
+        }
+        session.registries.set(decoded.registry, decoded.ids)
         break
       }
       case 'neoforge:frozen_registry_sync_completed':

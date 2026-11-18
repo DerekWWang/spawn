@@ -83,6 +83,9 @@ public final class Facility {
     /** Why a power station cannot run; empty when it can. */
     public static String stationFault(ServerLevel level,WorksEntity station){
         BlockPos pos=station.getBlockPos();
+        // A station is read every second by everything it feeds, from as far as a mile of cable away. Its plant is
+        // looked at only where the country is loaded: asking after a block that is not would load it, there and then.
+        if(!level.hasChunksAt(pos.offset(-10,0,-10),pos.offset(10,0,10)))return "the power station stands at the edge of loaded country and cannot be reached";
         if(count(level,pos,plant("generator"),3)==0)return "the power station has no generator within three blocks";
         if(generators(level,station)==0)return "each generator needs a stationary engine to turn it, within three blocks of the switchboard";
         BlockPos boiler=nearest(level,pos,plant("steam_boiler"),4);if(boiler==null)return "the power station has no steam boiler within four blocks";
@@ -160,7 +163,7 @@ public final class Facility {
         if(filters<needed)faults.add("ceiling filter coverage too low: "+filters+" filter units for "+area+" square blocks of floor (needs "+needed+")");
         if(doors==0)faults.add("no iron door: a cleanroom is entered through a closed airlock door");
         int unsuited=0;var suit=SurvivalContent.item("cleanroom_suit");
-        for(LivingEntity person:level.getEntitiesOfClass(LivingEntity.class,new AABB(minX,minY,minZ,maxX+1,maxY+1,maxZ+1),SurvivalApi::isHumanoid))if(!person.getItemBySlot(EquipmentSlot.CHEST).is(suit)&&!SurvivalApi.exempt(person))unsuited++;
+        for(LivingEntity person:level.getEntitiesOfClass(LivingEntity.class,new AABB(minX,minY,minZ,maxX+1,maxY+1,maxZ+1),SurvivalApi::isHumanoid))if(person.isAlive()&&!person.getItemBySlot(EquipmentSlot.CHEST).is(suit)&&!SurvivalApi.exempt(person))unsuited++;
         return new Cleanroom(faults,open,unsuited,area,filters);
     }
     // ---- A works' whole site ------------------------------------------------------------------------------

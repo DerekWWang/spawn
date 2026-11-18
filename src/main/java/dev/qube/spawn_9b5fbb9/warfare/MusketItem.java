@@ -19,6 +19,11 @@ public class MusketItem extends Item {
     public MusketItem(Properties properties){super(properties);}
     @Override public InteractionResult use(Level level,Player player,InteractionHand hand){
         ItemStack musket=player.getItemInHand(hand);
+        // Hands that cannot strike or dig cannot work a lock or a ramrod either.
+        if(level instanceof ServerLevel&&!dev.qube.spawn_9b5fbb9.survival.SurvivalApi.exempt(player)){
+            var body=dev.qube.spawn_9b5fbb9.survival.SurvivalApi.state(player);
+            if(body.mental()<=0||body.manipulation()<.1){player.sendOverlayMessage(Component.literal("You are in no state to handle a musket"));return InteractionResult.FAIL;}
+        }
         if(Firearms.loaded(musket)){
             if(level instanceof ServerLevel server){
                 var result=Firearms.fire(player,musket,server,player.getLookAngle());player.sendOverlayMessage(Component.literal(result.message()));

@@ -198,13 +198,15 @@ public class VehicleEntity extends Entity {
         long now=SurvivalApi.calendar(level);if(fedAt==0||fedAt>now)fedAt=now;
         for(int guard=0;now-fedAt>=2400&&guard<240;guard++){
             fedAt+=2400;int unfed=0;
-            for(UUID id:team){
+            // Over a copy: an animal that starves here dies here, and its death takes it out of the team.
+            for(UUID id:List.copyOf(team)){
                 if(!(level.getEntity(id) instanceof Mob animal))continue;
                 // A feed is a kilogram: forage is drawn from the load into the nosebag by weight.
                 for(String feed:Vehicles.FODDER)while(fodder<1&&Ledger.take(cargo,feed,1)>0)fodder+=Ledger.mass(feed);
                 boolean fed=fodder>=1;if(fed)fodder-=1;
                 if(!fed&&Math.abs(velocity)<.003&&level.getBlockState(animal.getOnPos()).is(Blocks.GRASS_BLOCK))fed=true;
-                if(!fed){unfed++;if(teamHunger>=40&&!animal.isInvulnerable())animal.hurtServer(level,level.damageSources().starve(),1);}
+                // Four to the missed feed: a horse mends a point of health every forty-five seconds, and one point every two minutes never caught up with it.
+                if(!fed){unfed++;if(teamHunger>=40&&!animal.isInvulnerable())animal.hurtServer(level,level.damageSources().starve(),4);}
             }
             teamHunger=unfed>0?Math.min(60,teamHunger+1):Math.max(0,teamHunger-2);
         }

@@ -1,6 +1,5 @@
 package dev.qube.spawn_9b5fbb9.survival;
 
-import dev.qube.spawn_9b5fbb9.environment.EnvironmentModel;
 import static dev.qube.spawn_9b5fbb9.environment.EnvironmentModel.*;
 
 public final class EnvironmentModelTests {

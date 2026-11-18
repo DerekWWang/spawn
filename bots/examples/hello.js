@@ -6,10 +6,14 @@ const { createBot } = require('../lib')
 const port = Number(process.argv[2])
 if (!port) { console.error('usage: node examples/hello.js <port> [host] [name]'); process.exit(2) }
 const bot = createBot({ host: process.argv[3] || '127.0.0.1', port, username: process.argv[4] || 'Hello' })
+let watch = null
 
 bot.on('error', error => console.error('error:', error.message))
 bot.on('kicked', reason => console.error('kicked:', JSON.stringify(reason)))
-bot.on('end', reason => { console.log('disconnected:', reason); process.exit(0) })
+bot.on('end', reason => { clearInterval(watch); console.log('disconnected:', reason); process.exit(0) })
+// Death is permanent: the server brings the bot back as a spectator whose commands are refused, and
+// which still holds its chunks loaded. Stop driving it and leave.
+bot.on('death', () => { clearInterval(watch); console.log('died; leaving'); bot.quit() })
 
 bot.once('spawn', async () => {
   const added = bot.spawnMod.added
@@ -21,7 +25,7 @@ bot.once('spawn', async () => {
   console.log('Mod blocks nearby:', names.join(', ') || 'none')
   console.log('Animals and people nearby:', Object.values(bot.entities).filter(e => e !== bot.entity).map(e => e.name || e.username).slice(0, 12).join(', ') || 'none')
 
-  setInterval(async () => {
+  watch = setInterval(async () => {
     try {
       const body = await bot.survival.query()
       const weather = bot.survival.weather

@@ -31,6 +31,16 @@ public final class WarfareGameTests {
         var mob=soldier(h,x,z);hand(commander,new ItemStack(Items.IRON_SWORD));
         h.assertTrue(Military.conscript(commander,mob).success(),"An armed commander presses an unarmed villager");hand(commander,ItemStack.EMPTY);return mob;
     }
+    /** Soldiers serve a living commander. When he dies his men are released; another commander's are not. */
+    public static void deadCommanderReleasesMen(GameTestHelper h){
+        IndustrialGameTests.floor(h);var commander=commander(h,8.5,8.5);var man=pressed(h,commander,9,8);man.setNoAi(true);
+        var rival=commander(h,4.5,4.5);var theirs=pressed(h,rival,5,4);theirs.setNoAi(true);
+        h.assertTrue(Military.serving(man)&&Military.serving(theirs),"Both men are in service");
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.living.LivingDeathEvent(commander,h.getLevel().damageSources().generic()));
+        h.assertTrue(!Military.serving(man),"A dead commander's man is released");
+        h.assertTrue(Military.serving(theirs),"Another commander's man serves on");
+        man.discard();theirs.discard();h.succeed();
+    }
     public static void recruitBounty(GameTestHelper h){
         IndustrialGameTests.floor(h);var commander=commander(h,8.5,8.5);var recruit=soldier(h,9,8);recruit.setNoAi(true);
         h.assertTrue(!Military.recruit(commander,recruit).success()&&!Military.serving(recruit),"Nobody enlists for nothing");
@@ -39,7 +49,7 @@ public final class WarfareGameTests {
         hand(commander,new ItemStack(Items.BREAD,6));
         h.assertTrue(Military.recruit(commander,recruit).success()&&commander.getMainHandItem().isEmpty(),"A real bounty of food is handed over");
         var record=Military.inspect(recruit);
-        h.assertTrue(record.get("kind").getAsString().equals("volunteer")&&record.get("morale").getAsDouble()==70&&record.get("rations").getAsInt()==6,"The volunteer keeps the bounty as rations and starts willing");
+        h.assertTrue(record.get("kind").getAsString().equals("volunteer")&&record.get("morale").getAsDouble()==70&&record.get("rations").getAsInt()==7,"The volunteer keeps the bounty as rations, four points of nutrition to the ration, and starts willing");
         var rival=commander(h,9.5,9.5);hand(rival,new ItemStack(Items.BREAD,8));
         h.assertTrue(!Military.recruit(rival,recruit).success()&&rival.getMainHandItem().getCount()==8,"A serving soldier cannot be enlisted by another commander");
         h.assertTrue(Military.discharge(commander,recruit).success()&&!Military.serving(recruit),"Discharge ends service");
@@ -71,7 +81,7 @@ public final class WarfareGameTests {
         hand(commander,IndustrialGameTests.item("paper_cartridge",10));Military.equip(commander,soldier,InteractionHand.MAIN_HAND);
         hand(commander,new ItemStack(Items.BREAD,5));Military.equip(commander,soldier,InteractionHand.MAIN_HAND);
         var record=Military.inspect(soldier);
-        h.assertTrue(record.get("arrows").getAsInt()==24&&record.get("cartridges").getAsInt()==10&&record.get("rations").getAsInt()==5&&commander.getMainHandItem().isEmpty(),"Ammunition and rations go into the pack");
+        h.assertTrue(record.get("arrows").getAsInt()==24&&record.get("cartridges").getAsInt()==10&&record.get("rations").getAsInt()==6&&commander.getMainHandItem().isEmpty(),"Ammunition and rations go into the pack");
         soldier.discard();stranger.discard();h.succeed();
     }
     public static void attackOrder(GameTestHelper h){
@@ -209,5 +219,37 @@ public final class WarfareGameTests {
         h.assertTrue(shot>1200&&shot<3500&&shot<noAir/2,"Air drag holds a six-pounder at full elevation to a couple of kilometres, a fraction of its vacuum range: "+shot+" vs "+noAir);
         h.assertTrue(engine.immobileReason().equals("fixed emplacement")&&art.powderCharges()==0,"It is built where it shoots and needs no powder");
         engine.discard();master.discard();h.succeed();
+    }
+    /** A ration is four points of nutrition, whatever it is made of: small food is not worth a meal apiece. */
+    public static void rationsByNutrition(GameTestHelper h){
+        IndustrialGameTests.floor(h);var commander=commander(h,8.5,8.5);var soldier=pressed(h,commander,9,8);soldier.setNoAi(true);
+        hand(commander,new ItemStack(Items.BEETROOT,9));Military.equip(commander,soldier,InteractionHand.MAIN_HAND);
+        h.assertTrue(Military.inspect(soldier).get("rations").getAsInt()==2,"Nine beetroots are two rations and a bit over, not nine: "+Military.inspect(soldier).get("rations"));
+        hand(commander,new ItemStack(Items.BEETROOT,3));Military.equip(commander,soldier,InteractionHand.MAIN_HAND);
+        h.assertTrue(Military.inspect(soldier).get("rations").getAsInt()==3,"The bit over is kept towards the next ration");
+        soldier.discard();h.succeed();
+    }
+    /** A man who was out of the loaded world when his commander fell learns of it when he is next seen. */
+    public static void absentSoldierLearnsOfDeath(GameTestHelper h){
+        IndustrialGameTests.floor(h);var captain=soldier(h,8,8);captain.setNoAi(true);hand(captain,new ItemStack(Items.IRON_SWORD));
+        var man=soldier(h,9,8);man.setNoAi(true);
+        h.assertTrue(Military.conscript(captain,man).success(),"A villager captain presses a man");
+        var sworn=Military.record(man).copy();
+        captain.hurtServer(h.getLevel(),h.getLevel().damageSources().genericKill(),Float.MAX_VALUE);
+        h.assertTrue(!Military.serving(man),"The man in sight is released at the death");
+        // As he would be had he stood in country nobody had loaded: still sworn to the dead captain.
+        Military.save(man,sworn);h.assertTrue(Military.serving(man),"The absent man is still on the books");
+        man.tickCount=100;net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.tick.EntityTickEvent.Post(man));
+        h.assertTrue(!Military.serving(man),"He is released when he is next seen, not left serving a dead name");
+        man.discard();h.succeed();
+    }
+    /** A commander who strikes his own man is not made that man's enemy; a stranger who strikes him is. */
+    public static void commanderIsNoThreat(GameTestHelper h){
+        IndustrialGameTests.floor(h);var commander=commander(h,8.5,8.5);var man=pressed(h,commander,9,8);man.setNoAi(true);
+        man.hurtServer(h.getLevel(),h.getLevel().damageSources().playerAttack(commander),1);
+        h.assertTrue(man.isAlive()&&!Military.record(man).contains("threat"),"A blow from his own commander marks no enemy");
+        var stranger=commander(h,9.5,9.5);man.setInvulnerableTime(0);man.hurtServer(h.getLevel(),h.getLevel().damageSources().playerAttack(stranger),2);
+        h.assertTrue(Military.record(man).getStringOr("threat","").equals(stranger.getUUID().toString()),"A stranger's blow does");
+        man.discard();h.succeed();
     }
 }

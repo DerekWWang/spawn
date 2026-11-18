@@ -42,15 +42,21 @@ public class WorksEntity extends BlockEntity {
     public String station(){return BuiltInRegistries.BLOCK.getKey(getBlockState().getBlock()).getPath();}
     public boolean usesFuel(){String station=station();return station.equals("foundry")||station.equals("chemical_works")||station.equals("machine_shop")||station.equals("power_station");}
     /** Re-surveys the site. A cleanroom gains cleanliness only while sealed, powered, shut and free of unsuited people. */
-    public void survey(ServerLevel level,Industry.Recipe r){
-        siteAt=level.getGameTime();
+    public void survey(ServerLevel level,Industry.Recipe r){siteAt=level.getGameTime();read(level,r,true);}
+    /** The site as it stands, read without running it: looking at a works neither cleans its room nor burns the station's coal. */
+    public void inspect(ServerLevel level,Industry.Recipe r){read(level,r,false);}
+    private void read(ServerLevel level,Industry.Recipe r,boolean step){
         if(r.needs().contains("cleanroom")){
             var room=Facility.cleanroom(level,worldPosition);cleanFaults=List.copyOf(room.faults());
             if(!cleanFaults.isEmpty())cleanliness=0;
+            else if(!step){}
             else if(!Facility.draw(level,worldPosition,3+(room.filters()+1)/2,5))cleanliness=Math.max(0,cleanliness-10);
             else if(room.doorOpen()||room.unsuited()>0)cleanliness=Math.max(0,cleanliness-15);
             else cleanliness=Math.min(100,cleanliness+5);
-        }else cleanFaults=List.of();
+        }else{
+            // A room nobody is keeping clean does not stay clean: turned to other work, the fans are off.
+            cleanFaults=List.of();if(step)cleanliness=Math.max(0,cleanliness-15);
+        }
         site=List.copyOf(Facility.unmet(level,this,r));setChanged();
     }
     public boolean pendingVehicle(){for(String id:products.keySet())if(id.startsWith("vehicle:"))return true;return false;}
@@ -73,27 +79,32 @@ public class WorksEntity extends BlockEntity {
         if(station().equals("powder_mill")&&nakedFlame(level)){explode(level);return;}
         double work;
         if(r.attended()){
-            work=0;int hands=0;
+            work=0;var hands=new ArrayList<LivingEntity>();
             for(var iterator=workers.iterator();iterator.hasNext();){
                 String id=iterator.next();LivingEntity actor=null;
                 try{if(level.getEntity(UUID.fromString(id)) instanceof LivingEntity living)actor=living;}catch(IllegalArgumentException malformed){iterator.remove();continue;}
                 if(actor==null)continue;
                 if(!actor.isAlive()||actor.getPersistentData().getLongOr("survivalWorksPos",Long.MIN_VALUE)!=worldPosition.asLong()){iterator.remove();continue;}
-                if(hands>=r.maxWorkers()||actor.distanceToSqr(Vec3.atCenterOf(worldPosition))>64||!SurvivalApi.isHumanoid(actor))continue;
+                if(hands.size()>=r.maxWorkers()||actor.distanceToSqr(Vec3.atCenterOf(worldPosition))>64||!SurvivalApi.isHumanoid(actor))continue;
                 SurvivalState body=SurvivalApi.state(actor);
                 if(body.manipulation()<.1||body.mental()<=.05||r.skill()!=null&&body.skills.level(r.skill())<r.minimumSkill())continue;
                 // One pair of hands: the shared manual-labour gate also serves forges, looms and field work.
                 if(LaborGuard.worldBusy(actor)||LaborGuard.gridBusy(actor)||LaborGuard.forgeBusy(actor))continue;
                 if(level.getGameTime()-actor.getPersistentData().getLongOr("survivalManualWorkAt",Long.MIN_VALUE/2)<20)continue;
-                LaborGuard.worked(actor);hands++;work+=20*SkillApi.manualRate(body,r.skill());
-                body.hunger=Math.max(0,body.hunger-20*.0005);SurvivalApi.save(actor,body);SurvivalApi.syncFood(actor,body);
-                activeTicks.merge(id,20L,Long::sum);
+                hands.add(actor);work+=20*SkillApi.manualRate(body,r.skill());
             }
             if(work<=0)return;
             long burn=20L*Industry.fuelRate(station());
-            if(r.burnsFuel()){if(fuel<burn)return;fuel-=burn;}
+            if(r.burnsFuel()&&fuel<burn)return;
             // Energy follows the work actually done, so a batch costs the same kilowatt-hours however many hands are on it.
             if(r.electric()&&!Facility.draw(level,worldPosition,r.load(),work/(20d*Math.max(1,r.maxWorkers())))){site=List.of("the power station cannot carry this load (each generator gives "+Facility.GENERATOR_KW+" kW before cable loss; this job draws "+r.load()+" kW)");siteAt=level.getGameTime();return;}
+            if(r.burnsFuel())fuel-=burn;
+            // The second is charged to the hands only now that it was worked: a cold hearth or a dead main used to
+            // cost them the hunger and credit them the hours all the same, and the hours were paid in skill.
+            for(LivingEntity actor:hands){
+                LaborGuard.worked(actor);var body=SurvivalApi.state(actor);body.hunger=Math.max(0,body.hunger-20*.0005);SurvivalApi.save(actor,body);SurvivalApi.syncFood(actor,body);
+                activeTicks.merge(actor.getUUID().toString(),20L,Long::sum);
+            }
         }else{
             work=Math.min(dt,64L*ticks);
             if(r.burnsFuel()){work=Math.min(work,fuel);fuel-=(long)work;}
@@ -124,7 +135,8 @@ public class WorksEntity extends BlockEntity {
         if(base<=0)return;
         for(String id:activeTicks.keySet()){
             LivingEntity actor;try{actor=level.getEntity(UUID.fromString(id)) instanceof LivingEntity living?living:null;}catch(IllegalArgumentException malformed){continue;}
-            if(actor==null||!actor.isAlive()||SurvivalApi.exempt(actor))continue;
+            // The machine hurts whoever is at it when the batch comes off, not someone who lent a hand an hour ago and is a mile away.
+            if(actor==null||!actor.isAlive()||SurvivalApi.exempt(actor)||actor.distanceToSqr(Vec3.atCenterOf(worldPosition))>64)continue;
             SurvivalState body=SurvivalApi.state(actor);double skill=r.skill()==null?0:body.skills.level(r.skill());
             if(level.getRandom().nextDouble()>=base*(1.5-skill/20))continue;
             var arm=level.getRandom().nextBoolean()?SurvivalState.Part.LEFT_ARM:SurvivalState.Part.RIGHT_ARM;String what;

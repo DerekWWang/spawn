@@ -127,4 +127,53 @@ public final class ControllerGameTests {
         actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(SurvivalContent.item("rice_seeds")));
         h.assertFalse(WorldActions.start(actor,"sow",pos).success(),"Rice cannot be sown on an unflooded field");actor.discard();h.succeed();
     }
+    private static net.minecraft.world.entity.LivingEntity hand(GameTestHelper h,int x,int y,int z){var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(x,y,z));actor.setNoAi(true);SurvivalApi.enroll(actor);return actor;}
+    /** What is walled in by rock on every side is dug to, not mined from where its position happens to be known. */
+    public static void buriedBlockNeedsDigging(GameTestHelper h){
+        for(int x=0;x<5;x++)for(int y=1;y<=3;y++)for(int z=0;z<5;z++)h.setBlock(x,y,z,Blocks.STONE);
+        var actor=hand(h,2,4,2);actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.IRON_PICKAXE));var target=h.absolutePos(new BlockPos(2,2,2));
+        var buried=WorldActions.start(actor,"mine",target,InteractionHand.MAIN_HAND);
+        h.assertTrue(!buried.success()&&buried.message().contains("buried"),"Stone with rock hard against every face cannot be mined: "+buried.message());
+        h.setBlock(2,3,2,Blocks.AIR);var opened=WorldActions.start(actor,"mine",target,InteractionHand.MAIN_HAND);
+        h.assertTrue(opened.success(),"With the block above it dug away it can: "+opened.message());
+        actor.discard();h.succeed();
+    }
+    /** A job is held to its tool only where the tool does the work; the same pick a little more worn is the same pick. */
+    public static void toolHeldOnlyWhereNeeded(GameTestHelper h){
+        h.setBlock(1,1,1,Blocks.STONE);h.setBlock(2,1,1,Blocks.STONE);h.setBlock(2,2,1,Blocks.SAND);var actor=hand(h,1,2,1);
+        h.assertTrue(WorldActions.start(actor,"mine",h.absolutePos(new BlockPos(2,2,1)),InteractionHand.MAIN_HAND).success(),"Sand is dug bare-handed");
+        actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.BREAD));actor.tickCount=41;WorldActions.tick(actor);
+        h.assertTrue(dev.qube.spawn_9b5fbb9.survival.LaborGuard.worldBusy(actor),"Taking up food does not cancel digging that needed no tool");
+        WorldActions.cancel(actor,"test");h.setBlock(2,2,1,Blocks.AIR);
+        var pick=new ItemStack(Items.IRON_PICKAXE);actor.setItemInHand(InteractionHand.MAIN_HAND,pick);
+        h.assertTrue(WorldActions.start(actor,"mine",h.absolutePos(new BlockPos(2,1,1)),InteractionHand.MAIN_HAND).success(),"Stone is mined with a pick");
+        pick.setDamageValue(7);actor.tickCount=42;WorldActions.tick(actor);
+        h.assertTrue(dev.qube.spawn_9b5fbb9.survival.LaborGuard.worldBusy(actor),"The same pick, a little more worn, is still the pick");
+        actor.setItemInHand(InteractionHand.MAIN_HAND,new ItemStack(Items.BREAD));actor.tickCount=43;WorldActions.tick(actor);
+        h.assertTrue(!dev.qube.spawn_9b5fbb9.survival.LaborGuard.worldBusy(actor),"Putting the pick away ends work that needed it");
+        actor.discard();h.succeed();
+    }
+    /** A recipe the mod has struck out is not a way of making anything, and a name that is no name at all is answered plainly. */
+    public static void struckRecipesAreNotOffered(GameTestHelper h){
+        h.setBlock(1,1,1,Blocks.STONE);var actor=hand(h,1,2,1);
+        var struck=WorldActions.craft(actor,"minecraft:wooden_pickaxe");
+        h.assertTrue(!struck.success()&&struck.message().contains("registered normal crafting recipe"),"The game's wooden pickaxe is not on offer: "+struck.message());
+        // NeoForge ships its own versions of the game's tool, armour, bucket and shears recipes. This mod's data has to sit above them for those to stay struck out.
+        for(String id:new String[]{"minecraft:iron_pickaxe","minecraft:bucket","minecraft:shears","minecraft:iron_chestplate","minecraft:stone_sword"}){var other=WorldActions.craft(actor,id);h.assertTrue(!other.success()&&other.message().contains("registered normal crafting recipe"),id+" is struck out too: "+other.message());}
+        var nonsense=WorldActions.craft(actor,"Oak Planks");
+        h.assertTrue(!nonsense.success()&&nonsense.message().contains("registered normal crafting recipe"),"A malformed name is refused in words, not with an error: "+nonsense.message());
+        h.assertTrue(!WorldActions.planning(actor).toString().contains("minecraft:bedrock"),"Nothing in the catalogue asks for bedrock");
+        actor.discard();h.succeed();
+    }
+    /** Nobody works in his sleep. */
+    public static void noWorkAsleep(GameTestHelper h){
+        h.setBlock(1,1,1,Blocks.STONE);h.setBlock(2,1,1,Blocks.STONE);h.setBlock(2,2,1,Blocks.SAND);var actor=hand(h,1,2,1);
+        actor.setSleepingPos(actor.blockPosition());
+        var asleep=WorldActions.start(actor,"mine",h.absolutePos(new BlockPos(2,2,1)),InteractionHand.MAIN_HAND);
+        h.assertTrue(!asleep.success()&&asleep.message().contains("Asleep"),"A sleeper starts no work: "+asleep.message());
+        actor.clearSleepingPos();h.assertTrue(WorldActions.start(actor,"mine",h.absolutePos(new BlockPos(2,2,1)),InteractionHand.MAIN_HAND).success(),"Awake, he does");
+        actor.setSleepingPos(actor.blockPosition());actor.tickCount=41;WorldActions.tick(actor);
+        h.assertTrue(dev.qube.spawn_9b5fbb9.survival.LaborGuard.worldBusy(actor)&&actor.getPersistentData().getCompoundOrEmpty("survivalWorldJob").getStringOr("status","").contains("asleep")&&actor.getPersistentData().getCompoundOrEmpty("survivalWorldJob").getDoubleOr("progress",1)==0,"Work begun waits while he sleeps");
+        actor.discard();h.succeed();
+    }
 }

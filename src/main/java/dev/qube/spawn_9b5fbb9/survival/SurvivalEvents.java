@@ -52,8 +52,9 @@ public final class SurvivalEvents {
             moving?SurvivalState.Activity.WALKING:SurvivalState.Activity.IDLE;
         if(actor instanceof Mob mob&&actor.tickCount%100==0)s=autonomy(mob,s,level,now);
         if(actor instanceof Player player){int shown=meta.getIntOr("survivalFoodShown",player.getFoodData().getFoodLevel());int increase=player.getFoodData().getFoodLevel()-shown;if(increase>0)s.feed(increase*5);}
+        String pastime=meta.getStringOr("survivalLeisureItem","");
         boolean recreation=meta.getLongOr("survivalLeisureUntil",0)>now&&
-            meta.getStringOr("survivalLeisureItem","").equals(BuiltInRegistries.ITEM.getKey(actor.getMainHandItem().getItem()).toString());
+            (pastime.equals(BuiltInRegistries.ITEM.getKey(actor.getMainHandItem().getItem()).toString())||pastime.equals(BuiltInRegistries.ITEM.getKey(actor.getOffhandItem().getItem()).toString()));
         if(meta.getLongOr("survivalSocialUntil",0)>now){
             try{
                 Entity other=level.getEntity(UUID.fromString(meta.getStringOr("survivalCompanion","")));
@@ -65,7 +66,7 @@ public final class SurvivalEvents {
         }
         long ticks=Math.max(1,Math.round(20*Config.NEEDS_RATE.get()));
         if(actor instanceof Player player)CraftingGuard.tick(player,s);
-        var outcome=s.advance(ticks,activity,climate(actor,level),recreation,actor.isSleeping());
+        var outcome=s.advance(ticks,activity,climate(actor,level,now,s),recreation,actor.isSleeping());
         onset(actor,s,ticks);wornOut(actor,s);
         if(s.hunger<=20)actor.setSprinting(false);
         SurvivalApi.save(actor,s);SurvivalApi.syncFood(actor,s);applyCapacities(actor,s,false);
@@ -76,7 +77,10 @@ public final class SurvivalEvents {
         if(outcome.dehydrated())actor.hurtServer(level,actor.damageSources().genericKill(),Float.MAX_VALUE);
         else if(outcome.damage()>0){
             // A single consolidated physiological damage application avoids resetting another condition's timer.
-            actor.setInvulnerableTime(0);actor.hurtServer(level,actor.damageSources().starve(),(float)outcome.damage());
+            // A sleeper is not shaken awake once a second by his own wound or fever: any blow ends sleep, and one
+            // sick player would keep a whole server from its night. What would kill him still does.
+            if(actor.isSleeping()&&actor.getHealth()>outcome.damage())actor.setHealth(actor.getHealth()-(float)outcome.damage());
+            else{actor.setInvulnerableTime(0);actor.hurtServer(level,actor.damageSources().starve(),(float)outcome.damage());}
         }else if(actor.tickCount%200==0&&s.hunger>60&&s.thirst>60&&!s.severeSymptoms()&&s.bleeding==0&&s.poisonTicks==0)actor.heal(1);
         if(s.blind())actor.addEffect(new MobEffectInstance(MobEffects.BLINDNESS,60,0,false,false));
         if(s.infectious(false)||s.infectious(true))transmit(actor,s,level);
@@ -85,12 +89,19 @@ public final class SurvivalEvents {
     public static SurvivalState.Climate climate(LivingEntity actor,ServerLevel level){
         return climate(actor,level,SurvivalApi.calendar(level));
     }
-    public static SurvivalState.Climate climate(LivingEntity actor,ServerLevel level,long tick){
-        if(dev.qube.spawn_9b5fbb9.environment.WorldEnvironment.active(level)){
-            var weather=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.at(level,actor.blockPosition(),tick);
-            var exposure=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.exposure(level,actor.blockPosition());var body=SurvivalApi.state(actor);double insulation=body.insulation();
-            return new SurvivalState.Climate(weather.temperature(),insulation,actor.isInWater()||!exposure.roof()&&!weather.snow()&&weather.rain()>.15,exposure.roof(),exposure.fire(),weather.wind(),exposure.enclosure());
-        }
+    public static SurvivalState.Climate climate(LivingEntity actor,ServerLevel level,long tick){return climate(actor,level,tick,SurvivalApi.state(actor));}
+    /** With the body already in hand, so that reading the weather does not mean reading the actor a second time. */
+    public static SurvivalState.Climate climate(LivingEntity actor,ServerLevel level,long tick,SurvivalState body){
+        if(dev.qube.spawn_9b5fbb9.environment.WorldEnvironment.active(level))
+            return exposed(actor,level,tick,dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.exposure(level,actor.blockPosition()),body.insulation());
+        return sheltered(actor,level,body);
+    }
+    /** The weather of one moment over shelter that was looked at once: a night slept through is forty such moments under one roof. */
+    private static SurvivalState.Climate exposed(LivingEntity actor,ServerLevel level,long tick,dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.Exposure exposure,double insulation){
+        var weather=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.at(level,actor.blockPosition(),tick);
+        return new SurvivalState.Climate(weather.temperature(),insulation,actor.isInWater()||!exposure.roof()&&!weather.snow()&&weather.rain()>.15,exposure.roof(),exposure.fire(),weather.wind(),exposure.enclosure());
+    }
+    private static SurvivalState.Climate sheltered(LivingEntity actor,ServerLevel level,SurvivalState s){
         float biome=level.getBiome(actor.blockPosition()).value().getBaseTemperature();
         double ambient=biome<=0?-15:biome<.5?5:biome>1.5?42:biome>1?32:18;
         int season=(int)(SurvivalApi.calendar(level)/24000/Config.SEASON_DAYS.get()%4);
@@ -100,8 +111,7 @@ public final class SurvivalEvents {
         for(BlockPos p:BlockPos.betweenClosed(actor.blockPosition().offset(-3,-1,-3),actor.blockPosition().offset(3,1,3))){
             var b=level.getBlockState(p);if(b.is(Blocks.FIRE)||b.is(Blocks.LAVA)||b.is(Blocks.CAMPFIRE)&&b.getValue(net.minecraft.world.level.block.CampfireBlock.LIT)){fire=true;break;}
         }
-        SurvivalState s=SurvivalApi.state(actor);double insulation=s.insulation();
-        return new SurvivalState.Climate(ambient,insulation,actor.isInWater()||level.isRainingAt(actor.blockPosition()),sheltered,fire);
+        return new SurvivalState.Climate(ambient,s.insulation(),actor.isInWater()||level.isRainingAt(actor.blockPosition()),sheltered,fire);
     }
     public static void applyCapacities(LivingEntity entity,SurvivalState s,boolean exempt){
         // The load on the back is weighed once a second.
@@ -116,8 +126,12 @@ public final class SurvivalEvents {
     }
     private static void modifier(LivingEntity e,Holder<Attribute> attribute,Identifier id,double capacity){
         var instance=e.getAttribute(attribute);if(instance==null)return;
+        // To the nearest hundredth, and left alone when that has not moved: taking a modifier off and putting it
+        // back marks the attribute changed, and every change is sent to everyone watching the actor.
+        double amount=capacity<.999?Math.round((capacity-1)*100)/100d:0;var current=instance.getModifier(id);
+        if(current==null?amount==0:current.amount()==amount)return;
         instance.removeModifier(id);
-        if(capacity<.999)instance.addTransientModifier(new AttributeModifier(id,capacity-1,AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        if(amount!=0)instance.addTransientModifier(new AttributeModifier(id,amount,AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
     }
     /** Nobody has to hand a first case to anyone: illness turns up by chance, more often in the starved and parched. */
     public static void onset(LivingEntity actor,SurvivalState s,long ticks){
@@ -139,9 +153,9 @@ public final class SurvivalEvents {
         double near=s.rules.number("contactRange"),room=s.rules.number("sharedRoomRange");int cases=0;
         boolean indoors=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.roofed(level,actor.blockPosition());
         for(LivingEntity other:level.getEntitiesOfClass(LivingEntity.class,actor.getBoundingBox().inflate(Math.max(near,room)),e->e!=actor&&e.isAlive()&&SurvivalApi.isHumanoid(e)&&!SurvivalApi.exempt(e))){
-            double distance=actor.distanceTo(other);
-            boolean shared=indoors&&distance<=room&&dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.roofed(level,other.blockPosition())&&actor.hasLineOfSight(other);
-            if(distance>near&&!shared||actor.getRandom().nextDouble()>=chance)continue;
+            // The dice first: nearly every throw fails, and a failed throw has no need to know who could see whom.
+            double distance=actor.distanceTo(other);if(distance>near&&!(indoors&&distance<=room)||actor.getRandom().nextDouble()>=chance)continue;
+            if(distance>near&&!(dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.roofed(level,other.blockPosition())&&actor.hasLineOfSight(other)))continue;
             var target=SurvivalApi.state(other);boolean caught=false;
             if(s.infectious(false))caught|=target.infect(false);
             if(s.infectious(true))caught|=target.infect(true);
@@ -215,7 +229,7 @@ public final class SurvivalEvents {
     public static boolean brainTick(LivingEntity actor){
         if(!SurvivalApi.isHumanoid(actor)||SurvivalApi.exempt(actor))return true;
         if(dev.qube.spawn_9b5fbb9.warfare.Military.underOrders(actor))return false;
-        double mental=SurvivalApi.state(actor).mental();if(mental>=.999)return true;
+        double mental=actor.getPersistentData().getDoubleOr(SurvivalApi.MENTAL,1);if(mental>=.999)return true;
         double budget=actor.getPersistentData().getDoubleOr("survivalBrainBudget",0)+mental;
         boolean allowed=budget>=1-1e-9;if(allowed)budget=Math.max(0,budget-1);actor.getPersistentData().putDouble("survivalBrainBudget",budget);return allowed;
     }
@@ -274,7 +288,7 @@ public final class SurvivalEvents {
     @SubscribeEvent public static void mining(PlayerEvent.BreakSpeed e){if(e.getEntity().level() instanceof ServerLevel&&!SurvivalApi.exempt(e.getEntity())){var s=SurvivalApi.state(e.getEntity());if(s.mental()==0||s.manipulation()<.1)e.setNewSpeed(0);}}
     @SubscribeEvent public static void broken(net.neoforged.neoforge.event.level.BlockDropsEvent e){if(e.getBreaker() instanceof LivingEntity living)cost(living,.08);}
     private static void cost(LivingEntity e,double cost){if(e.level() instanceof ServerLevel&&SurvivalApi.isHumanoid(e)&&!SurvivalApi.exempt(e)){var s=SurvivalApi.state(e);s.hunger=Math.max(0,s.hunger-cost);SurvivalApi.save(e,s);}}
-    @SubscribeEvent public static void item(PlayerInteractEvent.RightClickItem e){
+    @SubscribeEvent public static void item(PlayerInteractEvent.RightClickItem e){if(e.getEntity().isSpectator())return;
         if(!(e.getLevel() instanceof ServerLevel))return;
         String id=BuiltInRegistries.ITEM.getKey(e.getItemStack().getItem()).getPath();String action=
             id.matches("(wool|fiber)_(shirt|pants|jacket|shoes)")?"clothe":
@@ -283,7 +297,7 @@ public final class SurvivalEvents {
             id.equals("wooden_toy")?"play":e.getItemStack().is(Items.BOOK)?"read":null;
         if(action!=null){var result=SurvivalApi.act(e.getEntity(),action,null,e.getHand());e.getEntity().sendOverlayMessage(Component.literal(result.message()));e.setCancellationResult(InteractionResult.SUCCESS);e.setCanceled(true);}
     }
-    @SubscribeEvent public static void interact(PlayerInteractEvent.EntityInteract e){
+    @SubscribeEvent public static void interact(PlayerInteractEvent.EntityInteract e){if(e.getEntity().isSpectator())return;
         if(!(e.getLevel() instanceof ServerLevel)||!(e.getTarget() instanceof LivingEntity other))return;
         String id=BuiltInRegistries.ITEM.getKey(e.getItemStack().getItem()).getPath();
         if(e.getEntity().isShiftKeyDown()&&SurvivalApi.isHumanoid(other)&&e.getItemStack().get(DataComponents.FOOD)!=null){
@@ -297,17 +311,58 @@ public final class SurvivalEvents {
             e.setCanceled(true);e.setCancellationResult(InteractionResult.SUCCESS);
         }
     }
+    /** Marks a player whose life has ended. It follows them through every later respawn and login. */
+    public static final String DEAD="survivalDead";
+    public static boolean dead(Player player){return player.getPersistentData().getBooleanOr(DEAD,false);}
+    /** Dead, or lying dead and not yet returned: a client that never asks to respawn is not thereby left a voice and a hand. */
+    private static boolean departed(Player player){return dead(player)||player.isDeadOrDying();}
     @SubscribeEvent public static void clone(PlayerEvent.Clone e){
-        if(e.isWasDeath()){
+        boolean ended=e.isWasDeath()&&(dead(e.getOriginal())||!SurvivalApi.exempt(e.getOriginal()));
+        // Death is the end of that life: nothing learned or worn is carried on, and the one who comes back only watches.
+        if(ended)e.getEntity().getPersistentData().putBoolean(DEAD,true);
+        if(e.isWasDeath()&&!ended){
             var old=SurvivalApi.state(e.getOriginal());var fresh=SurvivalApi.state(e.getEntity());
             fresh.skills.copyFrom(old.skills);SurvivalApi.save(e.getEntity(),fresh);
         }
         if(!e.isWasDeath()&&e.getOriginal().getPersistentData().contains(SurvivalApi.KEY))e.getEntity().getPersistentData().putByteArray(SurvivalApi.KEY,e.getOriginal().getPersistentData().getByteArray(SurvivalApi.KEY).orElse(new byte[0]));
         if(!e.isWasDeath()&&e.getOriginal().getPersistentData().contains("survivalWorldJob"))e.getEntity().getPersistentData().put("survivalWorldJob",e.getOriginal().getPersistentData().getCompoundOrEmpty("survivalWorldJob").copy());
-        if(e.isWasDeath()&&e.getEntity().level() instanceof ServerLevel level&&level.getGameRules().get(net.minecraft.world.level.gamerules.GameRules.KEEP_INVENTORY)){
+        if(e.isWasDeath()&&!ended&&e.getEntity().level() instanceof ServerLevel level&&level.getGameRules().get(net.minecraft.world.level.gamerules.GameRules.KEEP_INVENTORY)){
             var old=SurvivalApi.state(e.getOriginal());var fresh=SurvivalApi.state(e.getEntity());
             for(int i=0;i<4;i++){fresh.clothing[i]=old.clothing[i];fresh.clothingWear[i]=old.clothingWear[i];fresh.clothingColors[i]=old.clothingColors[i];}SurvivalApi.save(e.getEntity(),fresh);
         }
+    }
+    @SubscribeEvent public static void respawned(PlayerEvent.PlayerRespawnEvent e){layToRest(e.getEntity());}
+    @SubscribeEvent public static void loggedIn(PlayerEvent.PlayerLoggedInEvent e){layToRest(e.getEntity());}
+    /** The dead take no further part: they are held as spectators, whatever game mode the server would give them. */
+    public static void layToRest(Player player){
+        if(!(player instanceof ServerPlayer gone)||!dead(gone)||gone.isSpectator())return;
+        gone.setGameMode(net.minecraft.world.level.GameType.SPECTATOR);
+        gone.sendSystemMessage(Component.literal("You died. That life is over: you may watch, but you take no further part."));
+    }
+    // The dead touch nothing, order nothing and say nothing. Vanilla lets a spectator's clicks reach block handlers
+    // and its commands and chat reach everyone, so each of those doors is shut here for a player who has died.
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadTouchBlock(PlayerInteractEvent.RightClickBlock e){if(departed(e.getEntity()))e.setCanceled(true);}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadUseItem(PlayerInteractEvent.RightClickItem e){if(departed(e.getEntity()))e.setCanceled(true);}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadStrikeBlock(PlayerInteractEvent.LeftClickBlock e){if(departed(e.getEntity()))e.setCanceled(true);}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadTouchEntity(PlayerInteractEvent.EntityInteract e){if(departed(e.getEntity()))e.setCanceled(true);}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadSpeak(net.neoforged.neoforge.event.ServerChatEvent e){if(departed(e.getPlayer()))e.setCanceled(true);}
+    @SubscribeEvent public static void sighted(PlayerEvent.StartTracking e){if(e.getTarget() instanceof LivingEntity actor&&e.getEntity() instanceof ServerPlayer viewer)SurvivalNetwork.appear(actor,viewer);}
+    @SubscribeEvent(priority=net.neoforged.bus.api.EventPriority.HIGHEST) public static void deadCommand(net.neoforged.neoforge.event.CommandEvent e){
+        var source=e.getParseResults().getContext().getSource();
+        if(source.getEntity() instanceof Player player&&departed(player)&&!net.minecraft.commands.Commands.hasPermission(net.minecraft.commands.Commands.LEVEL_GAMEMASTERS).test(source)){
+            e.setCanceled(true);source.sendFailure(Component.literal("The dead take no part in the world."));
+        }
+    }
+    /** An operator's way to put a player back into the world as a new person: fresh body, nothing learned. */
+    public static boolean revive(ServerPlayer player){
+        if(!newLife(player))return false;
+        player.setGameMode(net.minecraft.world.level.GameType.SURVIVAL);SurvivalApi.syncFood(player,SurvivalApi.state(player));
+        return true;
+    }
+    /** Clears the mark of death and everything the old life held, so the next state read is a new person's. */
+    public static boolean newLife(Player player){
+        if(!dead(player))return false;
+        var data=player.getPersistentData();data.remove(DEAD);data.remove(SurvivalApi.KEY);return true;
     }
     @SubscribeEvent public static void death(LivingDeathEvent e){
         var actor=e.getEntity();if(!(actor.level() instanceof ServerLevel level)||!SurvivalApi.isHumanoid(actor))return;
@@ -328,12 +383,18 @@ public final class SurvivalEvents {
         if(skipped<=0)return;skipped=Math.min(skipped,SurvivalState.DAY);
         CompoundTag calendar=e.getServer().getCommandStorage().get(SurvivalApi.CALENDAR).copy();
         calendar.putLong("sleepOffset",calendar.getLongOr("sleepOffset",0)+skipped);e.getServer().getCommandStorage().set(SurvivalApi.CALENDAR,calendar);
-        for(ServerLevel world:e.getServer().getAllLevels())for(Entity entity:world.getAllEntities())if(entity instanceof LivingEntity actor&&SurvivalApi.isHumanoid(actor)&&!SurvivalApi.exempt(actor)){
+        // Listed first: one who dies of the night drops what he wore, and a drop is a new entity in the very
+        // collection that would otherwise be under the loop's feet.
+        var sleepers=new java.util.ArrayList<LivingEntity>();
+        for(ServerLevel world:e.getServer().getAllLevels())for(Entity entity:world.getAllEntities())if(entity instanceof LivingEntity actor&&actor.isAlive()&&SurvivalApi.isHumanoid(actor)&&!SurvivalApi.exempt(actor))sleepers.add(actor);
+        for(LivingEntity actor:sleepers){
+            if(!actor.isAlive()||!(actor.level() instanceof ServerLevel world))continue;
             var state=SurvivalApi.state(actor);long elapsed=Math.round(skipped*Config.NEEDS_RATE.get());double damage=0;boolean dry=false;
             if(dev.qube.spawn_9b5fbb9.environment.WorldEnvironment.active(world)){
                 long end=SurvivalApi.calendar(world),start=end-skipped;
-                for(long cursor=start;cursor<end;){long bucket=Math.floorDiv(cursor,600),next=Math.min(end,(bucket+1)*600);long batch=Math.max(0,Math.round((next-cursor)*Config.NEEDS_RATE.get()));while(batch>0){long part=Math.min(batch,7*SurvivalState.DAY);var partial=state.advance(part,SurvivalState.Activity.IDLE,climate(actor,world,bucket*600+300),false,sleepStates.getOrDefault(actor.getUUID(),false));damage+=partial.damage();dry|=partial.dehydrated();batch-=part;}cursor=next;}
-            }else while(elapsed>0){long batch=Math.min(elapsed,7*SurvivalState.DAY);var partial=state.advance(batch,SurvivalState.Activity.IDLE,climate(actor,world),false,sleepStates.getOrDefault(actor.getUUID(),false));damage+=partial.damage();dry|=partial.dehydrated();elapsed-=batch;}
+                var exposure=dev.qube.spawn_9b5fbb9.environment.EnvironmentApi.exposure(world,actor.blockPosition());double insulation=state.insulation();
+                for(long cursor=start;cursor<end;){long bucket=Math.floorDiv(cursor,600),next=Math.min(end,(bucket+1)*600);long batch=Math.max(0,Math.round((next-cursor)*Config.NEEDS_RATE.get()));while(batch>0){long part=Math.min(batch,7*SurvivalState.DAY);var partial=state.advance(part,SurvivalState.Activity.IDLE,exposed(actor,world,bucket*600+300,exposure,insulation),false,sleepStates.getOrDefault(actor.getUUID(),false));damage+=partial.damage();dry|=partial.dehydrated();batch-=part;}cursor=next;}
+            }else{var climate=sheltered(actor,world,state);while(elapsed>0){long batch=Math.min(elapsed,7*SurvivalState.DAY);var partial=state.advance(batch,SurvivalState.Activity.IDLE,climate,false,sleepStates.getOrDefault(actor.getUUID(),false));damage+=partial.damage();dry|=partial.dehydrated();elapsed-=batch;}}
             onset(actor,state,Math.round(skipped*Config.NEEDS_RATE.get()));wornOut(actor,state);
             SurvivalApi.save(actor,state);SurvivalApi.syncFood(actor,state);
             if(dry)actor.hurtServer(world,actor.damageSources().genericKill(),Float.MAX_VALUE);

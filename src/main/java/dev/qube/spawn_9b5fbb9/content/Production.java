@@ -143,7 +143,14 @@ public final class Production {
         if(r.output.equals("spawn_9b5fbb9:crossbow_stock")&&(!r.station.equals("loom")||!r.manual||r.heated||r.skill!=Skill.CONSTRUCTION||r.minimumSkill<2))throw new IllegalArgumentException("Crossbow stock assembly needs construction2 at a loom");
     }
     private static String id(ItemStack stack){return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();}
-    public static void init(){NeoForge.EVENT_BUS.addListener(Production::interact);NeoForge.EVENT_BUS.addListener(Production::stationDrops);}
+    public static void init(){NeoForge.EVENT_BUS.addListener(Production::interact);NeoForge.EVENT_BUS.addListener(Production::stationDrops);NeoForge.EVENT_BUS.addListener(Production::workerDied);}
+    /** A dead worker's job is nobody's. What was put in and what was done stay in the station, for whoever can take the work up. */
+    private static void workerDied(net.neoforged.neoforge.event.entity.living.LivingDeathEvent event){
+        var dead=event.getEntity();var meta=dead.getPersistentData();
+        if(!(dead.level() instanceof ServerLevel level)||!meta.contains("survivalForgePos")||!meta.getStringOr("survivalForgeDimension","").equals(level.dimension().identifier().toString()))return;
+        var pos=net.minecraft.core.BlockPos.of(meta.getLongOr("survivalForgePos",0));
+        if(level.hasChunkAt(pos)&&level.getBlockEntity(pos) instanceof WorkstationEntity be&&be.worker.equals(dead.getUUID().toString())){be.worker="";be.setChanged();}
+    }
     private static void stationDrops(net.neoforged.neoforge.event.level.BlockDropsEvent event){if(event.getBlockEntity() instanceof WorkstationEntity station)for(var drop:event.getDrops())if(drop.getItem().is(station.getBlockState().getBlock().asItem())){var data=ItemAging.data(drop.getItem());data.putInt("workstationWear",station.wear);ItemAging.data(drop.getItem(),data);}}
     public static ItemStack finish(String id,ItemStack input,ServerLevel level){Recipe r=RECIPES.get(id);if(r==null)return input;ItemStack out=new ItemStack(BuiltInRegistries.ITEM.getValue(Identifier.parse(r.output)),r.amount);ItemAging.inherit(out,List.of(input),level);return out;}
     public static String stationId(WorkstationEntity station){var id=BuiltInRegistries.BLOCK.getKey(station.getBlockState().getBlock());return id.getNamespace().equals(SurvivalContent.MODID)?id.getPath():"";}
@@ -152,6 +159,14 @@ public final class Production {
     public static String start(net.minecraft.world.entity.LivingEntity actor,WorkstationEntity be,String recipe){
         if(!(actor.level() instanceof ServerLevel level)||be.getLevel()!=level||!actor.isAlive()||!SurvivalApi.isHumanoid(actor)||actor.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(be.getBlockPos()))>36)return "A living humanoid must stand within six blocks in the same world.";
         Recipe r=RECIPES.get(recipe);if(r==null)return "Unknown process.";
+        // Work left unfinished by a hand that is gone is taken up where it stands, by anyone who could have begun it.
+        if(!be.input.isEmpty()&&be.output.isEmpty()&&be.jobManual&&be.worker.isEmpty()&&be.required>0&&recipe.equals(be.recipe)){
+            if(r.skill!=null&&SkillApi.level(actor,r.skill)<r.minimumSkill)return "Requires "+r.skill.name().toLowerCase(Locale.ROOT)+" level "+r.minimumSkill+".";
+            if(!canWork(actor,r))return "Your body cannot perform this work (manipulation needs "+Math.round(r.minimumManipulation*100)+"%).";
+            if(!LaborGuard.mayStartForge(actor,be))return "Already performing manual labor; finish or pause the current job first.";
+            be.worker=actor.getUUID().toString();be.activeTicks=0;LaborGuard.claimForge(actor,be);be.setChanged();
+            return "Took up the unfinished "+be.recipe+": "+be.elapsed+" of "+be.required+" work ticks done.";
+        }
         if(be.wear>=256)return "Workstation is worn out; replace its masonry.";
         if(!be.input.isEmpty()||!be.output.isEmpty())return "Workstation occupied.";
         try{validateRequirements(r);}catch(IllegalArgumentException invalid){return invalid.getMessage();}
@@ -162,7 +177,13 @@ public final class Production {
         else if(!r.second.isEmpty()&&(!id(other).equals(r.second)||other.getCount()<r.secondCount))return "Offhand needs "+r.secondCount+" "+r.second;
         if(r.skill!=null&&SkillApi.level(actor,r.skill)<r.minimumSkill)return "Requires "+r.skill.name().toLowerCase(Locale.ROOT)+" level "+r.minimumSkill+".";
         if(!canWork(actor,r))return "Your body cannot perform this work (manipulation needs "+Math.round(r.minimumManipulation*100)+"%).";
-        if(r.heated&&be.fuel<r.ticks)return "Add fuel first (one charcoal supplies 8000 heat ticks).";
+        if(r.heated){
+            // The fire burns by the clock and the work goes at the worker's pace: a slow hand needs more fire than the
+            // job itself, and one begun on the bare figure went cold half done.
+            var body=SurvivalApi.state(actor);double pace=r.manual?Math.min(body.manipulation(),body.mental())*(r.skill==null?1:SkillApi.workRate(actor,r.skill)):1;
+            long heat=(long)Math.ceil(r.ticks/Math.max(.05,pace));
+            if(be.fuel<heat)return "Add fuel first: at your pace this needs "+heat+" heat ticks and the fire holds "+be.fuel+" (one charcoal supplies 8000).";
+        }
         if(r.manual&&!LaborGuard.mayStartForge(actor,be))return "Already performing manual labor; finish or pause the current job first.";
         be.input=held.split(r.count);be.secondary=ItemStack.EMPTY;if(r.second.equals("@safe_water")){for(int i=0;i<r.secondCount;i++)Pottery.consumeWater(other);}else if(r.secondCount>0)be.secondary=other.split(r.secondCount);
         be.recipe=recipe;be.elapsed=0;be.workRemainder=0;be.required=r.ticks;be.last=SurvivalApi.calendar(level);be.configure(r,actor);
@@ -194,7 +215,7 @@ public final class Production {
             else if((held.is(Items.WHEAT)||held.is(Items.WHEAT_SEEDS)||held.is(Items.CARROT)||held.is(Items.POTATO)||ItemAging.isFood(held))&&!ItemAging.spoiled(held)&&feed<128){held.shrink(1);feed=Math.min(128,feed+8);stock.putDouble("feed",feed);}
             be.setChanged();return "Trough: feed "+(int)feed+"/128, water "+(int)water+"/32. Supports livestock within four blocks.";
     }
-    private static void interact(PlayerInteractEvent.RightClickBlock event){
+    private static void interact(PlayerInteractEvent.RightClickBlock event){if(event.getEntity().isSpectator())return;
         if(!(event.getLevel() instanceof ServerLevel level)||!(level.getBlockEntity(event.getPos()) instanceof WorkstationEntity be))return;
         event.setCanceled(true);Player player=event.getEntity();if(event.getHand()!=net.minecraft.world.InteractionHand.MAIN_HAND)return;
         ItemStack held=event.getItemStack();String message;
@@ -202,7 +223,7 @@ public final class Production {
         else if(Set.of("kiln","bloomery","forge").contains(stationId(be))&&(held.is(Items.CHARCOAL)||held.is(Items.COAL)||held.is(SurvivalContent.item("coke"))||held.is(Items.STICK)||(held.is(net.minecraft.tags.ItemTags.LOGS)&&!player.isShiftKeyDown())))message=fuel(player,be);
         else if(held.isEmpty()&&!be.output.isEmpty())message=collect(player,be);
         else if(player.isShiftKeyDown()&&!be.input.isEmpty())message=cancel(player,be);
-        else if(!be.input.isEmpty())message="Processing "+be.recipe+": "+be.elapsed+"/"+be.required+" ticks; heat "+be.fuel;
+        else if(!be.input.isEmpty())message=be.jobManual&&be.worker.isEmpty()&&be.output.isEmpty()?start(player,be,be.recipe):"Processing "+be.recipe+": "+be.elapsed+"/"+be.required+" ticks; heat "+be.fuel;
         else {String match=RECIPES.entrySet().stream().filter(e->e.getValue().input.equals(id(held))&&e.getValue().station.equals(stationId(be))&&(e.getValue().second.isEmpty()||e.getValue().second.equals("@safe_water")||e.getValue().second.equals(id(player.getOffhandItem())))).map(Map.Entry::getKey).findFirst().orElse("");message=start(player,be,match);}
         player.sendOverlayMessage(Component.literal(message));
     }
