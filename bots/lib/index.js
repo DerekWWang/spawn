@@ -5,11 +5,16 @@ const registry = require('./registry')
 const survival = require('./survival')
 
 const VERSION = '26.3'
-// The two play channels the mod registers as required (survival/SurvivalNetwork and environment/WeatherNetwork).
+// The play channels the mod registers as required: survival/SurvivalNetwork and environment/WeatherNetwork
+// (version 4), and the tech tree's journal, discovery and ledger channels in network/ServerNetwork (version 1).
+const TECH_TREE_TO_SERVER = ['open_journal', 'discover', 'answer', 'craft', 'cancel_craft', 'write_treatise', 'prospect', 'request_ledger']
+const TECH_TREE_TO_CLIENT = ['knowledge_sync', 'journal_status', 'quiz', 'craft_progress', 'station_status', 'ledger_report']
 const MOD_CHANNELS = {
   play: [
     { id: 'spawn_9b5fbb9:state', version: '4', flow: 'clientbound', optional: false },
-    { id: 'spawn_9b5fbb9:weather', version: '4', flow: 'clientbound', optional: false }
+    { id: 'spawn_9b5fbb9:weather', version: '4', flow: 'clientbound', optional: false },
+    ...TECH_TREE_TO_SERVER.map(name => ({ id: 'spawn_9b5fbb9:' + name, version: '1', flow: 'serverbound', optional: false })),
+    ...TECH_TREE_TO_CLIENT.map(name => ({ id: 'spawn_9b5fbb9:' + name, version: '1', flow: 'clientbound', optional: false }))
   ]
 }
 

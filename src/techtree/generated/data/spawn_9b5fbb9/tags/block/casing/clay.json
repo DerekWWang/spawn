@@ -1,0 +1,9 @@
+{
+  "values": [
+    "minecraft:clay",
+    "minecraft:bricks",
+    "minecraft:mud_bricks",
+    "minecraft:packed_mud",
+    "#minecraft:terracotta"
+  ]
+}

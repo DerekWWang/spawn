@@ -4,6 +4,10 @@
     "spawn_9b5fbb9:workshop",
     "spawn_9b5fbb9:assembly_yard",
     "spawn_9b5fbb9:niter_bed",
-    "spawn_9b5fbb9:powder_mill"
+    "spawn_9b5fbb9:powder_mill",
+    {
+      "id": "#spawn_9b5fbb9:techtree/minecraft/mineable/axe",
+      "required": false
+    }
   ]
 }

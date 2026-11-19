@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "W": "spawn_9b5fbb9:wrought_iron",
+    "T": "spawn_9b5fbb9:timber"
+  },
+  "pattern": [
+    "WTW",
+    "T T",
+    "WTW"
+  ],
+  "result": {
+    "count": 4,
+    "id": "spawn_9b5fbb9:machine_frame"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": [
+    "minecraft:swamp",
+    "minecraft:mangrove_swamp",
+    "minecraft:river"
+  ],
+  "features": "spawn_9b5fbb9:bog_iron_deposit",
+  "step": "underground_ores"
+}

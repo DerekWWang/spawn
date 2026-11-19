@@ -10,3 +10,4 @@ reference/
 
 # Node bots
 /bots/node_modules/
+__pycache__/

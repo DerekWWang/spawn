@@ -23,8 +23,8 @@ test('varints and strings survive a round trip', () => {
 test('the channel list a bot sends decodes to what was declared', () => {
   const declared = { play: [...MOD_CHANNELS.play, ...neoforge.NEOFORGE_PLAY], configuration: neoforge.NEOFORGE_CONFIGURATION }
   assert.deepEqual(neoforge.decodeChannels(neoforge.encodeChannels(declared)), declared)
-  // First bytes: two phases, then PLAY (ordinal 1) with nine channels.
-  assert.deepEqual([...neoforge.encodeChannels(declared).subarray(0, 3)], [2, 1, 9])
+  // First bytes: two phases, then PLAY (ordinal 1) with 23 channels: 16 of the mod's and 7 of NeoForge's.
+  assert.deepEqual([...neoforge.encodeChannels(declared).subarray(0, 3)], [2, 1, 23])
   assert.throws(() => neoforge.encodeChannels({ login: [] }), /Unknown connection phase/)
 })
 

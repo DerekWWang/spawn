@@ -1,0 +1,9 @@
+{
+  "values": [
+    "#minecraft:climbable",
+    "#minecraft:chains",
+    "#minecraft:rails",
+    "minecraft:torch",
+    "minecraft:wall_torch"
+  ]
+}

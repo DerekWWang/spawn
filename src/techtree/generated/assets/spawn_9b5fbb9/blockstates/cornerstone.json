@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "spawn_9b5fbb9:block/cornerstone"
+    },
+    "facing=east": {
+      "model": "spawn_9b5fbb9:block/cornerstone",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "spawn_9b5fbb9:block/cornerstone",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "spawn_9b5fbb9:block/cornerstone",
+      "y": 270
+    }
+  }
+}

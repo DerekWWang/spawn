@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "front": "spawn_9b5fbb9:block/blood_bank_front_on",
+    "side": "spawn_9b5fbb9:block/blood_bank_side",
+    "top": "spawn_9b5fbb9:block/blood_bank_side"
+  }
+}

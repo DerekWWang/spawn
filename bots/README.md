@@ -352,6 +352,9 @@ run about 40 to a process.
   does not know which of the mod's tools suit which block. The server decides what a dig yields.
 - **The body-state channel is not decoded.** The server's binary `spawn_9b5fbb9:state` report is
   accepted and ignored; `query()` asks for the same information as JSON.
+- **The tech tree's journal channels are declared, not used.** A bot accepts the journal, quiz, ledger and
+  station reports and ignores them. It works the tech tree by command instead: `/techtree plan`, `status`,
+  `discover` and `make`, `/building ...` and `/ledger ...` all answer in chat.
 - **New biomes are not handled.** A server whose mods add biomes may send biome ids mineflayer's chunk
   reader does not expect.
 - **Some packets are misread by the unreleased 26.3 tables.** Seen so far: block particles

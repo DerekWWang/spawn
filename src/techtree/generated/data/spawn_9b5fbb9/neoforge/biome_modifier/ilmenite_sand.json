@@ -1,0 +1,6 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_beach",
+  "features": "spawn_9b5fbb9:ilmenite_sand",
+  "step": "underground_ores"
+}
