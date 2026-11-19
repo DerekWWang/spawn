@@ -15,7 +15,7 @@ Any humanoid can raise soldiers, and soldiers are ordinary actors: they eat, dri
 | Conscript | `/survival military conscript <target>` | You must be armed. An unarmed subject yields at weapon point; an armed one only to a commander with two armed soldiers within reach | 35 |
 | Discharge | `/survival military discharge <target>` | | |
 
-A ration is a quarter of a food's nutrition, rounded, and at least one. Rotten food is no ration.
+A ration is four points of nutrition, whatever the food: nine beetroots are two rations, and what is left over counts towards the next. Rotten food is no ration. What a soldier carried in his pack (arrows, cartridges, flints) falls where he stands when he dies or leaves the service.
 
 ## Equipment
 
@@ -46,6 +46,8 @@ Every five seconds each soldier looks after himself.
 
 `/survival military order <soldiers> <order>`
 
+`<soldiers>` is one soldier's name or UUID, or `all` for every soldier of yours within ninety-six blocks. A selector such as `@e` needs operator rights. A soldier who cannot reach the place he was sent holds where he is and tells you. A player who enlisted leaves with `/survival military resign`.
+
 | Order | Effect |
 | --- | --- |
 | `hold` | Stand and defend the spot |
@@ -56,9 +58,9 @@ Every five seconds each soldier looks after himself.
 | `attack <target>` | Engage: shoot if able, otherwise close |
 | `charge <target>` | Close to hand-to-hand regardless of missile weapons |
 | `fire <target>` | Shoot from where they stand; never close |
-| `mount <animal or vehicle>` and `dismount` | Horses must be tamed and saddled |
+| `mount <animal or vehicle>` and `dismount` | Horses must be tamed, saddled and riderless; a vehicle needs a free seat. Nothing else is ridden |
 | `crew <piece>` | Serve an artillery piece |
-| `bombard <piece> <pos>` | Lay a piece on a point and keep firing |
+| `bombard <piece> <pos>` | Lay a piece on a point and keep firing. Given standing within eight blocks of the piece, and refused if the point is out of its reach |
 | `drive <vehicle> <pos>` | Drive a vehicle to a point |
 | `work <pos>` | Labour at a works |
 

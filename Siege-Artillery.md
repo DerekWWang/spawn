@@ -69,7 +69,7 @@ Aim error is the piece's dispersion multiplied by 1.6 at Gunnery 0, falling to 0
 
 Shot landing near soldiers shakes their morale: see [Military Service and Combat](Military-Service-and-Combat).
 
-**To walls.** Damage accumulates. Each block has a resistance, and each shot spends its power against the block it strikes. If the power exceeds what is left of the block, the block breaks and the shot carries on with the remainder; if not, the block is left cracked and weaker for the next shot.
+**To walls.** Damage accumulates. Each block has a resistance, and each shot spends its power against the block it strikes. If the power exceeds what is left of the block, the block breaks and the shot carries on with the remainder; if not, the block is left cracked and weaker for the next shot. What a block has taken is saved with the world, so a siege carries on where it stopped after the server restarts; the cracks themselves are redrawn only by the next hit. A block built again in the same place starts whole.
 
 | Material | Resistance |
 | --- | --- |

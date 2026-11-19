@@ -283,6 +283,10 @@ Hard limits:
 
 An expert with ruined hands cannot work. Skill never overrides the body.
 
+### Unconsciousness
+
+A brain at 10 or less leaves no mental capacity at all, and the body is out cold. An unconscious player lies prone where they fell. They cannot walk, jump, use an item, strike or touch a block or another creature, open anything, speak in chat or give a command; only a vehicle they are riding moves them. The commands that report on their own body still answer (`/survival json`, `health`, `skills`, `calendar`); every other is refused with "You are unconscious." Others can still treat, dress and undress them. They get up once the brain is above 10 again.
+
 ## Recreation
 
 Recreation is a 0 to 100 score that sets half of your mental capacity: the factor is 50% at recreation 0 and 100% at recreation 100 (`recreationFloor`, default 0.5).

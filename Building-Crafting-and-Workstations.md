@@ -147,7 +147,7 @@ The kiln, bloomery and forge burn a heat reserve measured in ticks.
 - Raw wood cannot reach working heat in a bloomery or forge. Burn charcoal there.
 - A heated recipe will not start unless the reserve is at least the recipe's ticks.
 - An unattended job burns one tick of heat for each tick of progress.
-- A tended job burns one tick of heat for each real tick you work on it, so a slow worker burns more. A 4,000-tick forge job done at a 50% rate burns 8,000 ticks of heat, a whole sack.
+- A tended job burns one tick of heat for each real tick you work on it, so a slow worker burns more. A 4,000-tick forge job done at a 50% rate burns 8,000 ticks of heat, a whole sack. A job is refused until the fire holds enough for the worker starting it, and the refusal says how much that is. A job left by a worker who died stays in the station as it stood, and the next person able to do it takes it up by starting the same process there.
 - If the heat runs out the job pauses until the station is stoked again.
 - Unused heat stays in the station for the next job. Heat already burned is not returned when a job is cancelled.
 

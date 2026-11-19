@@ -218,6 +218,14 @@ A trough is crafted from 5 loose stone and 2 clay balls at a crafting table. It 
 | Sheep | 20 days | 8 days | 1 | 4 days after the birth |
 | Pig | 20 days | 8 days | 2 to 4 | 4 days after the birth |
 | Chicken | 12 days | 4 days of warm incubation | 1 egg | 8 days after laying |
+| Goat | 20 days | 8 days | 1 | 4 days after the birth |
+| Rabbit | 6 days | 2 days | 2 to 4 | 2 days after the birth |
+| Horse | 40 days | 14 days | 1 | 6 days after the birth |
+| Donkey | 36 days | 15 days | 1 | 6 days after the birth |
+| Llama | 28 days | 14 days | 1 | 6 days after the birth |
+| Camel | 40 days | 16 days | 1 | 6 days after the birth |
+
+These ten kinds are stock. No other animal breeds at all: the game's own pairing is stopped for every animal, so wolves, cats and foxes fed together get no young. A goat is milked as a cow is, after kidding. A mooshroom gives no bowl of stew.
 
 Only days on which the juvenile was fed, watered and comfortable count toward maturity. Feeding a juvenile by hand does not age it. The other parent waits the full term plus 4 days from the mating.
 

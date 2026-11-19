@@ -27,7 +27,7 @@ Vehicles are built at an assembly yard ([Industrial Manufacturing](Industrial-Ma
 | Harness an animal | Lead it to the vehicle on a lead and click the vehicle, or `/survival vehicle hitch <animal>` |
 | Release the team | Sneak-click with an empty hand when the bed is empty, or `/survival vehicle unhitch` |
 | Board | Click the vehicle, or `/survival vehicle board`. The first seat drives |
-| Drive | Movement keys from the driver's seat, or `/survival vehicle drive <pos>` to have the driver steer for a point and stop there. `/survival vehicle halt` cancels |
+| Drive | Movement keys from the driver's seat, or `/survival vehicle drive <pos>` to have the driver steer for a point and stop there. `/survival vehicle halt` cancels, for those aboard. Food in bulk has one age to the kind, the mean of what was loaded; it goes on ageing at a store room's rate, comes off with that age, and past its shelf life is spoiled food on the cart. Food already spoiled and filled or sealed vessels are not taken as bulk cargo |
 | Load | Sneak-click holding goods, or `/survival vehicle load` to load every matching stack you carry |
 | Unload | Sneak-click with an empty hand, or `/survival vehicle unload [item] [count]` |
 | Supply a works | `/survival vehicle deliver` hands everything the works' recipe uses straight across, including fuel, when drawn up within six blocks |

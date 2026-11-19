@@ -52,7 +52,7 @@ An engine moves only when all of these are true:
 | Steam | A cold boiler takes two hours of the game clock (2,000 ticks) to reach working pressure and four to reach full pressure, and only while someone is on the footplate with fuel and water. It moves at half pressure or better. Left untended, a full boiler falls below working pressure in two and a half hours |
 | A driver | In the first seat |
 
-Drive with the forward and back keys, or `/survival vehicle drive <pos>` to have the driver run to a point on the line and brake for it.
+Drive with the forward and back keys, or `/survival vehicle drive <pos>` to have the driver run to a point on the line and brake for it. A place beside the line is reached when the engine is abreast of it, and a train sent beyond the railhead stops at the last rail. `/survival vehicle halt`, from aboard, has the driver brake to a stand.
 
 | Consumption | Rate |
 | --- | --- |
@@ -85,6 +85,7 @@ An engine with twelve loaded goods wagons weighs about 205 tonnes, tops out near
 | --- | --- |
 | A curve taken above 11 km/h | Derailment: the engine and every vehicle are damaged and the crew hurt |
 | Reaching the end of the line faster than about 6 km/h | The same |
+| Backing round a curve above 11 km/h, or backing off the last rail faster than about 6 km/h | The same: the rear of a train backing up leads it |
 | Running out of fuel or water | The train stops where it is |
 | Running without lubricant | Damage with every block until the engine is wrecked |
 

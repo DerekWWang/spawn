@@ -156,8 +156,9 @@ Rock is not broken by holding the mouse button. Hitting any block that a pickaxe
 1. Stand within 4 blocks, hold the pickaxe in your main hand, and left-click the block once, or use `/survival mine <x> <y> <z>`.
 2. The job needs `hardness x 30 / tool speed` work ticks, and never less than 30.
 3. You do one work tick per game tick, multiplied by your work rate: the lower of your manipulation and mental capacity, times 50% at Mining level 0 rising to 100% at level 20. A healthy beginner breaks an ordinary ore block in about 60 ticks, three seconds.
-4. Stay within 4 blocks and keep the same tool in hand. Walking away, swapping the tool, or a change to the block cancels the job.
-5. When it finishes the block breaks, the drops fall, the tool takes its normal wear, and you gain Mining experience for the ticks you actually worked.
+4. Stay within 4 blocks, and keep the tool in hand where the tool does the work (a block that needs a tool or is sped by one). Walking away, putting that tool away, or a change to the block cancels the job; wear on the tool does not, and nor does eating while you dig something that needed no tool. Work waits while you sleep.
+5. A block walled in by solid blocks on every side cannot be mined. Dig to a face of it first.
+6. When it finishes the block breaks, the drops fall, the tool takes its normal wear, and you gain Mining experience for the ticks you actually worked.
 
 Each work tick costs 0.0005 hunger and each block broken another 0.08. You can do only one manual job at a time: see "One pair of hands" in [Building Crafting and Workstations](Building-Crafting-and-Workstations). Soil, sand, gravel, clay and wood are not pickaxe blocks and break in the vanilla way, slowed by injury.
 
@@ -202,7 +203,7 @@ What you carry slows you. Up to 35 kg costs nothing. From 35 to 120 kg your pace
 
 The heap can wait while you fetch one.
 
-- Broken ore, crushed and roasted ore, coal, charcoal, coke, clay, brick, lime, limestone, sulfur and pig iron do not weather at all. A heap lies where it fell until it is carted away.
+- Broken ore, crushed and roasted ore, coal, charcoal, coke, clay, brick, lime, limestone, sulfur and pig iron do not weather at all. A heap lies where it fell until it is carted away. What a block breaks down to falls as one heap of each kind: it shows a single stack and is labelled with the whole count, for example "1,600 Hematite". Walk onto it to take the stack that shows; the next is uncovered at once, so a full heap is taken up a stack every half second for as long as you have room. Loose stacks of the same thing lying against a heap join it.
 - No dropped item is removed on a timer. What removes other things left in the open is weathering and rot.
 - Other loose material is ruined after 4 game days exposed, and what is left is a few scraps of plant fibre. Items whose names mark them as stone, ingots, copper, bronze, iron, gold, diamond, pottery, scrap or obsidian last 28 days and end as metal scrap.
 - Plant fibre left out rots away to nothing after another 4 days exposed, and so does spoiled food, 4 days after it spoils. Metal scrap and ceramic shards stay where they lie.
@@ -232,7 +233,7 @@ New terrain generates as wild country.
 - **No other dimensions.** Portals do not form and travel to the Nether or the End is cancelled.
 - **No enchantments.** Enchantments are stripped from every item, including items inside containers.
 - **Prohibited items vanish.** They are deleted from inventories, containers, drops and trades. The list includes ender pearls and eyes, blaze rods, ghast tears, nether stars, totems, elytra, experience bottles, enchanted books, enchanting tables, brewing stands, beacons, the main redstone components (dust, blocks, torches, repeaters, comparators, observers, pistons, dispensers, droppers, daylight detectors, targets, lamps, powered, detector and activator rails, crafters, sculk sensors), anything netherite, shulker, chorus, purpur or end stone, copper bulbs, spawn eggs, command blocks, golden apples, glowstone, soul sand, nether wart, the mace, and every potion except a plain water bottle. Splash potions, lingering potions and tipped arrows are prohibited.
-- **Furnaces do nothing.** Right-clicking a furnace, blast furnace or smoker is cancelled, and the vanilla smelting recipes for copper and iron and the furnace, smoker and campfire recipes for meat are disabled. Heat work is done at the kiln, bloomery and forge.
+- **Furnaces do nothing.** A furnace, blast furnace or smoker does no work even when fed by a hopper. Right-clicking a furnace, blast furnace or smoker is cancelled, and the vanilla smelting recipes for copper and iron and the furnace, smoker and campfire recipes for meat are disabled. Heat work is done at the kiln, bloomery and forge.
 - **Merchants cannot sell finished work.** Any trade whose result needs a workstation, or which involves a prohibited item, is removed.
 
 Server owners can extend the lists with the data tags `spawn_9b5fbb9:forbidden_entities` and `spawn_9b5fbb9:forbidden_items`.
