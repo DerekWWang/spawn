@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "minecraft:clay_ball",
+    "minecraft:clay_ball",
+    "minecraft:dirt",
+    "minecraft:dirt"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:niter_bed",
+    "count": 1
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "steps": [
+    {"run":"survival query @s"},
+    {"sync":{"entities":"@a[name=Dev]","fields":["getSpawnSurvivalPottery","getSpawnSurvivalForaging","getSpawnSurvivalHunting"]}},
+    {"run":"survival health"},
+    {"wait":10},
+    {"shot":"persistent-skills","hud":true},
+    {"run":"survival health"},
+    {"wait":10}
+  ]
+}

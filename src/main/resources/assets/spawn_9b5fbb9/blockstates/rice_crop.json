@@ -1,0 +1,28 @@
+{
+  "variants": {
+    "age=0": {
+      "model": "spawn_9b5fbb9:block/rice_crop_0"
+    },
+    "age=1": {
+      "model": "spawn_9b5fbb9:block/rice_crop_1"
+    },
+    "age=2": {
+      "model": "spawn_9b5fbb9:block/rice_crop_2"
+    },
+    "age=3": {
+      "model": "spawn_9b5fbb9:block/rice_crop_3"
+    },
+    "age=4": {
+      "model": "spawn_9b5fbb9:block/rice_crop_4"
+    },
+    "age=5": {
+      "model": "spawn_9b5fbb9:block/rice_crop_5"
+    },
+    "age=6": {
+      "model": "spawn_9b5fbb9:block/rice_crop_6"
+    },
+    "age=7": {
+      "model": "spawn_9b5fbb9:block/rice_crop_7"
+    }
+  }
+}

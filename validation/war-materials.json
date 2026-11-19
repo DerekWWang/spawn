@@ -1,0 +1,239 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 60
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "fill -9 -60 -2 9 -50 -2 minecraft:black_concrete",
+    "summon minecraft:item_display -7.00 -51.20 -0.85 {item:{id:\"spawn_9b5fbb9:pig_iron\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -51.20 -0.85 {item:{id:\"spawn_9b5fbb9:iron_plate\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -51.20 -0.85 {item:{id:\"spawn_9b5fbb9:precision_parts\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -51.20 -0.85 {item:{id:\"spawn_9b5fbb9:insulated_wire\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -51.20 -0.85 {item:{id:\"spawn_9b5fbb9:salt\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -51.20 -0.85 {item:{id:\"spawn_9b5fbb9:fluorite\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -51.20 -0.85 {item:{id:\"spawn_9b5fbb9:hydrochloric_acid\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -51.20 -0.85 {item:{id:\"spawn_9b5fbb9:nitric_acid\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -53.10 -0.85 {item:{id:\"spawn_9b5fbb9:hydrofluoric_acid\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -53.10 -0.85 {item:{id:\"spawn_9b5fbb9:alumina\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -53.10 -0.85 {item:{id:\"spawn_9b5fbb9:aluminium_ingot\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -53.10 -0.85 {item:{id:\"spawn_9b5fbb9:phosphorus\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -53.10 -0.85 {item:{id:\"spawn_9b5fbb9:methanol\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -53.10 -0.85 {item:{id:\"spawn_9b5fbb9:lens\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -53.10 -0.85 {item:{id:\"spawn_9b5fbb9:vacuum_tube\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -53.10 -0.85 {item:{id:\"spawn_9b5fbb9:photomask\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -55.00 -0.85 {item:{id:\"spawn_9b5fbb9:passive_components\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -55.00 -0.85 {item:{id:\"spawn_9b5fbb9:electric_motor\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -55.00 -0.85 {item:{id:\"spawn_9b5fbb9:display_tube\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -55.00 -0.85 {item:{id:\"spawn_9b5fbb9:cleanroom_suit\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -55.00 -0.85 {item:{id:\"spawn_9b5fbb9:oil_sand\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -55.00 -0.85 {item:{id:\"spawn_9b5fbb9:crude_oil\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -55.00 -0.85 {item:{id:\"spawn_9b5fbb9:petrol\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -55.00 -0.85 {item:{id:\"spawn_9b5fbb9:lubricant\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -56.90 -0.85 {item:{id:\"spawn_9b5fbb9:raw_rubber\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -56.90 -0.85 {item:{id:\"spawn_9b5fbb9:rubber\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -56.90 -0.85 {item:{id:\"spawn_9b5fbb9:rubber_tyre\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -56.90 -0.85 {item:{id:\"spawn_9b5fbb9:bauxite\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -56.90 -0.85 {item:{id:\"spawn_9b5fbb9:soda_ash\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -56.90 -0.85 {item:{id:\"spawn_9b5fbb9:caustic_soda\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -56.90 -0.85 {item:{id:\"spawn_9b5fbb9:cryolite\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -56.90 -0.85 {item:{id:\"spawn_9b5fbb9:wolframite\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -7.00 -58.80 -0.85 {item:{id:\"spawn_9b5fbb9:tungsten\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -5.00 -58.80 -0.85 {item:{id:\"spawn_9b5fbb9:silver\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -3.00 -58.80 -0.85 {item:{id:\"spawn_9b5fbb9:borax\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display -1.00 -58.80 -0.85 {item:{id:\"spawn_9b5fbb9:boron_oxide\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 1.00 -58.80 -0.85 {item:{id:\"spawn_9b5fbb9:wafer_oxidised\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 3.00 -58.80 -0.85 {item:{id:\"spawn_9b5fbb9:wafer_diffused\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 5.00 -58.80 -0.85 {item:{id:\"spawn_9b5fbb9:wafer_gated\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "summon minecraft:item_display 7.00 -58.80 -0.85 {item:{id:\"spawn_9b5fbb9:wafer_contacted\",count:1},item_display:\"fixed\",transformation:[1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1.6f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+    "setblock -8 -60 1 spawn_9b5fbb9:firebrick",
+    "setblock -6 -60 1 spawn_9b5fbb9:chimney",
+    "setblock -4 -60 1 spawn_9b5fbb9:steam_boiler",
+    "setblock -2 -60 1 spawn_9b5fbb9:stationary_engine",
+    "setblock 0 -60 1 spawn_9b5fbb9:lead_chamber",
+    "setblock 2 -60 1 spawn_9b5fbb9:generator",
+    "setblock 4 -60 1 spawn_9b5fbb9:power_cable",
+    "setblock 6 -60 1 spawn_9b5fbb9:arc_furnace",
+    "setblock 8 -60 1 spawn_9b5fbb9:electrolytic_cell",
+    "setblock -8 -60 3 spawn_9b5fbb9:vacuum_pump",
+    "setblock -6 -60 3 spawn_9b5fbb9:cleanroom_panel",
+    "setblock -4 -60 3 spawn_9b5fbb9:filter_unit",
+    "setblock -2 -60 3 spawn_9b5fbb9:water_purifier",
+    "setblock 0 -60 3 spawn_9b5fbb9:crystal_puller",
+    "setblock 2 -60 3 spawn_9b5fbb9:diffusion_furnace",
+    "setblock 4 -60 3 spawn_9b5fbb9:lithography_stepper",
+    "setblock 6 -60 3 spawn_9b5fbb9:wire_bonder",
+    "setblock 8 -60 3 spawn_9b5fbb9:distillation_column",
+    "setblock -8 -60 5 spawn_9b5fbb9:power_station",
+    "setblock -6 -60 5 spawn_9b5fbb9:rock_salt",
+    "setblock -4 -60 5 spawn_9b5fbb9:fluorite_ore",
+    "setblock -2 -60 5 spawn_9b5fbb9:tar_sand",
+    "setblock 0 -60 5 spawn_9b5fbb9:bauxite_ore",
+    "setblock 2 -60 5 spawn_9b5fbb9:wolframite_ore",
+    "setblock 4 -60 5 spawn_9b5fbb9:borax_ore"
+   ]
+  },
+  {
+   "step": 20
+  },
+  {
+   "camera": {
+    "pos": [
+     0,
+     -54.5,
+     10.5
+    ],
+    "look_at": [
+     0,
+     -55,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "materials_wall"
+  },
+  {
+   "camera": {
+    "pos": [
+     -3.5,
+     -53,
+     3.2
+    ],
+    "look_at": [
+     -3.5,
+     -53,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "materials_left_high"
+  },
+  {
+   "camera": {
+    "pos": [
+     3.5,
+     -53,
+     3.2
+    ],
+    "look_at": [
+     3.5,
+     -53,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "materials_right_high"
+  },
+  {
+   "camera": {
+    "pos": [
+     -3.5,
+     -57,
+     3.2
+    ],
+    "look_at": [
+     -3.5,
+     -57,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "materials_left_low"
+  },
+  {
+   "camera": {
+    "pos": [
+     3.5,
+     -57,
+     3.2
+    ],
+    "look_at": [
+     3.5,
+     -57,
+     -2
+    ]
+   }
+  },
+  {
+   "shot": "materials_right_low"
+  },
+  {
+   "camera": {
+    "pos": [
+     0,
+     -54,
+     11
+    ],
+    "look_at": [
+     0,
+     -60,
+     3
+    ]
+   }
+  },
+  {
+   "shot": "plant_blocks"
+  },
+  {
+   "camera": {
+    "pos": [
+     -4,
+     -57.5,
+     8.5
+    ],
+    "look_at": [
+     -4,
+     -60,
+     3
+    ]
+   }
+  },
+  {
+   "shot": "plant_blocks_left"
+  },
+  {
+   "camera": {
+    "pos": [
+     4,
+     -57.5,
+     8.5
+    ],
+    "look_at": [
+     4,
+     -60,
+     3
+    ]
+   }
+  },
+  {
+   "shot": "plant_blocks_right"
+  }
+ ]
+}

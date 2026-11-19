@@ -1,0 +1,6 @@
+{
+  "steps": [
+    {"run":"survival query @s"},
+    {"sync":{"entities":"@a[name=Dev]","fields":["getSpawnSurvivalMental","getSpawnSurvivalMovement"]}}
+  ]
+}

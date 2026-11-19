@@ -773,7 +773,8 @@
       "stack": 64,
       "shape": "fiber",
       "colour": null,
-      "resource": "plant_fiber"
+      "resource": "plant_fiber",
+      "survival": true
     },
     {
       "id": "fireclay",
@@ -821,7 +822,8 @@
           180
         ]
       ],
-      "resource": "salt"
+      "resource": "salt",
+      "survival": true
     },
     {
       "id": "native_copper",
@@ -869,7 +871,8 @@
           55
         ]
       ],
-      "resource": "malachite"
+      "resource": "malachite",
+      "survival": true
     },
     {
       "id": "cassiterite",
@@ -893,7 +896,8 @@
           80
         ]
       ],
-      "resource": "cassiterite"
+      "resource": "cassiterite",
+      "survival": true
     },
     {
       "id": "galena",
@@ -917,7 +921,8 @@
           96
         ]
       ],
-      "resource": "galena"
+      "resource": "galena",
+      "survival": true
     },
     {
       "id": "zinc_ore",
@@ -965,7 +970,8 @@
           20
         ]
       ],
-      "resource": "sulfur"
+      "resource": "sulfur",
+      "survival": true
     },
     {
       "id": "niter",
@@ -1133,7 +1139,8 @@
           180
         ]
       ],
-      "resource": "borax"
+      "resource": "borax",
+      "survival": true
     },
     {
       "id": "fluorite",
@@ -1157,7 +1164,8 @@
           110
         ]
       ],
-      "resource": "fluorite"
+      "resource": "fluorite",
+      "survival": true
     },
     {
       "id": "platinum",
@@ -1253,7 +1261,8 @@
           12
         ]
       ],
-      "resource": "crude_oil"
+      "resource": "crude_oil",
+      "survival": true
     },
     {
       "id": "bauxite",
@@ -1277,7 +1286,8 @@
           110
         ]
       ],
-      "resource": "bauxite"
+      "resource": "bauxite",
+      "survival": true
     },
     {
       "id": "chromite",
@@ -1349,7 +1359,8 @@
           80
         ]
       ],
-      "resource": "wolframite"
+      "resource": "wolframite",
+      "survival": true
     },
     {
       "id": "phosphate_rock",
@@ -1507,7 +1518,8 @@
       ],
       "usedBy": 22,
       "stack": 64,
-      "shape": "wire"
+      "shape": "wire",
+      "survival": true
     },
     {
       "id": "flint_flakes",
@@ -1772,7 +1784,8 @@
       "usedBy": 1,
       "stack": 1,
       "shape": "device",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "preserved_food",
@@ -1818,7 +1831,8 @@
       ],
       "usedBy": 3,
       "stack": 64,
-      "shape": "dust"
+      "shape": "dust",
+      "survival": true
     },
     {
       "id": "workbench",
@@ -2054,7 +2068,8 @@
       "usedBy": 24,
       "stack": 1,
       "shape": "device",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "potash",
@@ -2131,7 +2146,8 @@
       "usedBy": 16,
       "stack": 1,
       "shape": "device",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "glycerol",
@@ -2221,7 +2237,8 @@
       "usedBy": 1,
       "stack": 1,
       "shape": "device",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "bread",
@@ -2330,7 +2347,8 @@
       ],
       "usedBy": 4,
       "stack": 64,
-      "shape": "dust"
+      "shape": "dust",
+      "survival": true
     },
     {
       "id": "smelting_furnace",
@@ -2402,7 +2420,8 @@
       ],
       "usedBy": 1,
       "stack": 64,
-      "shape": "lump"
+      "shape": "lump",
+      "survival": true
     },
     {
       "id": "slag",
@@ -2946,7 +2965,8 @@
       ],
       "usedBy": 2,
       "stack": 64,
-      "shape": "flask"
+      "shape": "flask",
+      "survival": true
     },
     {
       "id": "musket",
@@ -2960,7 +2980,8 @@
       ],
       "usedBy": 1,
       "stack": 1,
-      "shape": "gun"
+      "shape": "gun",
+      "survival": true
     },
     {
       "id": "paved_road",
@@ -3076,7 +3097,8 @@
       ],
       "usedBy": 0,
       "stack": 64,
-      "shape": "vehicle"
+      "shape": "vehicle",
+      "survival": true
     },
     {
       "id": "ammonia",
@@ -3120,7 +3142,8 @@
       ],
       "usedBy": 1,
       "stack": 1,
-      "shape": "gun"
+      "shape": "gun",
+      "survival": true
     },
     {
       "id": "coal_gas",
@@ -3148,7 +3171,8 @@
       ],
       "usedBy": 3,
       "stack": 64,
-      "shape": "flask"
+      "shape": "flask",
+      "survival": true
     },
     {
       "id": "coke",
@@ -3162,7 +3186,8 @@
       ],
       "usedBy": 16,
       "stack": 64,
-      "shape": "lump"
+      "shape": "lump",
+      "survival": true
     },
     {
       "id": "compass",
@@ -3190,7 +3215,8 @@
       ],
       "usedBy": 15,
       "stack": 64,
-      "shape": "wire"
+      "shape": "wire",
+      "survival": true
     },
     {
       "id": "corned_powder",
@@ -3268,7 +3294,8 @@
       "usedBy": 1,
       "stack": 1,
       "shape": "ingot",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "litharge",
@@ -3338,7 +3365,8 @@
       ],
       "usedBy": 6,
       "stack": 64,
-      "shape": "ingot"
+      "shape": "ingot",
+      "survival": true
     },
     {
       "id": "solder",
@@ -3352,7 +3380,8 @@
       ],
       "usedBy": 18,
       "stack": 64,
-      "shape": "ingot"
+      "shape": "ingot",
+      "survival": true
     },
     {
       "id": "water_wheel",
@@ -3453,7 +3482,8 @@
       ],
       "usedBy": 2,
       "stack": 64,
-      "shape": "paper"
+      "shape": "paper",
+      "survival": true
     },
     {
       "id": "pig_iron",
@@ -3468,7 +3498,8 @@
       ],
       "usedBy": 18,
       "stack": 64,
-      "shape": "ingot"
+      "shape": "ingot",
+      "survival": true
     },
     {
       "id": "printing_press",
@@ -3499,7 +3530,8 @@
       ],
       "usedBy": 22,
       "stack": 64,
-      "shape": "flask"
+      "shape": "flask",
+      "survival": true
     },
     {
       "id": "zinc",
@@ -3556,7 +3588,8 @@
       ],
       "usedBy": 8,
       "stack": 64,
-      "shape": "flask"
+      "shape": "flask",
+      "survival": true
     },
     {
       "id": "marine_chronometer",
@@ -3585,7 +3618,8 @@
       ],
       "usedBy": 10,
       "stack": 64,
-      "shape": "flask"
+      "shape": "flask",
+      "survival": true
     },
     {
       "id": "ocean_going_ship",
@@ -3641,7 +3675,8 @@
       ],
       "usedBy": 3,
       "stack": 64,
-      "shape": "lens"
+      "shape": "lens",
+      "survival": true
     },
     {
       "id": "optical_glass",
@@ -3684,7 +3719,8 @@
       ],
       "usedBy": 4,
       "stack": 64,
-      "shape": "dust"
+      "shape": "dust",
+      "survival": true
     },
     {
       "id": "microscope",
@@ -3713,7 +3749,8 @@
       ],
       "usedBy": 14,
       "stack": 64,
-      "shape": "device"
+      "shape": "device",
+      "survival": true
     },
     {
       "id": "sodium_hydroxide",
@@ -4024,7 +4061,8 @@
       "usedBy": 20,
       "stack": 1,
       "shape": "device",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "asphalt_road",
@@ -4167,7 +4205,8 @@
       "usedBy": 109,
       "stack": 1,
       "shape": "device",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "quinine",
@@ -4329,7 +4368,8 @@
       ],
       "usedBy": 16,
       "stack": 64,
-      "shape": "wire"
+      "shape": "wire",
+      "survival": true
     },
     {
       "id": "mild_steel",
@@ -4405,7 +4445,8 @@
         "seconds": 12,
         "amplifier": 0,
         "heal": 2
-      }
+      },
+      "survival": true
     },
     {
       "id": "aspirin",
@@ -4495,7 +4536,8 @@
       ],
       "usedBy": 5,
       "stack": 64,
-      "shape": "flask"
+      "shape": "flask",
+      "survival": true
     },
     {
       "id": "photographic_plate",
@@ -4608,7 +4650,8 @@
       ],
       "usedBy": 45,
       "stack": 64,
-      "shape": "plate"
+      "shape": "plate",
+      "survival": true
     },
     {
       "id": "autoclave",
@@ -4636,7 +4679,8 @@
       ],
       "usedBy": 22,
       "stack": 64,
-      "shape": "device"
+      "shape": "device",
+      "survival": true
     },
     {
       "id": "generator",
@@ -4650,7 +4694,8 @@
       ],
       "usedBy": 6,
       "stack": 16,
-      "shape": "device"
+      "shape": "device",
+      "survival": true
     },
     {
       "id": "incandescent_lamp",
@@ -5101,7 +5146,8 @@
       ],
       "usedBy": 3,
       "stack": 64,
-      "shape": "dust"
+      "shape": "dust",
+      "survival": true
     },
     {
       "id": "bayer_liquor",
@@ -5215,7 +5261,8 @@
       ],
       "usedBy": 10,
       "stack": 64,
-      "shape": "flask"
+      "shape": "flask",
+      "survival": true
     },
     {
       "id": "kerosene",
@@ -5458,7 +5505,8 @@
       ],
       "usedBy": 17,
       "stack": 64,
-      "shape": "device"
+      "shape": "device",
+      "survival": true
     },
     {
       "id": "tunnel",
@@ -5566,7 +5614,8 @@
       "usedBy": 1,
       "stack": 1,
       "shape": "device",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "repeating_rifle",
@@ -5671,7 +5720,8 @@
       ],
       "usedBy": 8,
       "stack": 64,
-      "shape": "flask"
+      "shape": "flask",
+      "survival": true
     },
     {
       "id": "aluminium",
@@ -5797,7 +5847,8 @@
       ],
       "usedBy": 2,
       "stack": 64,
-      "shape": "ingot"
+      "shape": "ingot",
+      "survival": true
     },
     {
       "id": "nickel",
@@ -5839,7 +5890,8 @@
       ],
       "usedBy": 1,
       "stack": 64,
-      "shape": "dust"
+      "shape": "dust",
+      "survival": true
     },
     {
       "id": "rare_gases",
@@ -6238,7 +6290,8 @@
       ],
       "usedBy": 7,
       "stack": 64,
-      "shape": "tube"
+      "shape": "tube",
+      "survival": true
     },
     {
       "id": "welding_torch",
@@ -6353,7 +6406,8 @@
       ],
       "usedBy": 0,
       "stack": 64,
-      "shape": "vehicle"
+      "shape": "vehicle",
+      "survival": true
     },
     {
       "id": "multilayer_circuit_board",
@@ -6571,7 +6625,8 @@
       ],
       "usedBy": 1,
       "stack": 64,
-      "shape": "crystal"
+      "shape": "crystal",
+      "survival": true
     },
     {
       "id": "radio_set",
@@ -6798,7 +6853,8 @@
       ],
       "usedBy": 3,
       "stack": 16,
-      "shape": "wire"
+      "shape": "wire",
+      "survival": true
     },
     {
       "id": "motor_ship",
@@ -6946,7 +7002,8 @@
       "usedBy": 1,
       "stack": 1,
       "shape": "crystal",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "diffusion_furnace",
@@ -6961,7 +7018,8 @@
       "usedBy": 5,
       "stack": 1,
       "shape": "device",
-      "station": true
+      "station": true,
+      "survival": true
     },
     {
       "id": "dopant_chemicals",
@@ -7088,7 +7146,8 @@
       ],
       "usedBy": 8,
       "stack": 64,
-      "shape": "wafer"
+      "shape": "wafer",
+      "survival": true
     },
     {
       "id": "solar_cell",
@@ -7132,7 +7191,8 @@
       "usedBy": 2,
       "stack": 1,
       "shape": "device",
-      "durability": 50
+      "durability": 50,
+      "survival": true
     },
     {
       "id": "solar_panel",
@@ -7633,7 +7693,8 @@
       ],
       "usedBy": 1,
       "stack": 64,
-      "shape": "device"
+      "shape": "device",
+      "survival": true
     },
     {
       "id": "data_center",
@@ -7801,9 +7862,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": [
-        "P-023"
-      ]
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -7839,24 +7899,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": [
-        "P-029",
-        "P-030",
-        "P-031",
-        "P-042",
-        "P-043",
-        "P-046",
-        "P-052",
-        "P-059",
-        "P-291",
-        "P-087",
-        "P-107",
-        "P-114",
-        "P-129",
-        "P-154",
-        "P-161",
-        "P-201"
-      ]
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -7898,17 +7942,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": [
-        "P-048",
-        "P-054",
-        "P-064",
-        "P-071",
-        "P-076",
-        "P-084",
-        "P-099",
-        "P-100",
-        "P-123"
-      ]
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -7938,9 +7973,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": [
-        "P-047"
-      ]
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -8320,9 +8354,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": [
-        "P-111"
-      ]
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -8642,12 +8675,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": [
-        "P-128",
-        "P-314",
-        "P-141",
-        "P-323"
-      ]
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -8689,92 +8718,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": [
-        "P-130",
-        "P-131",
-        "P-135",
-        "P-311",
-        "P-313",
-        "P-140",
-        "P-142",
-        "P-317",
-        "P-150",
-        "P-151",
-        "P-156",
-        "P-158",
-        "P-159",
-        "P-330",
-        "P-331",
-        "P-332",
-        "P-162",
-        "P-165",
-        "P-334",
-        "P-335",
-        "P-336",
-        "P-337",
-        "P-339",
-        "P-167",
-        "P-196",
-        "P-344",
-        "P-345",
-        "P-346",
-        "P-169",
-        "P-171",
-        "P-347",
-        "P-349",
-        "P-350",
-        "P-172",
-        "P-173",
-        "P-175",
-        "P-352",
-        "P-357",
-        "P-358",
-        "P-359",
-        "P-176",
-        "P-188",
-        "P-367",
-        "P-370",
-        "P-371",
-        "P-372",
-        "P-374",
-        "P-197",
-        "P-199",
-        "P-378",
-        "P-380",
-        "P-213",
-        "P-214",
-        "P-215",
-        "P-216",
-        "P-388",
-        "P-217",
-        "P-220",
-        "P-394",
-        "P-222",
-        "P-400",
-        "P-223",
-        "P-401",
-        "P-402",
-        "P-403",
-        "P-226",
-        "P-228",
-        "P-232",
-        "P-233",
-        "P-235",
-        "P-241",
-        "P-242",
-        "P-246",
-        "P-247",
-        "P-248",
-        "P-250",
-        "P-408",
-        "P-409",
-        "P-253",
-        "P-411",
-        "P-412",
-        "P-262",
-        "P-416",
-        "P-267"
-      ]
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -9196,7 +9141,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": []
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -9498,9 +9444,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": [
-        "P-230"
-      ]
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -9530,11 +9475,8 @@
       "producer": null,
       "coverage": false,
       "access": null,
-      "hosts": [
-        "P-404",
-        "P-236",
-        "P-237"
-      ]
+      "hosts": [],
+      "survival": true
     },
     {
       "shape": "box",
@@ -11388,8 +11330,8 @@
       "depth": 6,
       "prerequisites": 8,
       "unlocks": 22,
-      "mode": "station",
-      "host": "loom",
+      "mode": "hand",
+      "host": null,
       "ticks": 260
     },
     {
@@ -11803,8 +11745,8 @@
       "depth": 9,
       "prerequisites": 12,
       "unlocks": 16,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -11847,8 +11789,8 @@
       "depth": 9,
       "prerequisites": 12,
       "unlocks": 7,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 640
     },
     {
@@ -11891,8 +11833,8 @@
       "depth": 9,
       "prerequisites": 12,
       "unlocks": 12,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 640
     },
     {
@@ -12800,8 +12742,8 @@
       "depth": 10,
       "prerequisites": 19,
       "unlocks": 12,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -12913,8 +12855,8 @@
       "depth": 10,
       "prerequisites": 19,
       "unlocks": 1,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -13113,8 +13055,8 @@
       "depth": 11,
       "prerequisites": 20,
       "unlocks": 12,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -13162,8 +13104,8 @@
       "depth": 11,
       "prerequisites": 20,
       "unlocks": 1,
-      "mode": "station",
-      "host": "bloomery",
+      "mode": "hand",
+      "host": null,
       "ticks": 1240
     },
     {
@@ -13282,8 +13224,8 @@
       "depth": 12,
       "prerequisites": 24,
       "unlocks": 29,
-      "mode": "station",
-      "host": "forge",
+      "mode": "hand",
+      "host": null,
       "ticks": 340
     },
     {
@@ -13560,8 +13502,8 @@
       "depth": 14,
       "prerequisites": 31,
       "unlocks": 9,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 1800
     },
     {
@@ -13663,8 +13605,8 @@
       "depth": 15,
       "prerequisites": 32,
       "unlocks": 38,
-      "mode": "station",
-      "host": "forge",
+      "mode": "hand",
+      "host": null,
       "ticks": 380
     },
     {
@@ -14506,8 +14448,8 @@
       "depth": 10,
       "prerequisites": 13,
       "unlocks": 4,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 640
     },
     {
@@ -14737,8 +14679,8 @@
       "depth": 13,
       "prerequisites": 25,
       "unlocks": 1,
-      "mode": "station",
-      "host": "forge",
+      "mode": "hand",
+      "host": null,
       "ticks": 320
     },
     {
@@ -15196,8 +15138,8 @@
       "depth": 16,
       "prerequisites": 33,
       "unlocks": 5,
-      "mode": "station",
-      "host": "forge",
+      "mode": "hand",
+      "host": null,
       "ticks": 320
     },
     {
@@ -15665,8 +15607,8 @@
       "depth": 17,
       "prerequisites": 34,
       "unlocks": 15,
-      "mode": "station",
-      "host": "forge",
+      "mode": "hand",
+      "host": null,
       "ticks": 340
     },
     {
@@ -16270,8 +16212,8 @@
       "depth": 10,
       "prerequisites": 15,
       "unlocks": 1,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -16668,8 +16610,8 @@
       "depth": 16,
       "prerequisites": 60,
       "unlocks": 1,
-      "mode": "station",
-      "host": "forge",
+      "mode": "hand",
+      "host": null,
       "ticks": 380
     },
     {
@@ -16823,8 +16765,8 @@
       "depth": 16,
       "prerequisites": 36,
       "unlocks": 1,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 620
     },
     {
@@ -17571,8 +17513,8 @@
       "depth": 19,
       "prerequisites": 59,
       "unlocks": 29,
-      "mode": "station",
-      "host": "forge",
+      "mode": "hand",
+      "host": null,
       "ticks": 340
     },
     {
@@ -17771,8 +17713,8 @@
       "depth": 20,
       "prerequisites": 77,
       "unlocks": 0,
-      "mode": "station",
-      "host": "forge",
+      "mode": "hand",
+      "host": null,
       "ticks": 400
     },
     {
@@ -18681,8 +18623,8 @@
       "depth": 16,
       "prerequisites": 34,
       "unlocks": 27,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 620
     },
     {
@@ -18944,8 +18886,8 @@
       "depth": 18,
       "prerequisites": 62,
       "unlocks": 22,
-      "mode": "station",
-      "host": "lead_chamber",
+      "mode": "hand",
+      "host": null,
       "ticks": 880
     },
     {
@@ -19139,8 +19081,8 @@
       "depth": 20,
       "prerequisites": 69,
       "unlocks": 4,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -19933,8 +19875,8 @@
       "depth": 24,
       "prerequisites": 90,
       "unlocks": 1,
-      "mode": "station",
-      "host": "forge",
+      "mode": "hand",
+      "host": null,
       "ticks": 420
     },
     {
@@ -20425,8 +20367,8 @@
       "depth": 25,
       "prerequisites": 114,
       "unlocks": 109,
-      "mode": "station",
-      "host": "steam_engine",
+      "mode": "hand",
+      "host": null,
       "ticks": 520
     },
     {
@@ -20478,8 +20420,8 @@
       "depth": 25,
       "prerequisites": 106,
       "unlocks": 2,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -20815,8 +20757,8 @@
       "depth": 26,
       "prerequisites": 115,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 640
     },
     {
@@ -20863,8 +20805,8 @@
       "depth": 26,
       "prerequisites": 118,
       "unlocks": 4,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 640
     },
     {
@@ -21246,8 +21188,8 @@
       "depth": 28,
       "prerequisites": 117,
       "unlocks": 7,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -21530,8 +21472,8 @@
       "depth": 28,
       "prerequisites": 118,
       "unlocks": 5,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 620
     },
     {
@@ -21722,8 +21664,8 @@
       "depth": 30,
       "prerequisites": 127,
       "unlocks": 5,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -21775,8 +21717,8 @@
       "depth": 30,
       "prerequisites": 133,
       "unlocks": 0,
-      "mode": "station",
-      "host": "steam_engine",
+      "mode": "hand",
+      "host": null,
       "ticks": 460
     },
     {
@@ -21838,8 +21780,8 @@
       "depth": 31,
       "prerequisites": 132,
       "unlocks": 49,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -21896,8 +21838,8 @@
       "depth": 31,
       "prerequisites": 120,
       "unlocks": 0,
-      "mode": "station",
-      "host": "steam_engine",
+      "mode": "hand",
+      "host": null,
       "ticks": 480
     },
     {
@@ -21946,8 +21888,8 @@
       "depth": 31,
       "prerequisites": 131,
       "unlocks": 3,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -22143,8 +22085,8 @@
       "depth": 31,
       "prerequisites": 120,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -22985,8 +22927,8 @@
       "depth": 25,
       "prerequisites": 118,
       "unlocks": 0,
-      "mode": "station",
-      "host": "steam_engine",
+      "mode": "hand",
+      "host": null,
       "ticks": 460
     },
     {
@@ -23096,8 +23038,8 @@
       "depth": 26,
       "prerequisites": 115,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 640
     },
     {
@@ -23193,8 +23135,8 @@
       "depth": 27,
       "prerequisites": 129,
       "unlocks": 16,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -23423,8 +23365,8 @@
       "depth": 28,
       "prerequisites": 127,
       "unlocks": 2,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 640
     },
     {
@@ -23760,8 +23702,8 @@
       "depth": 29,
       "prerequisites": 132,
       "unlocks": 3,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -23951,8 +23893,8 @@
       "depth": 30,
       "prerequisites": 137,
       "unlocks": 6,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -24006,8 +23948,8 @@
       "depth": 30,
       "prerequisites": 137,
       "unlocks": 22,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -24123,8 +24065,8 @@
       "depth": 30,
       "prerequisites": 146,
       "unlocks": 12,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -24275,8 +24217,8 @@
       "depth": 30,
       "prerequisites": 121,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -24328,8 +24270,8 @@
       "depth": 30,
       "prerequisites": 136,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -24382,8 +24324,8 @@
       "depth": 30,
       "prerequisites": 132,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -24468,8 +24410,8 @@
       "depth": 31,
       "prerequisites": 133,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -24660,8 +24602,8 @@
       "depth": 31,
       "prerequisites": 151,
       "unlocks": 9,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -24774,8 +24716,8 @@
       "depth": 31,
       "prerequisites": 122,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -24828,8 +24770,8 @@
       "depth": 31,
       "prerequisites": 142,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -24881,8 +24823,8 @@
       "depth": 31,
       "prerequisites": 138,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -24930,8 +24872,8 @@
       "depth": 31,
       "prerequisites": 150,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -25047,8 +24989,8 @@
       "depth": 31,
       "prerequisites": 152,
       "unlocks": 3,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -25166,8 +25108,8 @@
       "depth": 32,
       "prerequisites": 153,
       "unlocks": 4,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -25316,8 +25258,8 @@
       "depth": 32,
       "prerequisites": 153,
       "unlocks": 8,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -25649,8 +25591,8 @@
       "depth": 32,
       "prerequisites": 161,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -25701,8 +25643,8 @@
       "depth": 32,
       "prerequisites": 152,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -25764,8 +25706,8 @@
       "depth": 32,
       "prerequisites": 156,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -25849,8 +25791,8 @@
       "depth": 33,
       "prerequisites": 162,
       "unlocks": 17,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -25953,8 +25895,8 @@
       "depth": 33,
       "prerequisites": 157,
       "unlocks": 4,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -26002,8 +25944,8 @@
       "depth": 33,
       "prerequisites": 154,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -26186,8 +26128,8 @@
       "depth": 33,
       "prerequisites": 140,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -26250,8 +26192,8 @@
       "depth": 33,
       "prerequisites": 150,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -26374,8 +26316,8 @@
       "depth": 34,
       "prerequisites": 167,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -26434,8 +26376,8 @@
       "depth": 34,
       "prerequisites": 165,
       "unlocks": 13,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -26527,8 +26469,8 @@
       "depth": 34,
       "prerequisites": 162,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -26574,8 +26516,8 @@
       "depth": 34,
       "prerequisites": 159,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -26847,8 +26789,8 @@
       "depth": 34,
       "prerequisites": 145,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -26902,8 +26844,8 @@
       "depth": 34,
       "prerequisites": 166,
       "unlocks": 7,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -26971,8 +26913,8 @@
       "depth": 34,
       "prerequisites": 178,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -27036,8 +26978,8 @@
       "depth": 35,
       "prerequisites": 168,
       "unlocks": 42,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -27817,8 +27759,8 @@
       "depth": 37,
       "prerequisites": 181,
       "unlocks": 7,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -28352,8 +28294,8 @@
       "depth": 37,
       "prerequisites": 174,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -28538,8 +28480,8 @@
       "depth": 37,
       "prerequisites": 176,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -28598,8 +28540,8 @@
       "depth": 37,
       "prerequisites": 176,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -28698,8 +28640,8 @@
       "depth": 38,
       "prerequisites": 181,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -28855,8 +28797,8 @@
       "depth": 38,
       "prerequisites": 179,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -28996,8 +28938,8 @@
       "depth": 39,
       "prerequisites": 198,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 740
     },
     {
@@ -29138,8 +29080,8 @@
       "depth": 39,
       "prerequisites": 199,
       "unlocks": 9,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -29410,8 +29352,8 @@
       "depth": 40,
       "prerequisites": 192,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -29590,8 +29532,8 @@
       "depth": 31,
       "prerequisites": 153,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -29652,8 +29594,8 @@
       "depth": 32,
       "prerequisites": 142,
       "unlocks": 2,
-      "mode": "station",
-      "host": "kiln",
+      "mode": "hand",
+      "host": null,
       "ticks": 660
     },
     {
@@ -30764,8 +30706,8 @@
       "depth": 38,
       "prerequisites": 182,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -30823,8 +30765,8 @@
       "depth": 38,
       "prerequisites": 199,
       "unlocks": 3,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -30883,8 +30825,8 @@
       "depth": 38,
       "prerequisites": 179,
       "unlocks": 12,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -30937,8 +30879,8 @@
       "depth": 38,
       "prerequisites": 193,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -31001,8 +30943,8 @@
       "depth": 38,
       "prerequisites": 195,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -31206,8 +31148,8 @@
       "depth": 39,
       "prerequisites": 186,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -31349,8 +31291,8 @@
       "depth": 39,
       "prerequisites": 185,
       "unlocks": 5,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -31686,8 +31628,8 @@
       "depth": 40,
       "prerequisites": 221,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -31867,8 +31809,8 @@
       "depth": 41,
       "prerequisites": 204,
       "unlocks": 3,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -32382,8 +32324,8 @@
       "depth": 42,
       "prerequisites": 226,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -32446,8 +32388,8 @@
       "depth": 43,
       "prerequisites": 213,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -32520,8 +32462,8 @@
       "depth": 43,
       "prerequisites": 242,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 740
     },
     {
@@ -32597,8 +32539,8 @@
       "depth": 43,
       "prerequisites": 244,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 740
     },
     {
@@ -32729,8 +32671,8 @@
       "depth": 44,
       "prerequisites": 249,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 760
     },
     {
@@ -32953,8 +32895,8 @@
       "depth": 46,
       "prerequisites": 222,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -33070,8 +33012,8 @@
       "depth": 46,
       "prerequisites": 222,
       "unlocks": 5,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -33210,8 +33152,8 @@
       "depth": 47,
       "prerequisites": 232,
       "unlocks": 1,
-      "mode": "station",
-      "host": "crystal_puller",
+      "mode": "hand",
+      "host": null,
       "ticks": 3600
     },
     {
@@ -33362,8 +33304,8 @@
       "depth": 49,
       "prerequisites": 231,
       "unlocks": 18,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -33425,8 +33367,8 @@
       "depth": 50,
       "prerequisites": 249,
       "unlocks": 8,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -33528,8 +33470,8 @@
       "depth": 51,
       "prerequisites": 253,
       "unlocks": 1,
-      "mode": "station",
-      "host": "diffusion_furnace",
+      "mode": "hand",
+      "host": null,
       "ticks": 1300
     },
     {
@@ -33650,8 +33592,8 @@
       "depth": 52,
       "prerequisites": 257,
       "unlocks": 3,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -33816,8 +33758,8 @@
       "depth": 53,
       "prerequisites": 265,
       "unlocks": 2,
-      "mode": "station",
-      "host": "diffusion_furnace",
+      "mode": "hand",
+      "host": null,
       "ticks": 1400
     },
     {
@@ -33960,8 +33902,8 @@
       "depth": 55,
       "prerequisites": 277,
       "unlocks": 18,
-      "mode": "station",
-      "host": "diffusion_furnace",
+      "mode": "hand",
+      "host": null,
       "ticks": 1420
     },
     {
@@ -34224,8 +34166,8 @@
       "depth": 38,
       "prerequisites": 184,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 640
     },
     {
@@ -34276,8 +34218,8 @@
       "depth": 38,
       "prerequisites": 187,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -34765,8 +34707,8 @@
       "depth": 56,
       "prerequisites": 278,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -34829,8 +34771,8 @@
       "depth": 56,
       "prerequisites": 279,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -34893,8 +34835,8 @@
       "depth": 56,
       "prerequisites": 278,
       "unlocks": 2,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -35030,8 +34972,8 @@
       "depth": 56,
       "prerequisites": 278,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 680
     },
     {
@@ -35247,8 +35189,8 @@
       "depth": 56,
       "prerequisites": 286,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -35334,8 +35276,8 @@
       "depth": 56,
       "prerequisites": 308,
       "unlocks": 3,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 760
     },
     {
@@ -35543,8 +35485,8 @@
       "depth": 57,
       "prerequisites": 286,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 760
     },
     {
@@ -35689,8 +35631,8 @@
       "depth": 57,
       "prerequisites": 288,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 720
     },
     {
@@ -35763,8 +35705,8 @@
       "depth": 57,
       "prerequisites": 289,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 740
     },
     {
@@ -36700,8 +36642,8 @@
       "depth": 61,
       "prerequisites": 306,
       "unlocks": 1,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 780
     },
     {
@@ -36768,8 +36710,8 @@
       "depth": 61,
       "prerequisites": 324,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 700
     },
     {
@@ -37288,8 +37230,8 @@
       "depth": 65,
       "prerequisites": 326,
       "unlocks": 0,
-      "mode": "station",
-      "host": "machine_shop",
+      "mode": "hand",
+      "host": null,
       "ticks": 780
     }
   ],
@@ -37313,38 +37255,6 @@
       "recognisedBy": "T-05"
     },
     {
-      "block": "rock_salt_deposit",
-      "name": "Rock Salt Deposit",
-      "host": "stone",
-      "count": 3,
-      "size": 10,
-      "min": 30,
-      "max": 90,
-      "drop": [
-        2,
-        3
-      ],
-      "biomes": [
-        "minecraft:desert",
-        "minecraft:badlands",
-        "minecraft:eroded_badlands",
-        "minecraft:wooded_badlands",
-        "minecraft:beach",
-        "minecraft:snowy_beach",
-        "minecraft:stony_shore"
-      ],
-      "extra": {
-        "count": 1,
-        "min": 0,
-        "max": 50,
-        "biomes": "#minecraft:is_overworld"
-      },
-      "resource": "salt",
-      "dropItem": "spawn_9b5fbb9:salt",
-      "access": null,
-      "recognisedBy": null
-    },
-    {
       "block": "native_copper_deposit",
       "name": "Native Copper Deposit",
       "host": "stone",
@@ -37361,42 +37271,6 @@
       "dropItem": "spawn_9b5fbb9:native_copper",
       "access": null,
       "recognisedBy": null
-    },
-    {
-      "block": "malachite_deposit",
-      "name": "Malachite Deposit",
-      "host": "stone",
-      "count": 6,
-      "size": 8,
-      "min": 32,
-      "max": 130,
-      "drop": [
-        1,
-        3
-      ],
-      "biomes": "#minecraft:is_overworld",
-      "resource": "malachite",
-      "dropItem": "spawn_9b5fbb9:malachite",
-      "access": null,
-      "recognisedBy": null
-    },
-    {
-      "block": "cassiterite_deposit",
-      "name": "Cassiterite Deposit",
-      "host": "stone",
-      "count": 4,
-      "size": 6,
-      "min": 16,
-      "max": 96,
-      "drop": [
-        1,
-        2
-      ],
-      "biomes": "#minecraft:is_overworld",
-      "resource": "cassiterite",
-      "dropItem": "spawn_9b5fbb9:cassiterite",
-      "access": null,
-      "recognisedBy": "T-16"
     },
     {
       "block": "bog_iron_deposit",
@@ -37421,24 +37295,6 @@
       "recognisedBy": "T-16"
     },
     {
-      "block": "galena_deposit",
-      "name": "Galena Deposit",
-      "host": "stone",
-      "count": 4,
-      "size": 8,
-      "min": -16,
-      "max": 40,
-      "drop": [
-        1,
-        2
-      ],
-      "biomes": "#minecraft:is_overworld",
-      "resource": "galena",
-      "dropItem": "spawn_9b5fbb9:galena",
-      "access": "shaft_mine",
-      "recognisedBy": "T-16"
-    },
-    {
       "block": "sphalerite_deposit",
       "name": "Sphalerite Deposit (Zinc Ore)",
       "host": "stone",
@@ -37455,31 +37311,6 @@
       "dropItem": "spawn_9b5fbb9:zinc_ore",
       "access": "shaft_mine",
       "recognisedBy": "T-19"
-    },
-    {
-      "block": "sulfur_deposit",
-      "name": "Sulfur Deposit",
-      "host": "stone",
-      "count": 3,
-      "size": 8,
-      "min": -60,
-      "max": 10,
-      "drop": [
-        1,
-        3
-      ],
-      "biomes": "#minecraft:is_overworld",
-      "extra": {
-        "count": 8,
-        "min": 10,
-        "max": 110,
-        "biomes": "#minecraft:is_nether",
-        "target": "netherrack"
-      },
-      "resource": "sulfur",
-      "dropItem": "spawn_9b5fbb9:sulfur",
-      "access": null,
-      "recognisedBy": null
     },
     {
       "block": "niter_crust",
@@ -37609,47 +37440,6 @@
       "recognisedBy": null
     },
     {
-      "block": "borax_crust",
-      "name": "Borax Crust",
-      "host": "sand",
-      "count": 6,
-      "size": 8,
-      "min": 58,
-      "max": 90,
-      "drop": [
-        1,
-        3
-      ],
-      "biomes": [
-        "minecraft:desert",
-        "minecraft:badlands",
-        "minecraft:eroded_badlands",
-        "minecraft:wooded_badlands"
-      ],
-      "resource": "borax",
-      "dropItem": "spawn_9b5fbb9:borax",
-      "access": null,
-      "recognisedBy": null
-    },
-    {
-      "block": "fluorite_deposit",
-      "name": "Fluorite Deposit",
-      "host": "stone",
-      "count": 3,
-      "size": 6,
-      "min": -20,
-      "max": 40,
-      "drop": [
-        1,
-        2
-      ],
-      "biomes": "#minecraft:is_overworld",
-      "resource": "fluorite",
-      "dropItem": "spawn_9b5fbb9:fluorite",
-      "access": "shaft_mine",
-      "recognisedBy": null
-    },
-    {
       "block": "platinum_placer",
       "name": "Platinum Placer",
       "host": "stone",
@@ -37699,28 +37489,6 @@
       "access": "drilling_rig"
     },
     {
-      "block": "bauxite_deposit",
-      "name": "Bauxite Deposit",
-      "host": "stone",
-      "count": 6,
-      "size": 10,
-      "min": 50,
-      "max": 110,
-      "drop": [
-        1,
-        3
-      ],
-      "biomes": [
-        "#minecraft:is_jungle",
-        "#minecraft:is_savanna",
-        "#minecraft:is_badlands"
-      ],
-      "resource": "bauxite",
-      "dropItem": "spawn_9b5fbb9:bauxite",
-      "access": null,
-      "recognisedBy": "T-51"
-    },
-    {
       "block": "chromite_deposit",
       "name": "Chromite Deposit",
       "host": "deepslate",
@@ -37753,24 +37521,6 @@
       "biomes": "#minecraft:is_overworld",
       "resource": "nickel_ore",
       "dropItem": "spawn_9b5fbb9:nickel_ore",
-      "access": "deep_mine",
-      "recognisedBy": "T-42"
-    },
-    {
-      "block": "wolframite_deposit",
-      "name": "Wolframite Deposit",
-      "host": "deepslate",
-      "count": 2,
-      "size": 6,
-      "min": -60,
-      "max": -16,
-      "drop": [
-        1,
-        2
-      ],
-      "biomes": "#minecraft:is_overworld",
-      "resource": "wolframite",
-      "dropItem": "spawn_9b5fbb9:wolframite",
       "access": "deep_mine",
       "recognisedBy": "T-42"
     },
@@ -37894,7 +37644,8 @@
           168
         ]
       ],
-      "drops": "self"
+      "drops": "self",
+      "survival": true
     },
     {
       "id": "limestone_bricks",
@@ -38030,7 +37781,8 @@
           238
         ]
       ],
-      "drops": "self"
+      "drops": "self",
+      "survival": true
     },
     {
       "id": "fan_filter_unit",
@@ -38065,53 +37817,8 @@
       "ore": true
     },
     {
-      "id": "rock_salt_deposit",
-      "name": "Rock Salt Deposit",
-      "hardness": 3.0,
-      "resistance": 3.0,
-      "sound": "stone",
-      "tool": "pickaxe",
-      "level": "stone",
-      "texture": [
-        "ore",
-        null
-      ],
-      "drops": "ore",
-      "ore": true
-    },
-    {
       "id": "native_copper_deposit",
       "name": "Native Copper Deposit",
-      "hardness": 3.0,
-      "resistance": 3.0,
-      "sound": "stone",
-      "tool": "pickaxe",
-      "level": "stone",
-      "texture": [
-        "ore",
-        null
-      ],
-      "drops": "ore",
-      "ore": true
-    },
-    {
-      "id": "malachite_deposit",
-      "name": "Malachite Deposit",
-      "hardness": 3.0,
-      "resistance": 3.0,
-      "sound": "stone",
-      "tool": "pickaxe",
-      "level": "stone",
-      "texture": [
-        "ore",
-        null
-      ],
-      "drops": "ore",
-      "ore": true
-    },
-    {
-      "id": "cassiterite_deposit",
-      "name": "Cassiterite Deposit",
       "hardness": 3.0,
       "resistance": 3.0,
       "sound": "stone",
@@ -38140,38 +37847,8 @@
       "ore": true
     },
     {
-      "id": "galena_deposit",
-      "name": "Galena Deposit",
-      "hardness": 3.0,
-      "resistance": 3.0,
-      "sound": "stone",
-      "tool": "pickaxe",
-      "level": "stone",
-      "texture": [
-        "ore",
-        null
-      ],
-      "drops": "ore",
-      "ore": true
-    },
-    {
       "id": "sphalerite_deposit",
       "name": "Sphalerite Deposit (Zinc Ore)",
-      "hardness": 3.0,
-      "resistance": 3.0,
-      "sound": "stone",
-      "tool": "pickaxe",
-      "level": "stone",
-      "texture": [
-        "ore",
-        null
-      ],
-      "drops": "ore",
-      "ore": true
-    },
-    {
-      "id": "sulfur_deposit",
-      "name": "Sulfur Deposit",
       "hardness": 3.0,
       "resistance": 3.0,
       "sound": "stone",
@@ -38290,36 +37967,6 @@
       "ore": true
     },
     {
-      "id": "borax_crust",
-      "name": "Borax Crust",
-      "hardness": 0.6,
-      "resistance": 3.0,
-      "sound": "sand",
-      "tool": "shovel",
-      "level": null,
-      "texture": [
-        "ore",
-        null
-      ],
-      "drops": "ore",
-      "ore": true
-    },
-    {
-      "id": "fluorite_deposit",
-      "name": "Fluorite Deposit",
-      "hardness": 3.0,
-      "resistance": 3.0,
-      "sound": "stone",
-      "tool": "pickaxe",
-      "level": "stone",
-      "texture": [
-        "ore",
-        null
-      ],
-      "drops": "ore",
-      "ore": true
-    },
-    {
       "id": "platinum_placer",
       "name": "Platinum Placer",
       "hardness": 3.0,
@@ -38368,21 +38015,6 @@
       "ore": true
     },
     {
-      "id": "bauxite_deposit",
-      "name": "Bauxite Deposit",
-      "hardness": 3.0,
-      "resistance": 3.0,
-      "sound": "stone",
-      "tool": "pickaxe",
-      "level": "stone",
-      "texture": [
-        "ore",
-        null
-      ],
-      "drops": "ore",
-      "ore": true
-    },
-    {
       "id": "chromite_deposit",
       "name": "Chromite Deposit",
       "hardness": 4.5,
@@ -38400,21 +38032,6 @@
     {
       "id": "pentlandite_deposit",
       "name": "Pentlandite Deposit (Nickel Ore)",
-      "hardness": 4.5,
-      "resistance": 3.0,
-      "sound": "deepslate",
-      "tool": "pickaxe",
-      "level": "iron",
-      "texture": [
-        "ore",
-        null
-      ],
-      "drops": "ore",
-      "ore": true
-    },
-    {
-      "id": "wolframite_deposit",
-      "name": "Wolframite Deposit",
       "hardness": 4.5,
       "resistance": 3.0,
       "sound": "deepslate",

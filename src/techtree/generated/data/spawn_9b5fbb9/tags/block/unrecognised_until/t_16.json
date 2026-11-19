@@ -1,8 +1,6 @@
 {
   "values": [
-    "spawn_9b5fbb9:cassiterite_deposit",
     "spawn_9b5fbb9:bog_iron_deposit",
-    "spawn_9b5fbb9:galena_deposit",
     "#minecraft:iron_ores"
   ]
 }

@@ -1,0 +1,133 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 60
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "summon spawn_9b5fbb9:brown_bear -2.5 -60 0.5 {NoAI:1b,Tags:[\"bear\"],Rotation:[0f,0f]}",
+    "summon spawn_9b5fbb9:lion 2.5 -60 0.5 {NoAI:1b,Tags:[\"lion\"],Rotation:[0f,0f]}",
+    "summon minecraft:villager 0.5 -60 0.5 {NoAI:1b,Rotation:[0f,0f]}"
+   ]
+  },
+  {
+   "step": 10
+  },
+  {
+   "camera": {
+    "pos": [
+     0.5,
+     -58.8,
+     5.5
+    ],
+    "look_at": [
+     0.5,
+     -59.2,
+     0.5
+    ]
+   }
+  },
+  {
+   "shot": "wild-front"
+  },
+  {
+   "camera": {
+    "pos": [
+     6.0,
+     -58.6,
+     -2.5
+    ],
+    "look_at": [
+     0.5,
+     -59.3,
+     0.5
+    ]
+   }
+  },
+  {
+   "shot": "wild-side"
+  },
+  {
+   "camera": {
+    "pos": [
+     -5.0,
+     -57.0,
+     4.5
+    ],
+    "look_at": [
+     0.5,
+     -59.6,
+     0.5
+    ]
+   }
+  },
+  {
+   "shot": "wild-above"
+  },
+  {
+   "camera": {
+    "pos": [
+     -5.5,
+     -59.2,
+     3.0
+    ],
+    "look_at": [
+     -2.5,
+     -59.3,
+     0.0
+    ]
+   }
+  },
+  {
+   "animate": "@e[tag=bear]",
+   "animation": "attack",
+   "frames": 6,
+   "every": 2,
+   "name": "bear-attack"
+  },
+  {
+   "camera": {
+    "pos": [
+     5.5,
+     -59.2,
+     3.0
+    ],
+    "look_at": [
+     2.5,
+     -59.3,
+     0.0
+    ]
+   }
+  },
+  {
+   "animate": "@e[tag=lion]",
+   "animation": "attack",
+   "frames": 6,
+   "every": 2,
+   "name": "lion-attack"
+  }
+ ]
+}

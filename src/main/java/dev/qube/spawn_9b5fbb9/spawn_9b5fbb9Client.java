@@ -20,11 +20,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
+import dev.qube.spawn_9b5fbb9.client.SurvivalHud;
 import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
@@ -42,8 +45,24 @@ public class spawn_9b5fbb9Client {
             Identifier.fromNamespaceAndPath(spawn_9b5fbb9.MODID, "techtree"));
     public static final KeyMapping JOURNAL_KEY = new KeyMapping("key.spawn_9b5fbb9.journal", InputConstants.KEY_J, CATEGORY);
 
-    public spawn_9b5fbb9Client(ModContainer container) {
+    public spawn_9b5fbb9Client(IEventBus bus, ModContainer container) {
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        // survival: HUD, clothing and vehicle rendering, and what is known of other actors
+        bus.addListener(SurvivalHud::register);
+        bus.addListener(dev.qube.spawn_9b5fbb9.client.ClothingLayer::register);
+        bus.addListener(dev.qube.spawn_9b5fbb9.client.NpcClothingLayer::register);
+        bus.addListener(dev.qube.spawn_9b5fbb9.client.NpcClothingLayer::modifiers);
+        bus.addListener(SurvivalHud::keys);
+        bus.addListener(dev.qube.spawn_9b5fbb9.client.VehicleRenderer::register);
+        NeoForge.EVENT_BUS.addListener(SurvivalHud::tick);
+        // What is known of an actor goes when the actor does, and all of it when the server is left.
+        NeoForge.EVENT_BUS.addListener((net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent event) -> {
+            if (event.getLevel().isClientSide()) dev.qube.spawn_9b5fbb9.network.SurvivalNetwork.entityStates.remove(event.getEntity().getId());
+        });
+        NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut event) -> {
+            dev.qube.spawn_9b5fbb9.network.SurvivalNetwork.forget();
+            dev.qube.spawn_9b5fbb9.environment.WeatherNetwork.client = null;
+        });
     }
 
     @SubscribeEvent

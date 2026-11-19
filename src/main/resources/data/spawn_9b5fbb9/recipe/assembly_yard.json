@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "#minecraft:logs",
+    "#minecraft:logs",
+    "#minecraft:logs",
+    "#minecraft:logs",
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "spawn_9b5fbb9:cordage",
+    "spawn_9b5fbb9:cordage",
+    "spawn_9b5fbb9:cordage"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:assembly_yard",
+    "count": 1
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "steps": [
+    {
+      "run": [
+        "setblock -3 -60 0 spawn_9b5fbb9:kiln",
+        "setblock 0 -60 0 spawn_9b5fbb9:forge",
+        "setblock 3 -60 0 spawn_9b5fbb9:trough",
+        "fill -4 -61 3 -1 -61 3 minecraft:farmland[moisture=7]",
+        "setblock -4 -60 3 spawn_9b5fbb9:rice_crop[age=7]",
+        "setblock -3 -60 3 spawn_9b5fbb9:maize_crop[age=5]",
+        "setblock -2 -60 3 spawn_9b5fbb9:fiber_crop[age=6]",
+        "setblock -1 -60 3 minecraft:wheat[age=7]",
+        "setblock 4 -60 3 spawn_9b5fbb9:fruit_tree",
+        "summon minecraft:villager -2 -60 -2 {Tags:[\"cooperator\"],NoAI:1b}",
+        "item replace entity @e[tag=cooperator,limit=1] weapon.mainhand with spawn_9b5fbb9:wool_jacket",
+        "survival control @e[tag=cooperator,limit=1] clothe"
+      ]
+    },
+    {
+      "as": "p2",
+      "run": [
+        "item replace entity @s weapon.mainhand with spawn_9b5fbb9:wool_jacket",
+        "survival act clothe",
+        "item replace entity @s weapon.mainhand with spawn_9b5fbb9:wool_pants",
+        "survival act clothe",
+        "item replace entity @s weapon.mainhand with spawn_9b5fbb9:wool_shoes",
+        "survival act clothe"
+      ]
+    },
+    {
+      "as": "p2",
+      "camera": {
+        "pos": [
+          2.5,
+          -60,
+          -2.5
+        ],
+        "yaw": 180,
+        "pitch": 0
+      }
+    },
+    {
+      "step": 40
+    },
+    {
+      "camera": {
+        "pos": [
+          5,
+          -56,
+          -8
+        ],
+        "look_at": [
+          0,
+          -59,
+          0
+        ]
+      }
+    },
+    {
+      "shot": "survival-workshop-a"
+    },
+    {
+      "camera": {
+        "pos": [
+          -5,
+          -54,
+          -5
+        ],
+        "look_at": [
+          0,
+          -60,
+          0
+        ]
+      }
+    },
+    {
+      "shot": "survival-workshop-b"
+    },
+    {
+      "camera": {
+        "pos": [
+          2.5,
+          -58.5,
+          -6.5
+        ],
+        "look_at": [
+          2.5,
+          -59,
+          -2.5
+        ]
+      }
+    },
+    {
+      "shot": "clothed-bot"
+    },
+    {
+      "run": [
+        "gamemode survival @s",
+        "survival debug @s hunger 15",
+        "survival debug @s thirst 25"
+      ]
+    },
+    {
+      "camera": {
+        "pos": [
+          0.5,
+          -60,
+          -6.5
+        ],
+        "look_at": [
+          0,
+          -59,
+          0
+        ]
+      }
+    },
+    {
+      "step": 20
+    },
+    {
+      "shot": "five-state-hud",
+      "hud": true
+    },
+    {
+      "sync": {
+        "entities": "@e[tag=cooperator]",
+        "fields": [
+          "getSpawnSurvivalHunger",
+          "getSpawnSurvivalThirst",
+          "getSpawnSurvivalTemperature",
+          "getSpawnSurvivalMental",
+          "getSpawnSurvivalMovement"
+        ]
+      }
+    },
+    {
+      "sync": {
+        "entities": "@a[name=p2]",
+        "fields": [
+          "getSpawnSurvivalHunger",
+          "getSpawnSurvivalThirst",
+          "getSpawnSurvivalMental"
+        ]
+      }
+    }
+  ]
+}

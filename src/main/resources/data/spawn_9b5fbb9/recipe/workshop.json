@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "#minecraft:planks",
+    "#minecraft:logs",
+    "#minecraft:logs",
+    "spawn_9b5fbb9:cordage",
+    "spawn_9b5fbb9:cordage"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:workshop",
+    "count": 1
+  }
+}

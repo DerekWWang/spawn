@@ -1,0 +1,49 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "condition": {
+        "type": "minecraft:match_block",
+        "blocks": "spawn_9b5fbb9:rail_track",
+        "state": {
+          "part": "center"
+        }
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "spawn_9b5fbb9:steel_rail",
+          "modifier": [
+            {
+              "type": "minecraft:set_count",
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "condition": {
+        "type": "minecraft:match_block",
+        "blocks": "spawn_9b5fbb9:rail_track",
+        "state": {
+          "part": "center"
+        }
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "spawn_9b5fbb9:sleeper",
+          "modifier": [
+            {
+              "type": "minecraft:set_count",
+              "count": 2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

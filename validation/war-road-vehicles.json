@@ -1,0 +1,109 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 60
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "execute positioned -5.5 -60 0.5 rotated 0 0 run survival deploy cart",
+    "execute positioned -1.5 -60 0.5 rotated 0 0 run survival deploy wagon",
+    "execute positioned 2.5 -60 0.5 rotated 0 0 run survival deploy chariot",
+    "execute positioned 5.5 -60 0.5 rotated 0 0 run survival deploy motor_truck"
+   ]
+  },
+  {
+   "step": 5
+  },
+  {
+   "camera": {
+    "pos": [
+     9,
+     -56.5,
+     9
+    ],
+    "look_at": [
+     0,
+     -59.3,
+     0.5
+    ]
+   }
+  },
+  {
+   "shot": "road_vehicles_front"
+  },
+  {
+   "camera": {
+    "pos": [
+     -9,
+     -54,
+     -7
+    ],
+    "look_at": [
+     0,
+     -60,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "road_vehicles_rear_high"
+  },
+  {
+   "camera": {
+    "pos": [
+     -3.5,
+     -58.6,
+     6.5
+    ],
+    "look_at": [
+     -3.5,
+     -59.2,
+     0.5
+    ]
+   }
+  },
+  {
+   "shot": "cart_wagon_close"
+  },
+  {
+   "camera": {
+    "pos": [
+     9.5,
+     -58.2,
+     3.5
+    ],
+    "look_at": [
+     5.5,
+     -58.8,
+     0.5
+    ]
+   }
+  },
+  {
+   "shot": "truck_close"
+  }
+ ]
+}

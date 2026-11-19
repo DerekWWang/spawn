@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "spawn_9b5fbb9:item/forged_iron_hoe"
+  }
+}

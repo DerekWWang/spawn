@@ -307,11 +307,22 @@ public final class WorldEvents {
         if (!StationIndex.formedNear(level, "irrigation_canal", fieldBounds, 12).isEmpty()) {
             grain *= 2; // irrigation multiplies yield and frees it from rainfall
         }
+        // the grain is the crop: the ears the survival rules would drop are not left as well
+        event.getDrops().removeIf(e -> isFoodstuff(e.getItem()));
         drop(event, new ItemStack(ModContent.item("grain"), grain));
         held.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
     }
 
-    /** Hunting (P-006): a wild animal killed with a hunting weapon leaves a carcass. */
+    /** Food in the survival sense: what its rules age (edible things and wheat). */
+    private static boolean isFoodstuff(ItemStack stack) {
+        return dev.qube.spawn_9b5fbb9.content.ItemAging.isFood(stack) || stack.is(Items.WHEAT);
+    }
+
+    /**
+     * Hunting (P-006): a wild animal killed with a hunting weapon leaves a carcass. The carcass is the meat,
+     * to be butchered (P-009); the cuts the animal would otherwise drop are not left as well, while its hide,
+     * wool and bones are.
+     */
     @SubscribeEvent
     static void onLivingDrops(LivingDropsEvent event) {
         if (!(event.getSource().getEntity() instanceof ServerPlayer player) || player.isCreative()) {
@@ -326,6 +337,7 @@ public final class WorldEvents {
         }
         ItemStack carcass = ModContent.stack("carcass");
         if (!carcass.isEmpty()) {
+            event.getDrops().removeIf(drop -> isFoodstuff(drop.getItem()));
             ItemEntity e = new ItemEntity(victim.level(), victim.getX(), victim.getY() + 0.5, victim.getZ(), carcass);
             e.setDefaultPickUpDelay();
             event.getDrops().add(e);

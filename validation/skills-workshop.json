@@ -1,0 +1,197 @@
+{
+  "steps": [
+    {
+      "run": [
+        "setblock -4 -60 0 spawn_9b5fbb9:kiln",
+        "setblock -2 -60 0 spawn_9b5fbb9:bloomery",
+        "setblock 0 -60 0 spawn_9b5fbb9:forge",
+        "setblock 2 -60 0 spawn_9b5fbb9:anvil",
+        "setblock 4 -60 0 spawn_9b5fbb9:loom",
+        "setblock -4 -60 2 spawn_9b5fbb9:kiln",
+        "setblock -6 -61 -3 minecraft:water",
+        "setblock -6 -60 -1 minecraft:campfire[lit=true]",
+        "setblock -4 -61 -4 minecraft:dirt",
+        "setblock -4 -60 -4 spawn_9b5fbb9:loose_stones",
+        "survival debug_skill @s pottery 14",
+        "survival debug_skill @s smithing 13",
+        "survival debug_skill @s weaving 8",
+        "survival debug_skill @s farming 4",
+        "survival debug_skill @s foraging 3",
+        "survival debug_skill @s hunting 6",
+        "summon minecraft:villager -4.5 -60 4.5 {Tags:[\"skill_potter\"],NoAI:1b}",
+        "summon minecraft:villager 4.5 -60 2.5 {Tags:[\"skill_weaver\"],NoAI:1b}",
+        "summon minecraft:villager 0.5 -60 2.5 {Tags:[\"skill_smith\"],NoAI:1b}"
+      ]
+    },
+    {
+      "as": "p2",
+      "camera": {
+        "pos": [
+          -4.5,
+          -60,
+          -2.5
+        ],
+        "yaw": 180,
+        "pitch": 0
+      }
+    },
+    {
+      "as": "p2",
+      "run": [
+        "survival debug_skill @s pottery 0",
+        "survival debug_skill @s foraging 0",
+        "survival forage -4 -60 -4"
+      ]
+    },
+    {
+      "step": 120
+    },
+    {
+      "as": "p2",
+      "hotbar": 8
+    },
+    {
+      "as": "p2",
+      "run": [
+        "item replace entity @s weapon.mainhand with minecraft:charcoal",
+        "survival fuel",
+        "item replace entity @s weapon.mainhand with minecraft:clay",
+        "survival produce fire_pot"
+      ]
+    },
+    {
+      "run": [
+        "survival debug_skill @e[tag=skill_potter,limit=1] pottery 16",
+        "item replace entity @e[tag=skill_potter,limit=1] weapon.mainhand with minecraft:charcoal",
+        "survival control @e[tag=skill_potter,limit=1] fuel",
+        "item replace entity @e[tag=skill_potter,limit=1] weapon.mainhand with minecraft:clay",
+        "survival control @e[tag=skill_potter,limit=1] produce fire_pot",
+        "item replace entity @e[tag=skill_weaver,limit=1] weapon.mainhand with minecraft:black_wool",
+        "survival control @e[tag=skill_weaver,limit=1] produce spin_black_wool",
+        "survival debug_skill @e[tag=skill_smith,limit=1] smithing 8",
+        "item replace entity @e[tag=skill_smith,limit=1] weapon.mainhand with minecraft:charcoal",
+        "survival control @e[tag=skill_smith,limit=1] fuel",
+        "item replace entity @e[tag=skill_smith,limit=1] weapon.mainhand with minecraft:copper_ingot 3",
+        "survival control @e[tag=skill_smith,limit=1] produce forge_copper_pickaxe_blank"
+      ]
+    },
+    {
+      "step": 40
+    },
+    {
+      "camera": {
+        "pos": [
+          7,
+          -56,
+          -7
+        ],
+        "look_at": [
+          0,
+          -59,
+          0
+        ]
+      }
+    },
+    {
+      "shot": "skill-workshop-a"
+    },
+    {
+      "camera": {
+        "pos": [
+          -7,
+          -54,
+          5
+        ],
+        "look_at": [
+          0,
+          -59,
+          0
+        ]
+      }
+    },
+    {
+      "shot": "skill-workshop-b"
+    },
+    {
+      "run": "tick sprint 4800"
+    },
+    {
+      "wait": 400
+    },
+    {
+      "run": [
+        "tick freeze",
+        "data get block -4 -60 0 output",
+        "data get block -4 -60 2 output",
+        "data get block 4 -60 0 output",
+        "data get block 0 -60 0 output"
+      ]
+    },
+    {
+      "as": "p2",
+      "run": [
+        "survival collect",
+        "survival skills",
+        "data get entity @s Inventory"
+      ]
+    },
+    {
+      "sync": {
+        "entities": "@a[name=p2]",
+        "fields": [
+          "getSpawnSurvivalPottery",
+          "getSpawnSurvivalForaging"
+        ]
+      }
+    },
+    {
+      "sync": {
+        "entities": "@e[tag=skill_potter]",
+        "fields": [
+          "getSpawnSurvivalPottery"
+        ]
+      }
+    },
+    {
+      "sync": {
+        "entities": "@e[tag=skill_weaver]",
+        "fields": [
+          "getSpawnSurvivalWeaving"
+        ]
+      }
+    },
+    {
+      "camera": {
+        "pos": [
+          -1,
+          -58,
+          -4
+        ],
+        "look_at": [
+          -4,
+          -59,
+          -2
+        ]
+      }
+    },
+    {
+      "shot": "practiced-potter"
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 10
+    },
+    {
+      "shot": "skills-health",
+      "hud": true
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 10
+    }
+  ]
+}

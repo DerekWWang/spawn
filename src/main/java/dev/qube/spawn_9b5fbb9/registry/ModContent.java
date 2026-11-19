@@ -27,6 +27,7 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ToolMaterial;
@@ -74,20 +75,30 @@ public final class ModContent {
 
     static {
         TechTree tree = TechTree.get();
+        // The survival rules register the ids they share with the tree; the tree uses theirs.
+        for (String id : tree.survival) {
+            ITEM_BY_ID.put(id, DeferredItem.createItem(Identifier.fromNamespaceAndPath(MODID, id)));
+        }
         for (TechTree.BlockDef def : tree.blocks) {
+            if (tree.survival.contains(def.id())) {
+                continue;
+            }
             DeferredBlock<Block> block = BLOCKS.registerBlock(def.id(), Block::new, p -> blockProperties(p, def));
             SIMPLE_BLOCKS.put(def.id(), block);
             ITEM_BY_ID.put(def.id(), ITEMS.registerSimpleBlockItem(def.id(), block));
         }
         for (TechTree.StationDef def : tree.stations) {
             String id = def.id();
+            if (tree.survival.contains(id)) {
+                continue;
+            }
             DeferredBlock<StationBlock> block = BLOCKS.registerBlock(id, p -> new StationBlock(p, id),
                     p -> p.strength(2.5F, 6.0F).sound(stationSound(def.family())).mapColor(MapColor.METAL));
             STATION_BLOCKS.put(id, block);
             ITEM_BY_ID.put(id, ITEMS.registerSimpleBlockItem(id, block, p -> p.stacksTo(1)));
         }
         for (TechTree.ItemDef def : tree.items) {
-            if (def.station()) {
+            if (def.station() || tree.survival.contains(def.id())) {
                 continue;
             }
             DeferredItem<? extends Item> item;

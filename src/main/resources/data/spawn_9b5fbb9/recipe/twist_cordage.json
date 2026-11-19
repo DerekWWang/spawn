@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "spawn_9b5fbb9:plant_fiber",
+    "spawn_9b5fbb9:plant_fiber"
+  ],
+  "result": {
+    "id": "spawn_9b5fbb9:cordage",
+    "count": 2
+  }
+}

@@ -1,0 +1,144 @@
+{
+  "evidence": "exploratory",
+  "shots": [
+    {
+      "name": "earned-skills-before-reconnect",
+      "path": "run/qube/shots/earned-skills-before-reconnect.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        -4.5,
+        -60.0,
+        -0.59,
+        161.6,
+        45.7
+      ],
+      "settled": true,
+      "segment": "segment 3",
+      "game_tick": 160,
+      "warnings": []
+    }
+  ],
+  "timing_warnings": [
+    "step 7: wait counts client ticks, but the world is frozen, so no game time passed (mobs did not move, cooldowns did not count down); use {\"step\": n} instead",
+    "step 10: wait counts client ticks, but the world is frozen, so no game time passed (mobs did not move, cooldowns did not count down); use {\"step\": n} instead",
+    "step 12: wait counts client ticks, but the world is frozen, so no game time passed (mobs did not move, cooldowns did not count down); use {\"step\": n} instead"
+  ],
+  "entities_gone": [],
+  "desyncs": [],
+  "sync": [
+    {
+      "segment": "segment 3",
+      "server": {
+        "380df991-f603-344c-a090-369bad2a924a": {
+          "getSpawnSurvivalMining": 12.0,
+          "getSpawnSurvivalConstruction": 6.0,
+          "getSpawnSurvivalForaging": 0.0,
+          "type": "minecraft:player"
+        }
+      },
+      "client": {
+        "380df991-f603-344c-a090-369bad2a924a": {
+          "getSpawnSurvivalMining": 12.0,
+          "getSpawnSurvivalConstruction": 6.0,
+          "getSpawnSurvivalForaging": 0.0
+        }
+      }
+    }
+  ],
+  "command_output": [
+    {
+      "run": "tick freeze",
+      "output": [
+        "The game is frozen"
+      ]
+    },
+    {
+      "run": "gamemode survival @s",
+      "output": [
+        "Set own game mode to Survival Mode"
+      ]
+    },
+    {
+      "run": "survival debug_passion @s foraging interested",
+      "output": [
+        "Dev \u2014 practiced skills",
+        "Pottery 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Smithing 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Weaving 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Farming 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Foraging 0/20 | interested | 1000 XP to next | learning 100% | today 0/4000 | decay 0/day",
+        "Hunting 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Mining 12/20 | burning | 16000 XP to next | learning 150% | today 0/4000 | decay 120/day",
+        "Construction 6/20 | interested | 7000 XP to next | learning 100% | today 0/4000 | decay 0/day",
+        "Cooking 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Animals 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Medicine 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day"
+      ]
+    },
+    {
+      "run": "tp @s -4.50 -60.00 -1.50 -198.4 45.7",
+      "output": [
+        "Teleported Dev to -4.500000, -60.000000, -1.500000"
+      ]
+    },
+    {
+      "run": "survival forage -5 -60 -3",
+      "output": [
+        "Started gather; 40 base loaded work ticks"
+      ]
+    },
+    {
+      "run": "tick step 160",
+      "output": [
+        "Stepping 160 tick(s)"
+      ]
+    },
+    {
+      "run": "survival query @s",
+      "output": [
+        "{\"entity\":\"380df991-f603-344c-a090-369bad2a924a\",\"recreation\":100.0,\"recreationHours\":0.0,\"requiredHours\":4.303,\"hunger\":99.55999999999983,\"thirst\":99.49999999999997,\"temperature\":37.0,\"health\":20.0,\"movement\":0.974595625,\"manipulation\":1.0,\"mental\":1.0,\"conditions\":\"Stable\",\"calendar\":1457,\"schemaVersion\":6,\"skills\":{\"pottery\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"smithing\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"weaving\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"farming\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"foraging\":{\"level\":0,\"maxLevel\":20,\"experience\":20.0,\"experienceToNext\":980.0,\"workRate\":0.5,\"passion\":\"interested\",\"learningMultiplier\":1.0,\"dailyNetExperience\":20.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":20.0,\"levelCost\":1000.0},\"hunting\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"mining\":{\"level\":12,\"maxLevel\":20,\"experience\":80999.1,\"experienceToNext\":16000.9,\"workRate\":0.8,\"passion\":\"burning\",\"learningMultiplier\":1.5,\"dailyNetExperience\":-0.8999999999999999,\"dailySoftCap\":4000.0,\"decayPerDay\":120.0,\"effectiveLevel\":12.0,\"levelExperience\":-0.8999999999999999,\"levelCost\":16000.0},\"construction\":{\"level\":6,\"maxLevel\":20,\"experience\":21000.0,\"experienceToNext\":7000.0,\"workRate\":0.65,\"passion\":\"interested\",\"learningMultiplier\":1.0,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":6.0,\"levelExperience\":0.0,\"levelCost\":7000.0},\"cooking\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"animals\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0},\"medicine\":{\"level\":0,\"maxLevel\":20,\"experience\":0.0,\"experienceToNext\":1000.0,\"workRate\":0.5,\"passion\":\"none\",\"learningMultiplier\":0.35,\"dailyNetExperience\":0.0,\"dailySoftCap\":4000.0,\"decayPerDay\":0.0,\"effectiveLevel\":0.0,\"levelExperience\":0.0,\"levelCost\":1000.0}},\"anatomy\":{\"LEFT_ARM\":100.0,\"RIGHT_ARM\":100.0,\"LEFT_LEG\":100.0,\"RIGHT_LEG\":94.02249999999998,\"BRAIN\":100.0,\"LEFT_EYE\":100.0,\"RIGHT_EYE\":100.0,\"HEARING\":100.0,\"LEFT_THUMB\":100.0,\"LEFT_INDEX\":100.0,\"LEFT_MIDDLE\":100.0,\"LEFT_RING\":100.0,\"LEFT_LITTLE\":100.0,\"RIGHT_THUMB\":100.0,\"RIGHT_INDEX\":100.0,\"RIGHT_MIDDLE\":100.0,\"RIGHT_RING\":100.0,\"RIGHT_LITTLE\":100.0,\"LEFT_TOE_1\":100.0,\"LEFT_TOE_2\":100.0,\"LEFT_TOE_3\":100.0,\"LEFT_TOE_4\":100.0,\"LEFT_TOE_5\":100.0,\"RIGHT_TOE_1\":100.0,\"RIGHT_TOE_2\":100.0,\"RIGHT_TOE_3\":100.0,\"RIGHT_TOE_4\":100.0,\"RIGHT_TOE_5\":100.0},\"clothing\":[\"\",\"\",\"\",\"\"]}"
+      ]
+    },
+    {
+      "run": "gamemode spectator @s",
+      "output": [
+        "Set own game mode to Spectator Mode"
+      ]
+    },
+    {
+      "run": "survival skills",
+      "output": [
+        "Dev \u2014 practiced skills",
+        "Pottery 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Smithing 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Weaving 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Farming 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Foraging 0/20 | interested | 980 XP to next | learning 100% | today 20/4000 | decay 0/day",
+        "Hunting 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Mining 12/20 | burning | 16001 XP to next | learning 150% | today -1/4000 | decay 120/day",
+        "Construction 6/20 | interested | 7000 XP to next | learning 100% | today 0/4000 | decay 0/day",
+        "Cooking 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Animals 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day",
+        "Medicine 0/20 | none | 1000 XP to next | learning 35% | today 0/4000 | decay 0/day"
+      ]
+    }
+  ],
+  "sheets": [
+    "run/qube/shots/segment-3.sheet.png"
+  ],
+  "session_segments": 4,
+  "client": {
+    "running": true,
+    "pid": 45260,
+    "world": null,
+    "dedicated": true,
+    "uptime_sec": 699,
+    "size": [
+      1280,
+      720
+    ]
+  }
+}

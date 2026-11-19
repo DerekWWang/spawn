@@ -1,0 +1,36 @@
+{
+  "models": {
+    "5624cbfb-92a7-4360-8d52-dd5d2126db1e": {
+      "as": "entity",
+      "files": [
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/LionModel.java",
+        "src/main/resources/assets/spawn_9b5fbb9/textures/entity/lion.png",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/LionAnimations.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/LionRenderState.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/LionEntity.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/LionEntities.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/LionRenderer.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/LionClient.java"
+      ],
+      "name": "lion",
+      "scaffold": true,
+      "version": 7
+    },
+    "fe1e6817-509a-401a-9f08-0a6f22978ead": {
+      "as": "entity",
+      "files": [
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/BrownBearModel.java",
+        "src/main/resources/assets/spawn_9b5fbb9/textures/entity/brown_bear.png",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/BrownBearAnimations.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/BrownBearRenderState.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/BrownBearEntity.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/BrownBearEntities.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/BrownBearRenderer.java",
+        "src/main/java/dev/qube/spawn_9b5fbb9/wildlife/BrownBearClient.java"
+      ],
+      "name": "brown_bear",
+      "scaffold": true,
+      "version": 10
+    }
+  }
+}

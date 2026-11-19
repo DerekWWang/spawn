@@ -1,0 +1,90 @@
+{
+  "steps": [
+    {
+      "run": [
+        "survival injure @s left_arm 60",
+        "survival debug @s temperature 34"
+      ]
+    },
+    {
+      "step": 20
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 10
+    },
+    {
+      "shot": "health-and-clothing",
+      "hud": true
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 10
+    },
+    {
+      "camera": {
+        "pos": [
+          1,
+          -60,
+          -4.5
+        ],
+        "look_at": [
+          2.5,
+          -59,
+          -2.5
+        ]
+      }
+    },
+    {
+      "as": "p2",
+      "run": [
+        "item replace entity @s weapon.mainhand with spawn_9b5fbb9:bandage 2",
+        "survival act treat @a[name=Dev,limit=1]"
+      ]
+    },
+    {
+      "step": 20
+    },
+    {
+      "run": "survival query @s"
+    },
+    {
+      "shot": "cooperative-treatment",
+      "hud": true
+    },
+    {
+      "as": "p2",
+      "run": "item replace entity @s armor.chest with minecraft:iron_chestplate"
+    },
+    {
+      "camera": {
+        "pos": [
+          2.5,
+          -60,
+          -6.5
+        ],
+        "look_at": [
+          2.5,
+          -59,
+          -2.5
+        ]
+      }
+    },
+    {
+      "shot": "armor-over-clothing"
+    },
+    {
+      "sync": {
+        "entities": "@a[name=p2]",
+        "fields": [
+          "getSpawnSurvivalMental",
+          "getSpawnSurvivalMovement"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+ "steps": [
+  {
+   "run": [
+    "kill @e[type=!minecraft:player]",
+    "item replace entity @s weapon.mainhand with spawn_9b5fbb9:wool_jacket",
+    "survival act clothe",
+    "item replace entity @s weapon.mainhand with spawn_9b5fbb9:fiber_pants",
+    "survival act clothe",
+    "item replace entity @s weapon.mainhand with spawn_9b5fbb9:wool_shoes",
+    "survival act clothe"
+   ]
+  },
+  {
+   "step": 25
+  },
+  {
+   "run": "survival health"
+  },
+  {
+   "wait": 10
+  },
+  {
+   "shot": "clothing-condition",
+   "hud": true
+  },
+  {
+   "run": "survival health"
+  },
+  {
+   "wait": 5
+  },
+  {
+   "run": [
+    "survival act undress",
+    "survival act undress_pants"
+   ]
+  },
+  {
+   "step": 25
+  },
+  {
+   "run": "survival health"
+  },
+  {
+   "wait": 10
+  },
+  {
+   "shot": "clothing-after-undress",
+   "hud": true
+  },
+  {
+   "run": [
+    "survival health",
+    "survival act undress",
+    "clear @s"
+   ]
+  }
+ ]
+}

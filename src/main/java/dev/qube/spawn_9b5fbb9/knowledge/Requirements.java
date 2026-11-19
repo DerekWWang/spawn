@@ -13,6 +13,7 @@ import dev.qube.spawn_9b5fbb9.registry.ModContent;
 import dev.qube.spawn_9b5fbb9.spawn_9b5fbb9;
 import dev.qube.spawn_9b5fbb9.station.StationBlockEntity;
 import dev.qube.spawn_9b5fbb9.station.StationIndex;
+import dev.qube.spawn_9b5fbb9.station.SurvivalStations;
 import dev.qube.spawn_9b5fbb9.techtree.TechTree;
 import dev.qube.spawn_9b5fbb9.techtree.TechTree.FunctionDef;
 import dev.qube.spawn_9b5fbb9.techtree.TechTree.Ref;
@@ -123,6 +124,12 @@ public final class Requirements {
     public static boolean mechanicalPower(Level level, AABB area, boolean draw) {
         double r = Config.integer(Config.PRESENCE_RADIUS);
         for (String id : MECHANICAL_PROVIDERS) {
+            if (SurvivalStations.owned(id)) {
+                if (SurvivalStations.near(level, id, area, r)) {
+                    return true; // the survival engine keeps its own fire and water
+                }
+                continue;
+            }
             for (StationBlockEntity s : StationIndex.formedNear(level, id, area, r)) {
                 if (draw ? s.drawPower(40) : s.canProvidePower()) {
                     return true;
@@ -203,7 +210,9 @@ public final class Requirements {
         }
 
         boolean stationNear(String id) {
-            return stations.computeIfAbsent(id, k -> !StationIndex.formedNear(level, k, here, Config.integer(Config.PRESENCE_RADIUS)).isEmpty());
+            double r = Config.integer(Config.PRESENCE_RADIUS);
+            return stations.computeIfAbsent(id, k -> SurvivalStations.owned(k) ? SurvivalStations.near(level, k, here, r)
+                    : !StationIndex.formedNear(level, k, here, r).isEmpty());
         }
 
         boolean nearWater() {
@@ -448,6 +457,12 @@ public final class Requirements {
                         continue; // checked above: the tool must be inside it
                     }
                     TechTree.StationDef other = TechTree.get().stationsById.get(m.id());
+                    if (SurvivalStations.owned(m.id())) {
+                        if (!SurvivalStations.near(level, m.id(), host, radius)) {
+                            missing.add("Needs a " + stationName(m.id()) + " within " + radius + " blocks");
+                        }
+                        continue;
+                    }
                     List<StationBlockEntity> near = StationIndex.formedNear(level, m.id(), host, radius);
                     boolean ok = false;
                     for (StationBlockEntity s : near) {

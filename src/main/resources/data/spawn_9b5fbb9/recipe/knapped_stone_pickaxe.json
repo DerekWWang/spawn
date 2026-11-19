@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "EEE",
+    "CS ",
+    " S "
+  ],
+  "key": {
+    "E": "spawn_9b5fbb9:stone_edge",
+    "S": "minecraft:stick",
+    "C": "spawn_9b5fbb9:cordage"
+  },
+  "result": {
+    "id": "spawn_9b5fbb9:knapped_stone_pickaxe"
+  }
+}

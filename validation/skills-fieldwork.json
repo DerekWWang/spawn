@@ -1,0 +1,101 @@
+{
+  "steps": [
+    {
+      "run": [
+        "fill 0 -61 -4 0 -60 -4 minecraft:air",
+        "setblock 0 -61 -4 minecraft:dirt",
+        "setblock 0 -60 -4 spawn_9b5fbb9:loose_stones",
+        "summon minecraft:villager 1.5 -60 5.5 {Tags:[\"skill_hunter\"]}",
+        "summon minecraft:cow 6.5 -60 5.5 {Tags:[\"skill_quarry\"],NoAI:1b,Health:1f}",
+        "item replace entity @e[tag=skill_hunter,limit=1] weapon.mainhand with spawn_9b5fbb9:spear",
+        "survival control @e[tag=skill_hunter,limit=1] hunt @e[tag=skill_quarry,limit=1]"
+      ]
+    },
+    {
+      "camera": {
+        "pos": [
+          4,
+          -57.5,
+          9
+        ],
+        "look_at": [
+          4,
+          -59,
+          5
+        ]
+      }
+    },
+    {
+      "burst": "skilled-hunt",
+      "frames": 10,
+      "every": 8
+    },
+    {
+      "run": "survival query @e[tag=skill_hunter,limit=1]"
+    },
+    {
+      "sync": {
+        "entities": "@e[tag=skill_hunter]",
+        "fields": [
+          "getSpawnSurvivalHunting",
+          "getSpawnSurvivalHunger",
+          "getSpawnSurvivalMental"
+        ]
+      }
+    },
+    {
+      "camera": {
+        "pos": [
+          -1.5,
+          -60,
+          -3.5
+        ],
+        "look_at": [
+          0,
+          -59,
+          0
+        ]
+      }
+    },
+    {
+      "run": [
+        "gamemode survival @s",
+        "survival debug_skill @s hunting 9",
+        "survival debug_skill @s foraging 4",
+        "survival forage 0 -60 -4"
+      ]
+    },
+    {
+      "step": 100
+    },
+    {
+      "sync": {
+        "entities": "@a[name=Dev]",
+        "fields": [
+          "getSpawnSurvivalHunting",
+          "getSpawnSurvivalForaging",
+          "getSpawnSurvivalPottery"
+        ]
+      }
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 10
+    },
+    {
+      "shot": "earned-player-skills",
+      "hud": true
+    },
+    {
+      "run": "survival health"
+    },
+    {
+      "wait": 10
+    }
+  ],
+  "requires": [
+    "entity @a[name=p2]"
+  ]
+}

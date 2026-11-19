@@ -3,4 +3,11 @@ run/
 .gradle/
 .qube/worktrees/
 reference/
+/.agents/skills/qube/
+/.claude/skills/qube/
+.gstack/
+/wiki/
+
+# Node bots
+/bots/node_modules/
 __pycache__/

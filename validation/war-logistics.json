@@ -1,0 +1,125 @@
+{
+ "steps": [
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "summon minecraft:item_display 0 -58 0",
+    "execute positioned 0 -58 0 run survival deploy cart",
+    "summon minecraft:villager 0 -58 0 {NoAI:1b}",
+    "summon minecraft:horse 0 -58 0 {NoAI:1b}",
+    "kill @e[type=spawn_9b5fbb9:vehicle]",
+    "kill @e[type=minecraft:villager]",
+    "kill @e[type=minecraft:horse]",
+    "kill @e[type=minecraft:item_display]",
+    "setblock 0 -50 0 minecraft:stone",
+    "fill -9 -60 -9 9 -44 9 minecraft:air",
+    "setblock 0 -61 0 minecraft:stone",
+    "fill -7 -61 -7 7 -61 7 minecraft:white_concrete"
+   ]
+  },
+  {
+   "step": 60
+  },
+  {
+   "run": [
+    "summon minecraft:item 0 -58 0 {Item:{id:\"minecraft:stone\",count:1}}",
+    "kill @e[type=minecraft:item]"
+   ]
+  },
+  {
+   "run": [
+    "fill -9 -60 0 9 -60 0 spawn_9b5fbb9:rail_track[axis=x,part=center]",
+    "fill -9 -60 -1 9 -60 -1 spawn_9b5fbb9:rail_track[axis=x,part=neg]",
+    "fill -9 -60 1 9 -60 1 spawn_9b5fbb9:rail_track[axis=x,part=pos]",
+    "setblock 1 -61 3 minecraft:water",
+    "execute positioned 0.5 -60 0.5 rotated -90 0 run survival deploy locomotive",
+    "execute positioned -5.5 -60 0.5 rotated -90 0 run survival deploy rail_wagon",
+    "summon minecraft:villager 1.5 -60 3.5 {Tags:[\"drv\"],NoAI:1b}",
+    "item replace entity @e[tag=drv,limit=1] weapon.mainhand with minecraft:coal 16",
+    "survival control @e[tag=drv,limit=1] vehicle load",
+    "survival control @e[tag=drv,limit=1] vehicle board",
+    "survival control @e[tag=drv,limit=1] vehicle couple",
+    "survival control @e[tag=drv,limit=1] vehicle status",
+    "execute positioned 0.5 -60 0.5 run data merge entity @e[type=spawn_9b5fbb9:vehicle,sort=nearest,limit=1] {steam:1.0d,water:3000.0d}",
+    "execute positioned -5.5 -60 5.5 rotated -90 0 run survival deploy wagon",
+    "summon minecraft:horse -4.5 -60 7.5 {Tame:1b,Tags:[\"h1\"]}",
+    "summon minecraft:horse -6.5 -60 7.5 {Tame:1b,Tags:[\"h2\"]}",
+    "summon minecraft:villager -5.5 -60 7.5 {Tags:[\"carter\"],NoAI:1b}",
+    "item replace entity @e[tag=carter,limit=1] weapon.mainhand with minecraft:wheat 64",
+    "survival control @e[tag=carter,limit=1] vehicle load",
+    "survival control @e[tag=carter,limit=1] vehicle hitch @e[tag=h1,limit=1]",
+    "survival control @e[tag=carter,limit=1] vehicle hitch @e[tag=h2,limit=1]"
+   ]
+  },
+  {
+   "step": 45
+  },
+  {
+   "run": [
+    "survival control @e[tag=drv,limit=1] vehicle status",
+    "survival control @e[tag=carter,limit=1] vehicle status",
+    "survival control @e[tag=drv,limit=1] vehicle drive 9 -60 0",
+    "survival control @e[tag=carter,limit=1] vehicle drive 3 -60 5"
+   ]
+  },
+  {
+   "camera": {
+    "pos": [
+     0,
+     -52,
+     13
+    ],
+    "look_at": [
+     0,
+     -60,
+     2
+    ]
+   }
+  },
+  {
+   "burst": "train_and_wagon_moving",
+   "frames": 12,
+   "every": 20
+  },
+  {
+   "run": [
+    "survival control @e[tag=drv,limit=1] vehicle status",
+    "survival control @e[tag=carter,limit=1] vehicle status"
+   ]
+  },
+  {
+   "camera": {
+    "pos": [
+     9,
+     -57.5,
+     9
+    ],
+    "look_at": [
+     3,
+     -59,
+     4
+    ]
+   }
+  },
+  {
+   "shot": "wagon_team_arrived"
+  },
+  {
+   "camera": {
+    "pos": [
+     -2,
+     -55,
+     -7
+    ],
+    "look_at": [
+     2,
+     -59,
+     0
+    ]
+   }
+  },
+  {
+   "shot": "train_arrived_other_side"
+  }
+ ]
+}

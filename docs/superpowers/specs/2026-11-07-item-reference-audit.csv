@@ -1,0 +1,148 @@
+registry_id,current_name,proposed_display_name,wikipedia_reference,icon_brief,notes
+spawn_9b5fbb9:antibiotic,Antibiotic,Antibiotic Preparation,https://en.wikipedia.org/wiki/Antibiotic,Distinct labelled medicine vial,Do not rename to penicillin without a real production route.
+spawn_9b5fbb9:antiseptic,Antiseptic,Antiseptic Preparation,https://en.wikipedia.org/wiki/Antiseptic,Stoppered topical preparation bottle,Do not equate unspecified leaves with a manufactured antiseptic.
+spawn_9b5fbb9:antitoxin,Antitoxin,Antitoxin Preparation,https://en.wikipedia.org/wiki/Antitoxin,Stoppered serum vial,A specific toxin and biological preparation are not established by the current recipe.
+spawn_9b5fbb9:anvil,Stone Anvil,Stone Anvil,https://en.wikipedia.org/wiki/Anvil,Flat-topped working stone,A stone working surface is not a modern horned steel anvil.
+spawn_9b5fbb9:bandage,Bandage,Cloth Bandage,https://en.wikipedia.org/wiki/Bandage,Rolled cloth strip with a loose tail,
+spawn_9b5fbb9:blackberries,Blackberries,Blackberries,https://en.wikipedia.org/wiki/Blackberry,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:bloomery,Masonry Bloomery,Masonry Bloomery,https://en.wikipedia.org/wiki/Bloomery,Short shaft furnace with lower opening,Block item can retain its block rendering.
+spawn_9b5fbb9:bramble_crop,Blackberry Plant,Blackberry Plant,https://en.wikipedia.org/wiki/Blackberry,Distinct original 16 by 16 botanical silhouette,Render-only crop binding required by Qube; carried in gameplay as seeds.
+spawn_9b5fbb9:bramble_seeds,Blackberry Seeds,Blackberry Seeds,https://en.wikipedia.org/wiki/Blackberry,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:bronze_axe,Bronze Axe,Bronze Axe,https://en.wikipedia.org/wiki/Axe,Flat recognizable axe icon with material-specific color and details,
+spawn_9b5fbb9:bronze_axe_blank,Bronze Axe Blank,Bronze Axe Blank,https://en.wikipedia.org/wiki/Axe,"Unfinished axe part without final handle, lining, or fittings",
+spawn_9b5fbb9:bronze_boots,Bronze Boots,Bronze Boots,https://en.wikipedia.org/wiki/Plate_armour,Flat recognizable boots icon with material-specific color and details,
+spawn_9b5fbb9:bronze_boots_blank,Bronze Boots Blank,Bronze Boots Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished boots part without final handle, lining, or fittings",
+spawn_9b5fbb9:bronze_chestplate,Bronze Chestplate,Bronze Chestplate,https://en.wikipedia.org/wiki/Plate_armour,Flat recognizable chestplate icon with material-specific color and details,
+spawn_9b5fbb9:bronze_chestplate_blank,Bronze Chestplate Blank,Bronze Chestplate Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished chestplate part without final handle, lining, or fittings",
+spawn_9b5fbb9:bronze_helmet,Bronze Helmet,Bronze Helmet,https://en.wikipedia.org/wiki/Plate_armour,Flat recognizable helmet icon with material-specific color and details,
+spawn_9b5fbb9:bronze_helmet_blank,Bronze Helmet Blank,Bronze Helmet Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished helmet part without final handle, lining, or fittings",
+spawn_9b5fbb9:bronze_hoe,Bronze Hoe,Bronze Hoe,https://en.wikipedia.org/wiki/Hoe_(tool),Flat recognizable hoe icon with material-specific color and details,
+spawn_9b5fbb9:bronze_hoe_blank,Bronze Hoe Blank,Bronze Hoe Blank,https://en.wikipedia.org/wiki/Hoe_(tool),"Unfinished hoe part without final handle, lining, or fittings",
+spawn_9b5fbb9:bronze_ingot,Bronze Ingot,Bronze Ingot,https://en.wikipedia.org/wiki/Bronze,Brown-gold cast ingot,Use Ingot as the secondary form reference.
+spawn_9b5fbb9:bronze_leggings,Bronze Leggings,Bronze Leggings,https://en.wikipedia.org/wiki/Plate_armour,Flat recognizable leggings icon with material-specific color and details,
+spawn_9b5fbb9:bronze_leggings_blank,Bronze Leggings Blank,Bronze Leggings Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished leggings part without final handle, lining, or fittings",
+spawn_9b5fbb9:bronze_pickaxe,Bronze Pickaxe,Bronze Pickaxe,https://en.wikipedia.org/wiki/Pickaxe,Flat recognizable pickaxe icon with material-specific color and details,
+spawn_9b5fbb9:bronze_pickaxe_blank,Bronze Pickaxe Blank,Bronze Pickaxe Blank,https://en.wikipedia.org/wiki/Pickaxe,"Unfinished pickaxe part without final handle, lining, or fittings",
+spawn_9b5fbb9:bronze_shovel,Bronze Shovel,Bronze Shovel,https://en.wikipedia.org/wiki/Shovel,Flat recognizable shovel icon with material-specific color and details,
+spawn_9b5fbb9:bronze_shovel_blank,Bronze Shovel Blank,Bronze Shovel Blank,https://en.wikipedia.org/wiki/Shovel,"Unfinished shovel part without final handle, lining, or fittings",
+spawn_9b5fbb9:bronze_sword,Bronze Sword,Bronze Sword,https://en.wikipedia.org/wiki/Sword,Flat recognizable sword icon with material-specific color and details,
+spawn_9b5fbb9:bronze_sword_blank,Bronze Sword Blank,Bronze Sword Blank,https://en.wikipedia.org/wiki/Sword,"Unfinished sword part without final handle, lining, or fittings",
+spawn_9b5fbb9:brush_blank,Brush Blank,Brush Ferrule Blank,https://en.wikipedia.org/wiki/Brush,Short unfinished copper ferrule,
+spawn_9b5fbb9:brush_bundle,Brush Bundle,Brush Bristle Bundle,https://en.wikipedia.org/wiki/Brush,Aligned natural bristles tied together,Current inputs determine whether fiber or hair is represented.
+spawn_9b5fbb9:bucket_blank,Bucket Blank,Bucket Blank,https://en.wikipedia.org/wiki/Bucket,Unfinished curved metal vessel without handle,
+spawn_9b5fbb9:cassiterite,Cassiterite,Cassiterite,https://en.wikipedia.org/wiki/Cassiterite,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:cassiterite_ore,Cassiterite-bearing Granite,Cassiterite-bearing Granite,https://en.wikipedia.org/wiki/Cassiterite,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:ceramic_shard,Ceramic Shard,Pottery Sherd,https://en.wikipedia.org/wiki/Pottery,Curved broken clay fragment with pale fracture edge,
+spawn_9b5fbb9:clean_cloth,Clean Cloth,Clean Dressing Cloth,https://en.wikipedia.org/wiki/Bandage,Folded clean undyed woven cloth,Clean does not imply sterile.
+spawn_9b5fbb9:copper_axe,Copper Axe,Copper Axe,https://en.wikipedia.org/wiki/Axe,Flat recognizable axe icon with material-specific color and details,
+spawn_9b5fbb9:copper_axe_blank,Copper Axe Blank,Copper Axe Blank,https://en.wikipedia.org/wiki/Axe,"Unfinished axe part without final handle, lining, or fittings",
+spawn_9b5fbb9:copper_boots_blank,Copper Boots Blank,Copper Boots Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished boots part without final handle, lining, or fittings",
+spawn_9b5fbb9:copper_chestplate_blank,Copper Chestplate Blank,Copper Chestplate Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished chestplate part without final handle, lining, or fittings",
+spawn_9b5fbb9:copper_helmet_blank,Copper Helmet Blank,Copper Helmet Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished helmet part without final handle, lining, or fittings",
+spawn_9b5fbb9:copper_hoe,Copper Hoe,Copper Hoe,https://en.wikipedia.org/wiki/Hoe_(tool),Flat recognizable hoe icon with material-specific color and details,
+spawn_9b5fbb9:copper_hoe_blank,Copper Hoe Blank,Copper Hoe Blank,https://en.wikipedia.org/wiki/Hoe_(tool),"Unfinished hoe part without final handle, lining, or fittings",
+spawn_9b5fbb9:copper_leggings_blank,Copper Leggings Blank,Copper Leggings Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished leggings part without final handle, lining, or fittings",
+spawn_9b5fbb9:copper_pickaxe,Copper Pickaxe,Copper Pickaxe,https://en.wikipedia.org/wiki/Pickaxe,Flat recognizable pickaxe icon with material-specific color and details,
+spawn_9b5fbb9:copper_pickaxe_blank,Copper Pickaxe Blank,Copper Pickaxe Blank,https://en.wikipedia.org/wiki/Pickaxe,"Unfinished pickaxe part without final handle, lining, or fittings",
+spawn_9b5fbb9:copper_shovel_blank,Copper Shovel Blank,Copper Shovel Blank,https://en.wikipedia.org/wiki/Shovel,"Unfinished shovel part without final handle, lining, or fittings",
+spawn_9b5fbb9:copper_spear_blank,Copper Spear Blank,Copper Spear Blank,https://en.wikipedia.org/wiki/Spear,"Unfinished spear part without final handle, lining, or fittings",
+spawn_9b5fbb9:copper_sword_blank,Copper Sword Blank,Copper Sword Blank,https://en.wikipedia.org/wiki/Sword,"Unfinished sword part without final handle, lining, or fittings",
+spawn_9b5fbb9:cordage,Cordage,Plant-fiber Cordage,https://en.wikipedia.org/wiki/Rope,Short loop of visibly twisted strands,
+spawn_9b5fbb9:crossbow_blank,Crossbow Blank,Crossbow Mechanism Blank,https://en.wikipedia.org/wiki/Crossbow,Unfinished trigger or bow hardware without the wooden stock,
+spawn_9b5fbb9:crossbow_stock,Crossbow Stock,Wooden Crossbow Stock,https://en.wikipedia.org/wiki/Crossbow,Carved wooden tiller without bow or trigger,"This is wooden assembly, not weaving, despite its current loom station."
+spawn_9b5fbb9:crushed_copper,Crushed Copper,Crushed Copper Ore,https://en.wikipedia.org/wiki/Smelting,Small irregular green and brown granules,Crushed ore is not crushed metallic copper.
+spawn_9b5fbb9:crushed_iron,Crushed Iron,Crushed Iron Ore,https://en.wikipedia.org/wiki/Hematite,Rust-red and steel-grey granules,Existing raw iron can remain generic; hematite identity needs a typed new source.
+spawn_9b5fbb9:crushed_tin,Crushed Tin,Crushed Tin Ore,https://en.wikipedia.org/wiki/Cassiterite,Brown-black cassiterite granules,Existing tin ore is generic; apply cassiterite wording only to identified new inputs.
+spawn_9b5fbb9:dried_fiber,Dried Fiber,Dried Bast Fiber,https://en.wikipedia.org/wiki/Bast_fibre,Dry pale tan fiber bundle,
+spawn_9b5fbb9:fallen_sticks,Fallen Sticks,Fallen Sticks,https://en.wikipedia.org/wiki/Coarse_woody_debris,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:fertilized_egg,Fertilized Egg,Fertilized Chicken Egg,https://en.wikipedia.org/wiki/Egg,Natural off-white speckled egg,
+spawn_9b5fbb9:fiber_cloth,Fiber Cloth,Bast-fiber Cloth,https://en.wikipedia.org/wiki/Weaving,Thin folded tan woven cloth,Call it linen only if all accepted fibers are flax.
+spawn_9b5fbb9:fiber_jacket,Fiber Jacket,Bast-fiber Jacket,https://en.wikipedia.org/wiki/Jacket,Recognizable jacket silhouette with material-specific weave,Do not identify a generic plant textile as linen without a flax-only source.
+spawn_9b5fbb9:fiber_pants,Fiber Pants,Bast-fiber Pants,https://en.wikipedia.org/wiki/Trousers,Recognizable pants silhouette with material-specific weave,Do not identify a generic plant textile as linen without a flax-only source.
+spawn_9b5fbb9:fiber_seeds,Fiber Seeds,Fiber-plant Seeds,https://en.wikipedia.org/wiki/Flax,Small glossy brown seed cluster,Current species is unspecified; replace with typed pale-flax or flax seed when its crop is defined.
+spawn_9b5fbb9:fiber_shirt,Fiber Shirt,Bast-fiber Shirt,https://en.wikipedia.org/wiki/Shirt,Recognizable shirt silhouette with material-specific weave,Do not identify a generic plant textile as linen without a flax-only source.
+spawn_9b5fbb9:fiber_shoes,Fiber Shoes,Bast-fiber Shoes,https://en.wikipedia.org/wiki/Shoe,Recognizable shoes silhouette with material-specific weave,Do not identify a generic plant textile as linen without a flax-only source.
+spawn_9b5fbb9:fired_pot,Fired Pot,Fired Clay Jar,https://en.wikipedia.org/wiki/Earthenware,Warm clay jar with a visible open rim,Unglazed earthenware permeability is not modeled by the existing vessel system.
+spawn_9b5fbb9:flax_crop,Flax,Flax,https://en.wikipedia.org/wiki/Flax,Distinct original 16 by 16 botanical silhouette,Render-only crop binding required by Qube; carried in gameplay as seeds.
+spawn_9b5fbb9:flax_fiber,Flax Fiber,Flax Fiber,https://en.wikipedia.org/wiki/Flax,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:flax_seeds,Flax Seeds,Flax Seeds,https://en.wikipedia.org/wiki/Flax,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:flint_and_steel_blank,Flint And Steel Blank,Fire-steel Blank,https://en.wikipedia.org/wiki/Fire_striker,Unfinished curved striker,Working fire steel needs suitable steel; a plain iron recipe is an existing approximation.
+spawn_9b5fbb9:forge,Forge,Forge Hearth,https://en.wikipedia.org/wiki/Forge,Dark masonry hearth with fire bed,Block item can retain its block rendering.
+spawn_9b5fbb9:forged_iron_axe,Forged Iron Axe,Wrought Iron Axe,https://en.wikipedia.org/wiki/Axe,Flat recognizable axe icon with material-specific color and details,
+spawn_9b5fbb9:forged_iron_axe_blank,Forged Iron Axe Blank,Wrought Iron Axe Blank,https://en.wikipedia.org/wiki/Axe,"Unfinished axe part without final handle, lining, or fittings",
+spawn_9b5fbb9:forged_iron_boots_blank,Forged Iron Boots Blank,Wrought Iron Boots Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished boots part without final handle, lining, or fittings",
+spawn_9b5fbb9:forged_iron_chestplate_blank,Forged Iron Chestplate Blank,Wrought Iron Chestplate Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished chestplate part without final handle, lining, or fittings",
+spawn_9b5fbb9:forged_iron_helmet_blank,Forged Iron Helmet Blank,Wrought Iron Helmet Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished helmet part without final handle, lining, or fittings",
+spawn_9b5fbb9:forged_iron_hoe,Forged Iron Hoe,Wrought Iron Hoe,https://en.wikipedia.org/wiki/Hoe_(tool),Flat recognizable hoe icon with material-specific color and details,
+spawn_9b5fbb9:forged_iron_hoe_blank,Forged Iron Hoe Blank,Wrought Iron Hoe Blank,https://en.wikipedia.org/wiki/Hoe_(tool),"Unfinished hoe part without final handle, lining, or fittings",
+spawn_9b5fbb9:forged_iron_leggings_blank,Forged Iron Leggings Blank,Wrought Iron Leggings Blank,https://en.wikipedia.org/wiki/Plate_armour,"Unfinished leggings part without final handle, lining, or fittings",
+spawn_9b5fbb9:forged_iron_pickaxe,Forged Iron Pickaxe,Wrought Iron Pickaxe,https://en.wikipedia.org/wiki/Pickaxe,Flat recognizable pickaxe icon with material-specific color and details,
+spawn_9b5fbb9:forged_iron_pickaxe_blank,Forged Iron Pickaxe Blank,Wrought Iron Pickaxe Blank,https://en.wikipedia.org/wiki/Pickaxe,"Unfinished pickaxe part without final handle, lining, or fittings",
+spawn_9b5fbb9:forged_iron_shovel_blank,Forged Iron Shovel Blank,Wrought Iron Shovel Blank,https://en.wikipedia.org/wiki/Shovel,"Unfinished shovel part without final handle, lining, or fittings",
+spawn_9b5fbb9:forged_iron_sword_blank,Forged Iron Sword Blank,Wrought Iron Sword Blank,https://en.wikipedia.org/wiki/Sword,"Unfinished sword part without final handle, lining, or fittings",
+spawn_9b5fbb9:fruit_tree,Fruit Tree,Apple Tree Sapling,https://en.wikipedia.org/wiki/Apple,Small woody stem with apple-tree leaves,Current block produces apples. Harvesting apples should not duplicate saplings.
+spawn_9b5fbb9:hematite,Hematite,Hematite,https://en.wikipedia.org/wiki/Hematite,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:hematite_ore,Hematite Ore,Hematite Ore,https://en.wikipedia.org/wiki/Hematite,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:iron_bloom,Iron Bloom,Iron Bloom,https://en.wikipedia.org/wiki/Bloomery,Irregular porous dark lump with trapped slag,Not a cast ingot.
+spawn_9b5fbb9:iron_spear_blank,Iron Spear Blank,Iron Spear Blank,https://en.wikipedia.org/wiki/Spear,"Unfinished spear part without final handle, lining, or fittings",
+spawn_9b5fbb9:kiln,Kiln,Kiln,https://en.wikipedia.org/wiki/Kiln,Clay or masonry firing chamber,Block item can retain its block rendering.
+spawn_9b5fbb9:knapped_stone_axe,Knapped Stone Axe,Knapped Stone Axe,https://en.wikipedia.org/wiki/Axe,Flat recognizable axe icon with material-specific color and details,Knapping requires a suitable stone; generic rock fragments do not all work.
+spawn_9b5fbb9:knapped_stone_hoe,Knapped Stone Hoe,Knapped Stone Hoe,https://en.wikipedia.org/wiki/Hoe_(tool),Flat recognizable hoe icon with material-specific color and details,Knapping requires a suitable stone; generic rock fragments do not all work.
+spawn_9b5fbb9:knapped_stone_pickaxe,Knapped Stone Pickaxe,Knapped Stone Pickaxe,https://en.wikipedia.org/wiki/Pickaxe,Flat recognizable pickaxe icon with material-specific color and details,Knapping requires a suitable stone; generic rock fragments do not all work.
+spawn_9b5fbb9:limestone,Limestone,Limestone,https://en.wikipedia.org/wiki/Limestone,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:loom,Hand Loom,Hand Loom,https://en.wikipedia.org/wiki/Loom,Wooden frame with warp threads,Block item can retain its block rendering.
+spawn_9b5fbb9:loose_stone,Loose Stone,Loose Stone,https://en.wikipedia.org/wiki/Scree,Irregular weathered stone fragment,Do not assert a rock species without a typed source.
+spawn_9b5fbb9:loose_stones,Loose Stones,Loose Stones,https://en.wikipedia.org/wiki/Scree,Several uneven fragments,Block icon or legacy item definition; reconcile actual registration.
+spawn_9b5fbb9:maize,Maize,Maize Ear,https://en.wikipedia.org/wiki/Maize,Recognizable cob with rows of kernels and a husk tip,
+spawn_9b5fbb9:maize_seeds,Maize Seeds,Maize Kernels,https://en.wikipedia.org/wiki/Maize,Broad angular yellow kernels,Teosinte and modern maize require distinct identities.
+spawn_9b5fbb9:malachite,Malachite,Malachite,https://en.wikipedia.org/wiki/Malachite,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:malachite_ore,Malachite-bearing Limestone,Malachite-bearing Limestone,https://en.wikipedia.org/wiki/Malachite,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:medicinal_leaves,Medicinal Leaves,Medicinal Leaves,https://en.wikipedia.org/wiki/Achillea_millefolium,Identifiable serrated leaf bundle once species is fixed,Existing contents are unspecified; new yarrow sources need typed identities. Do not infer pharmacological efficacy from botanical identity.
+spawn_9b5fbb9:medicinal_seeds,Medicinal Seeds,Medicinal-plant Seeds,https://en.wikipedia.org/wiki/Achillea_millefolium,Tiny narrow tan achenes for a typed yarrow crop,Current species is unspecified; do not relabel old contents as yarrow automatically.
+spawn_9b5fbb9:metal_rivet,Metal Rivet,Metal Rivet,https://en.wikipedia.org/wiki/Rivet,Short headed cylindrical fastener,Current recipes can use different metals; keep the label generic.
+spawn_9b5fbb9:metal_scrap,Metal Scrap,Metal Scrap,https://en.wikipedia.org/wiki/Forging,Irregular bent offcuts,Metal type is unspecified.
+spawn_9b5fbb9:obsidian_axe,Obsidian Axe,Obsidian Axe,https://en.wikipedia.org/wiki/Axe,Flat recognizable axe icon with material-specific color and details,Obsidian is brittle; preserve its actual durability and avoid implying metal-like performance.
+spawn_9b5fbb9:obsidian_flake,Obsidian Flake,Obsidian Flake,https://en.wikipedia.org/wiki/Obsidian,Black glass flake with sharp grey highlights,
+spawn_9b5fbb9:obsidian_hoe,Obsidian Hoe,Obsidian Hoe,https://en.wikipedia.org/wiki/Hoe_(tool),Flat recognizable hoe icon with material-specific color and details,Obsidian is brittle; preserve its actual durability and avoid implying metal-like performance.
+spawn_9b5fbb9:obsidian_pickaxe,Obsidian Pickaxe,Obsidian Pickaxe,https://en.wikipedia.org/wiki/Pickaxe,Flat recognizable pickaxe icon with material-specific color and details,Obsidian is brittle; preserve its actual durability and avoid implying metal-like performance.
+spawn_9b5fbb9:painkiller,Painkiller,Analgesic Preparation,https://en.wikipedia.org/wiki/Analgesic,Small labelled medicine packet or vial,Generic drug class; recipe does not establish a particular active substance.
+spawn_9b5fbb9:plant_fiber,Plant Fiber,Bast Fiber,https://en.wikipedia.org/wiki/Bast_fibre,Loose pale long fibers with green stem fragments,Use a more specific plant name only when its source is typed.
+spawn_9b5fbb9:pot_lid,Pot Lid,Clay Jar Lid,https://en.wikipedia.org/wiki/Pottery,Low clay disk with central knob,
+spawn_9b5fbb9:rice_grain,Rice Grain,Rice Grain,https://en.wikipedia.org/wiki/Rice,Slim pale cereal grains,
+spawn_9b5fbb9:rice_seeds,Rice Seeds,Seed Rice,https://en.wikipedia.org/wiki/Rice,Several elongated husked grains,Asian rice is not American wild rice.
+spawn_9b5fbb9:roasted_copper,Roasted Copper,Roasted Copper Ore,https://en.wikipedia.org/wiki/Smelting,Dark granular ore with oxidized brown edges,Retain compatibility with the existing processing-stage identity.
+spawn_9b5fbb9:roasted_iron,Roasted Iron,Roasted Iron Ore,https://en.wikipedia.org/wiki/Smelting,Dark rust-red porous granules,
+spawn_9b5fbb9:roasted_tin,Roasted Tin,Roasted Tin Ore,https://en.wikipedia.org/wiki/Smelting,Dark coarse granular concentrate,Not a tin ingot.
+spawn_9b5fbb9:shears_blank,Shears Blank,Shears Blank,https://en.wikipedia.org/wiki/Blade_shears,Unfinished paired spring blades,
+spawn_9b5fbb9:shield_blank,Shield Blank,Shield Fittings Blank,https://en.wikipedia.org/wiki/Forging,Unfinished metal boss or fitting without a wooden shield,Existing recipe reserves wood separately.
+spawn_9b5fbb9:spear,Spear,Stone-tipped Spear,https://en.wikipedia.org/wiki/Spear,Long wooden shaft and lashed stone point,Use the actual recipe point material.
+spawn_9b5fbb9:spoiled_food,Spoiled Food,Spoiled Food,https://en.wikipedia.org/wiki/Food_spoilage,Dull damaged food remnants,Composite gameplay state; no single ingredient identity.
+spawn_9b5fbb9:spyglass_blank,Spyglass Blank,Spyglass Tube Blank,https://en.wikipedia.org/wiki/Refracting_telescope,Unfinished copper tube with open ends,A functional spyglass requires lenses; the existing amethyst recipe is an approximation.
+spawn_9b5fbb9:stone_edge,Stone Edge,Knapped Stone Flake,https://en.wikipedia.org/wiki/Knapping,Thin sharp flake with a percussion bulb,Only suitable conchoidally fracturing stone supports knapping.
+spawn_9b5fbb9:tin_ingot,Tin Ingot,Tin Ingot,https://en.wikipedia.org/wiki/Tin,Pale silver cast ingot,Use Ingot as the secondary form reference.
+spawn_9b5fbb9:tin_ore,Tin Ore,Tin Ore,https://en.wikipedia.org/wiki/Cassiterite,Dark cassiterite grains in pale host rock,Use Cassiterite Ore for new identified deposits; retain this generic legacy item identity.
+spawn_9b5fbb9:trough,Feed and Water Trough,Feed and Water Trough,https://en.wikipedia.org/wiki/Manger,Low wooden feeding trough,Block item can retain its block rendering.
+spawn_9b5fbb9:unfired_pot,Unfired Pot,Unfired Clay Jar,https://en.wikipedia.org/wiki/Pottery,Dull grey-brown unglazed rounded jar,
+spawn_9b5fbb9:wild_beetroot,Unmanaged Beetroot Patch,Unmanaged Beetroot Patch,https://en.wikipedia.org/wiki/Beetroot,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference. Unmanaged domesticated crop stands are a retained gameplay approximation.
+spawn_9b5fbb9:wild_berries,Wild Berries,Wild Berries,https://en.wikipedia.org/wiki/Blackberry,Cluster of dark aggregate berries for a typed bramble,Current contents are unspecified; use blackberry identity only for new typed bramble fruit.
+spawn_9b5fbb9:wild_bramble,Blackberry Bramble,Blackberry Bramble,https://en.wikipedia.org/wiki/Blackberry,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:wild_carrot,Unmanaged Carrot Patch,Unmanaged Carrot Patch,https://en.wikipedia.org/wiki/Carrot,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference. Unmanaged domesticated crop stands are a retained gameplay approximation.
+spawn_9b5fbb9:wild_flax,Wild Flax,Wild Flax,https://en.wikipedia.org/wiki/Linum_bienne,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:wild_maize,Unmanaged Maize Stand,Unmanaged Maize Stand,https://en.wikipedia.org/wiki/Maize,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference. Unmanaged domesticated crop stands are a retained gameplay approximation.
+spawn_9b5fbb9:wild_melon,Unmanaged Melon Patch,Unmanaged Melon Patch,https://en.wikipedia.org/wiki/Melon,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference. Unmanaged domesticated crop stands are a retained gameplay approximation.
+spawn_9b5fbb9:wild_plants,Wild Plants,Wild Plants,https://en.wikipedia.org/wiki/Flax,Legacy mixed-plant icon,Replace world generation with species-specific plant definitions and targeted drops.
+spawn_9b5fbb9:wild_potato,Unmanaged Potato Patch,Unmanaged Potato Patch,https://en.wikipedia.org/wiki/Potato,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference. Unmanaged domesticated crop stands are a retained gameplay approximation.
+spawn_9b5fbb9:wild_pumpkin,Unmanaged Pumpkin Patch,Unmanaged Pumpkin Patch,https://en.wikipedia.org/wiki/Pumpkin,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference. Unmanaged domesticated crop stands are a retained gameplay approximation.
+spawn_9b5fbb9:wild_rice,Unmanaged Rice Stand,Unmanaged Rice Stand,https://en.wikipedia.org/wiki/Rice,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference. Unmanaged domesticated crop stands are a retained gameplay approximation.
+spawn_9b5fbb9:wild_wheat,Unmanaged Wheat Stand,Unmanaged Wheat Stand,https://en.wikipedia.org/wiki/Wild_emmer,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference. Unmanaged domesticated crop stands are a retained gameplay approximation.
+spawn_9b5fbb9:wild_yarrow,Yarrow,Yarrow,https://en.wikipedia.org/wiki/Achillea_millefolium,Distinct original 16 by 16 botanical silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:wooden_toy,Carved Wooden Toy,Carved Wooden Toy,https://en.wikipedia.org/wiki/List_of_wooden_toys,Small carved animal; visible wood grain,
+spawn_9b5fbb9:wool_cloth,Wool Cloth,Wool Cloth,https://en.wikipedia.org/wiki/Wool,Folded thick cloth with visible weave,
+spawn_9b5fbb9:wool_jacket,Wool Jacket,Wool Jacket,https://en.wikipedia.org/wiki/Jacket,Recognizable jacket silhouette with material-specific weave,Do not identify a generic plant textile as linen without a flax-only source.
+spawn_9b5fbb9:wool_pants,Wool Pants,Wool Pants,https://en.wikipedia.org/wiki/Trousers,Recognizable pants silhouette with material-specific weave,Do not identify a generic plant textile as linen without a flax-only source.
+spawn_9b5fbb9:wool_shirt,Wool Shirt,Wool Shirt,https://en.wikipedia.org/wiki/Shirt,Recognizable shirt silhouette with material-specific weave,Do not identify a generic plant textile as linen without a flax-only source.
+spawn_9b5fbb9:wool_shoes,Wool Shoes,Wool Shoes,https://en.wikipedia.org/wiki/Shoe,Recognizable shoes silhouette with material-specific weave,Do not identify a generic plant textile as linen without a flax-only source.
+spawn_9b5fbb9:yarn,Yarn,Wool Yarn,https://en.wikipedia.org/wiki/Yarn,Cream wool skein with a loose tail,Current spinning recipes use wool.
+spawn_9b5fbb9:yarrow_crop,Yarrow,Yarrow,https://en.wikipedia.org/wiki/Achillea_millefolium,Distinct original 16 by 16 botanical silhouette,Render-only crop binding required by Qube; carried in gameplay as seeds.
+spawn_9b5fbb9:yarrow_leaves,Yarrow Leaves,Yarrow Leaves,https://en.wikipedia.org/wiki/Achillea_millefolium,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.
+spawn_9b5fbb9:yarrow_seeds,Yarrow Seeds,Yarrow Seeds,https://en.wikipedia.org/wiki/Achillea_millefolium,Distinct original 16 by 16 material or propagule silhouette,Identified new source; original pixel art from the linked identity reference.

@@ -1,0 +1,55 @@
+{
+  "steps": [
+    {
+      "run": [
+        "fill -7 -61 -6 7 -61 6 minecraft:grass_block",
+        "fill -7 -63 -6 -3 -61 -2 spawn_9b5fbb9:limestone",
+        "fill 2 -63 -6 7 -61 -2 minecraft:granite",
+        "setblock -5 -61 -3 spawn_9b5fbb9:malachite_ore",
+        "setblock 4 -61 -3 spawn_9b5fbb9:cassiterite_ore",
+        "setblock 3 -61 -5 spawn_9b5fbb9:hematite_ore",
+        "setblock -5 -60 -3 spawn_9b5fbb9:loose_stones",
+        "setblock -2 -60 2 spawn_9b5fbb9:wild_flax",
+        "setblock -1 -60 2 spawn_9b5fbb9:wild_flax",
+        "setblock -2 -60 3 spawn_9b5fbb9:wild_flax",
+        "setblock 3 -60 2 spawn_9b5fbb9:wild_yarrow",
+        "setblock 4 -60 3 spawn_9b5fbb9:wild_yarrow",
+        "setblock -4 -60 4 spawn_9b5fbb9:fallen_sticks"
+      ]
+    },
+    {
+      "camera": {
+        "pos": [
+          5,
+          -57,
+          8
+        ],
+        "look_at": [
+          0,
+          -60,
+          0
+        ]
+      }
+    },
+    {
+      "shot": "realism-resource-stands-a"
+    },
+    {
+      "camera": {
+        "pos": [
+          -7,
+          -57,
+          -6
+        ],
+        "look_at": [
+          0,
+          -61,
+          -3
+        ]
+      }
+    },
+    {
+      "shot": "realism-quarry-outcrops-b"
+    }
+  ]
+}

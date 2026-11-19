@@ -1,8 +1,0 @@
-{
-  "parent": "minecraft:block/orientable",
-  "textures": {
-    "front": "spawn_9b5fbb9:block/steam_engine_front_on",
-    "side": "spawn_9b5fbb9:block/steam_engine_side",
-    "top": "spawn_9b5fbb9:block/steam_engine_side"
-  }
-}

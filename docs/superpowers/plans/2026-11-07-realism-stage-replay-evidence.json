@@ -1,0 +1,356 @@
+{
+  "evidence": "proof",
+  "shots": [
+    {
+      "name": "realism-skills",
+      "path": "run/qube/shots/proof/realism-skills.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        0.5,
+        -59.0,
+        10.5,
+        -180.0,
+        20.0
+      ],
+      "settled": true,
+      "segment": "segment 0",
+      "game_tick": 20,
+      "warnings": []
+    },
+    {
+      "name": "realism-resource-stands-a",
+      "path": "run/qube/shots/proof/realism-resource-stands-a.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        5.0,
+        -57.0,
+        8.0,
+        148.0,
+        26.1
+      ],
+      "settled": true,
+      "segment": "segment 1",
+      "game_tick": 0,
+      "warnings": []
+    },
+    {
+      "name": "realism-quarry-outcrops-b",
+      "path": "run/qube/shots/proof/realism-quarry-outcrops-b.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        -7.0,
+        -57.0,
+        -6.0,
+        -66.8,
+        36.4
+      ],
+      "settled": true,
+      "segment": "segment 1",
+      "game_tick": 0,
+      "warnings": []
+    },
+    {
+      "name": "realism-items-page-1-front",
+      "path": "run/qube/shots/proof/realism-items-page-1-front.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        0.0,
+        -51.0,
+        16.0,
+        -180.0,
+        5.3
+      ],
+      "settled": true,
+      "segment": "segment 2",
+      "game_tick": 2,
+      "warnings": []
+    },
+    {
+      "name": "realism-items-page-1-angle",
+      "path": "run/qube/shots/proof/realism-items-page-1-angle.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        7.0,
+        -48.0,
+        15.0,
+        156.9,
+        14.5
+      ],
+      "settled": true,
+      "segment": "segment 2",
+      "game_tick": 2,
+      "warnings": []
+    },
+    {
+      "name": "realism-items-page-2-front",
+      "path": "run/qube/shots/proof/realism-items-page-2-front.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        0.0,
+        -51.0,
+        -4.0,
+        -180.0,
+        5.3
+      ],
+      "settled": true,
+      "segment": "segment 2",
+      "game_tick": 4,
+      "warnings": []
+    },
+    {
+      "name": "realism-items-page-2-angle",
+      "path": "run/qube/shots/proof/realism-items-page-2-angle.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        7.0,
+        -48.0,
+        -5.0,
+        156.9,
+        14.5
+      ],
+      "settled": true,
+      "segment": "segment 2",
+      "game_tick": 4,
+      "warnings": []
+    },
+    {
+      "name": "realism-items-page-3-front",
+      "path": "run/qube/shots/proof/realism-items-page-3-front.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        0.0,
+        -51.0,
+        -24.0,
+        -180.0,
+        5.3
+      ],
+      "settled": true,
+      "segment": "segment 2",
+      "game_tick": 6,
+      "warnings": []
+    },
+    {
+      "name": "realism-items-page-3-angle",
+      "path": "run/qube/shots/proof/realism-items-page-3-angle.png",
+      "size": [
+        1280,
+        720
+      ],
+      "pose": [
+        7.0,
+        -48.0,
+        -25.0,
+        156.9,
+        14.5
+      ],
+      "settled": true,
+      "segment": "segment 2",
+      "game_tick": 6,
+      "warnings": []
+    }
+  ],
+  "timing_warnings": [
+    "segment 0 step 5: wait counts client ticks, but the world is frozen, so no game time passed (mobs did not move, cooldowns did not count down); use {\"step\": n} instead",
+    "segment 0 step 8: wait counts client ticks, but the world is frozen, so no game time passed (mobs did not move, cooldowns did not count down); use {\"step\": n} instead",
+    "segment 0 step 10: wait counts client ticks, but the world is frozen, so no game time passed (mobs did not move, cooldowns did not count down); use {\"step\": n} instead"
+  ],
+  "entities_gone": [],
+  "desyncs": [],
+  "sync": [
+    {
+      "segment": "segment 0",
+      "server": {
+        "380df991-f603-344c-a090-369bad2a924a": {
+          "getSpawnSurvivalMining": 12.0,
+          "getSpawnSurvivalConstruction": 6.0,
+          "getSpawnSurvivalPottery": 0.0,
+          "type": "minecraft:player"
+        }
+      },
+      "client": {
+        "380df991-f603-344c-a090-369bad2a924a": {
+          "getSpawnSurvivalMining": 12.0,
+          "getSpawnSurvivalConstruction": 6.0,
+          "getSpawnSurvivalPottery": 0.0
+        }
+      }
+    },
+    {
+      "segment": "segment 0",
+      "server": {
+        "3267a35f-6cd2-449b-ac36-00aa90308ea0": {
+          "getSpawnSurvivalMining": 8.0,
+          "type": "minecraft:villager"
+        }
+      },
+      "client": {
+        "3267a35f-6cd2-449b-ac36-00aa90308ea0": {
+          "getSpawnSurvivalMining": 8.0
+        }
+      }
+    }
+  ],
+  "command_output": [
+    {
+      "run": "summon minecraft:item_display -4.70 -53.20 -40.85 {item:{id:\"spawn_9b5fbb9:wild_maize\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -2.40 -53.20 -40.85 {item:{id:\"spawn_9b5fbb9:wild_melon\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -0.10 -53.20 -40.85 {item:{id:\"spawn_9b5fbb9:wild_plants\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display 2.20 -53.20 -40.85 {item:{id:\"spawn_9b5fbb9:wild_potato\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display 4.50 -53.20 -40.85 {item:{id:\"spawn_9b5fbb9:wild_pumpkin\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display 6.80 -53.20 -40.85 {item:{id:\"spawn_9b5fbb9:wild_rice\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -7.00 -55.50 -40.85 {item:{id:\"spawn_9b5fbb9:wild_wheat\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -4.70 -55.50 -40.85 {item:{id:\"spawn_9b5fbb9:wild_yarrow\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -2.40 -55.50 -40.85 {item:{id:\"spawn_9b5fbb9:wooden_toy\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -0.10 -55.50 -40.85 {item:{id:\"spawn_9b5fbb9:wool_cloth\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display 2.20 -55.50 -40.85 {item:{id:\"spawn_9b5fbb9:wool_jacket\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display 4.50 -55.50 -40.85 {item:{id:\"spawn_9b5fbb9:wool_pants\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display 6.80 -55.50 -40.85 {item:{id:\"spawn_9b5fbb9:wool_shirt\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -7.00 -57.80 -40.85 {item:{id:\"spawn_9b5fbb9:wool_shoes\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -4.70 -57.80 -40.85 {item:{id:\"spawn_9b5fbb9:yarn\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -2.40 -57.80 -40.85 {item:{id:\"spawn_9b5fbb9:yarrow_leaves\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "summon minecraft:item_display -0.10 -57.80 -40.85 {item:{id:\"spawn_9b5fbb9:yarrow_seeds\",count:1},item_display:\"fixed\",transformation:[1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1.8f,0f,0f,0f,0f,1f],billboard:\"fixed\"}",
+      "output": [
+        "Summoned new Item Display"
+      ]
+    },
+    {
+      "run": "tick step 2",
+      "output": [
+        "Stepping 2 tick(s)"
+      ]
+    },
+    {
+      "run": "tp @s 0.00 -51.00 -24.00 -180.0 5.3",
+      "output": [
+        "Teleported Dev to 0.000000, -51.000000, -24.000000"
+      ]
+    },
+    {
+      "run": "tp @s 7.00 -48.00 -25.00 -203.1 14.5",
+      "output": [
+        "Teleported Dev to 7.000000, -48.000000, -25.000000"
+      ]
+    }
+  ],
+  "sheets": [
+    "run/qube/shots/proof/segment-0.sheet.png",
+    "run/qube/shots/proof/segment-1.sheet.png",
+    "run/qube/shots/proof/segment-2.sheet.png"
+  ],
+  "session_segments": 3,
+  "client": {
+    "running": true,
+    "pid": 45260,
+    "world": null,
+    "dedicated": true,
+    "uptime_sec": 611,
+    "size": [
+      1280,
+      720
+    ]
+  }
+}

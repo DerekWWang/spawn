@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "spawn_9b5fbb9:tar_sand",
+    {
+      "id": "#spawn_9b5fbb9:techtree/minecraft/mineable/shovel",
+      "required": false
+    }
+  ]
+}

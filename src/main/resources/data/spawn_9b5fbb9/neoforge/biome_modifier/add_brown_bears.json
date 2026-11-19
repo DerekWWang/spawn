@@ -1,0 +1,11 @@
+{
+  "type": "neoforge:add_spawns",
+  "biomes": "#spawn_9b5fbb9:bear_country",
+  "spawners": [
+    {
+      "type": "spawn_9b5fbb9:brown_bear",
+      "count": 1,
+      "weight": 3
+    }
+  ]
+}

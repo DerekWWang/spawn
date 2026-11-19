@@ -42,8 +42,14 @@ public final class Spoilage {
         return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(spawn_9b5fbb9.MODID, path));
     }
 
-    /** Half-life in game days, or 0 for things that keep. */
+    /**
+     * Half-life in game days, or 0 for things that keep. Food is the survival rules' alone: they age every
+     * edible thing by its own shelf life, so nothing spoils twice.
+     */
     public static double halfLife(ItemStack stack) {
+        if (dev.qube.spawn_9b5fbb9.content.ItemAging.isFood(stack) || stack.is(net.minecraft.world.item.Items.WHEAT)) {
+            return 0;
+        }
         if (stack.is(FAST)) {
             return 2;
         }

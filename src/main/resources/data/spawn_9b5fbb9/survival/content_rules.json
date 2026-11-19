@@ -1,0 +1,195 @@
+{
+  "crops": {
+    "minecraft:wheat": {
+      "days": 8,
+      "mask": 5,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "minecraft:carrots": {
+      "days": 8,
+      "mask": 3,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "minecraft:potatoes": {
+      "days": 10,
+      "mask": 1,
+      "warm": false,
+      "frost": true,
+      "flooded": false
+    },
+    "minecraft:beetroots": {
+      "days": 6,
+      "mask": 5,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "spawn_9b5fbb9:rice_crop": {
+      "days": 12,
+      "mask": 1,
+      "warm": true,
+      "frost": true,
+      "flooded": true
+    },
+    "spawn_9b5fbb9:maize_crop": {
+      "days": 10,
+      "mask": 3,
+      "warm": true,
+      "frost": true,
+      "flooded": false
+    },
+    "spawn_9b5fbb9:fiber_crop": {
+      "days": 6,
+      "mask": 3,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "spawn_9b5fbb9:medicinal_crop": {
+      "days": 8,
+      "mask": 1,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "minecraft:sweet_berry_bush": {
+      "days": 8,
+      "mask": 5,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "minecraft:cave_vines": {
+      "days": 8,
+      "mask": 5,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "minecraft:cave_vines_plant": {
+      "days": 8,
+      "mask": 5,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "minecraft:melon_stem": {
+      "days": 10,
+      "mask": 3,
+      "warm": true,
+      "frost": true,
+      "flooded": false
+    },
+    "minecraft:attached_melon_stem": {
+      "days": 3,
+      "mask": 3,
+      "warm": true,
+      "frost": true,
+      "flooded": false
+    },
+    "minecraft:pumpkin_stem": {
+      "days": 12,
+      "mask": 3,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "minecraft:attached_pumpkin_stem": {
+      "days": 4,
+      "mask": 3,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "minecraft:cocoa": {
+      "days": 12,
+      "mask": 3,
+      "warm": true,
+      "frost": true,
+      "flooded": false
+    },
+    "minecraft:sugar_cane": {
+      "days": 6,
+      "mask": 3,
+      "warm": true,
+      "frost": true,
+      "flooded": false
+    },
+    "minecraft:brown_mushroom": {
+      "days": 4,
+      "mask": 15,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    },
+    "minecraft:red_mushroom": {
+      "days": 4,
+      "mask": 15,
+      "warm": false,
+      "frost": false,
+      "flooded": false
+    }
+  },
+  "husbandry": {
+    "cow": {
+      "maturityDays": 28,
+      "gestationDays": 12,
+      "productRecoveryDays": 1,
+      "breedingCooldownDays": 4
+    },
+    "sheep": {
+      "maturityDays": 20,
+      "gestationDays": 8,
+      "productRecoveryDays": 4,
+      "breedingCooldownDays": 4
+    },
+    "chicken": {
+      "maturityDays": 12,
+      "gestationDays": 4,
+      "productRecoveryDays": 1,
+      "breedingCooldownDays": 4
+    },
+    "pig": {
+      "maturityDays": 20,
+      "gestationDays": 8,
+      "productRecoveryDays": 1,
+      "breedingCooldownDays": 4
+    }
+  },
+  "decay": {
+    "rawMeatDays": 0.5,
+    "cookedFoodDays": 1,
+    "produceDays": 3,
+    "dryGrainDays": 7,
+    "sealedPotRate": 0.16666666666666666,
+    "storageRate": 0.9,
+    "organicWeatherDays": 4,
+    "durableWeatherDays": 28,
+    "rainMultiplier": 2,
+    "hotMultiplier": 1.5,
+    "shelfDays": {}
+  },
+  "production": {
+    "fire_pot": {
+      "ticks": 2000,
+      "input": "minecraft:clay_ball",
+      "station": "kiln",
+      "skill": "POTTERY",
+      "minimumSkill": 0,
+      "manual": true,
+      "heated": true,
+      "practice": 25,
+      "minimumManipulation": 0.25
+    },
+    "bronze": {
+      "ticks": 4000
+    },
+    "work_bloom": {
+      "ticks": 3000
+    }
+  }
+}

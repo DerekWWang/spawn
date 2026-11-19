@@ -44,7 +44,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 /** In-world tests of the logistics engine. Each test keeps its own society's books. */
 public final class LogisticsGameTests {
     private static final Item[] GOODS = {Items.IRON_INGOT, Items.GOLD_INGOT, Items.FLINT, Items.BRICK, Items.COAL, Items.STICK, Items.BONE,
-            Items.STRING, Items.FEATHER, Items.LEATHER, Items.PAPER, Items.CLAY_BALL, Items.DIAMOND, Items.EMERALD, Items.REDSTONE,
+            Items.STRING, Items.FEATHER, Items.LEATHER, Items.PAPER, Items.CLAY_BALL, Items.DIAMOND, Items.EMERALD, Items.IRON_NUGGET,
             Items.COPPER_INGOT, Items.QUARTZ, Items.GUNPOWDER, Items.SUGAR, Items.BOOK};
 
     private LogisticsGameTests() {
@@ -166,38 +166,40 @@ public final class LogisticsGameTests {
         MinecraftServer server = level.getServer();
         Building store = store(h, society);
         ChestBlockEntity chest = chest(h);
-        chest.setItem(0, new ItemStack(Items.BEEF, 64));
+        chest.setItem(0, ModContent.stack("insulin").copyWithCount(16)); // a full stack
         chest.setItem(1, new ItemStack(Items.IRON_INGOT, 64));
         Ledger.scanStore(level, store);
         LedgerData.Books books = Ledger.books(server, society);
-        String beef = Ledger.STOCK + store.id + "/minecraft:beef";
-        h.assertValueEqual(books.actual(beef), 64.0, "meat in store");
-        near(h, books.observed(beef), 64, 1, "meat on the books");
+        String insulin = Ledger.STOCK + store.id + "/spawn_9b5fbb9:insulin";
+        h.assertValueEqual(books.actual(insulin), 16.0, "insulin in store");
+        near(h, books.observed(insulin), 16, 1, "insulin on the books");
 
-        // four days in a sound, enclosed store age meat by two: one half-life
-        Spoilage.backdate(level, chest, 96000);
+        // twelve days in a sound, enclosed store age insulin by six: one half-life
+        Spoilage.backdate(level, chest, 288000);
         Ledger.scanStore(level, store);
         int left = chest.getItem(0).getCount();
-        h.assertTrue(left >= 12 && left <= 52, "about half the meat has gone off: " + left + " left");
+        h.assertTrue(left >= 2 && left <= 14, "about half the insulin has gone off: " + left + " left");
         h.assertValueEqual(chest.getItem(1).getCount(), 64, "iron keeps");
-        h.assertValueEqual(books.actual(beef), (double) left, "the truth knows");
-        near(h, books.observed(beef), 64, 1, "the books do not");
-        h.assertValueEqual(books.actual(Ledger.FLOW + "spoiled/minecraft:beef"), (double) (64 - left), "true losses");
-        h.assertValueEqual(books.observed(Ledger.FLOW + "spoiled/minecraft:beef"), 0.0, "nobody recorded them");
+        h.assertValueEqual(books.actual(insulin), (double) left, "the truth knows");
+        near(h, books.observed(insulin), 16, 1, "the books do not");
+        h.assertValueEqual(books.actual(Ledger.FLOW + "spoiled/spawn_9b5fbb9:insulin"), (double) (16 - left), "true losses");
+        h.assertValueEqual(books.observed(Ledger.FLOW + "spoiled/spawn_9b5fbb9:insulin"), 0.0, "nobody recorded them");
 
         // only a count finds the shortfall
         Ledger.stocktake(level, store, null);
-        h.assertValueEqual(books.observed(beef), (double) left, "the count finds what is left");
+        h.assertValueEqual(books.observed(insulin), (double) left, "the count finds what is left");
         EngineGameTests.done(h, store);
     }
 
     private static void storageQuality(GameTestHelper h) {
         ServerLevel level = h.getLevel();
-        h.assertValueEqual(Spoilage.halfLife(new ItemStack(Items.BEEF)), 2.0, "fresh meat");
-        h.assertValueEqual(Spoilage.halfLife(new ItemStack(Items.BREAD)), 6.0, "bread");
-        h.assertValueEqual(Spoilage.halfLife(new ItemStack(Items.WHEAT)), 30.0, "grain");
-        h.assertValueEqual(Spoilage.halfLife(ModContent.stack("carcass")), 2.0, "a carcass");
+        // food is the survival rules' to age, so it never spoils twice
+        h.assertValueEqual(Spoilage.halfLife(new ItemStack(Items.BEEF)), 0.0, "fresh meat is aged by the survival rules");
+        h.assertValueEqual(Spoilage.halfLife(new ItemStack(Items.BREAD)), 0.0, "and bread");
+        h.assertValueEqual(Spoilage.halfLife(new ItemStack(Items.WHEAT)), 0.0, "and wheat");
+        h.assertValueEqual(Spoilage.halfLife(ModContent.stack("carcass")), 0.0, "and a carcass, which is meat");
         h.assertValueEqual(Spoilage.halfLife(ModContent.stack("insulin")), 6.0, "insulin needs a cold chain");
+        h.assertValueEqual(Spoilage.halfLife(ModContent.stack("hide")), 30.0, "a raw hide rots slowly");
         h.assertValueEqual(Spoilage.halfLife(ModContent.stack("canned_food")), 0.0, "canned food keeps");
         h.assertValueEqual(Spoilage.halfLife(ModContent.stack("preserved_food")), 0.0, "salted food keeps");
         h.assertValueEqual(Spoilage.halfLife(new ItemStack(Items.IRON_INGOT)), 0.0, "iron keeps");
@@ -222,11 +224,11 @@ public final class LogisticsGameTests {
 
         // food a player carries spoils too, and they hear of it only by looking
         ChestBlockEntity chest = chest(h);
-        chest.setItem(0, new ItemStack(Items.BEEF, 64));
-        chest.setItem(1, ModContent.stack("canned_food").copyWithCount(16));
-        Spoilage.age(random, chest, 20, null);
-        h.assertTrue(chest.getItem(0).isEmpty(), "meat left for twenty days is gone");
-        h.assertValueEqual(chest.getItem(1).getCount(), 16, "the cans are fine");
+        chest.setItem(0, ModContent.stack("insulin").copyWithCount(16));
+        chest.setItem(1, new ItemStack(Items.IRON_INGOT, 16));
+        Spoilage.age(random, chest, 120, null);
+        h.assertTrue(chest.getItem(0).isEmpty(), "insulin left for four months is gone");
+        h.assertValueEqual(chest.getItem(1).getCount(), 16, "the iron is fine");
         EngineGameTests.done(h, store, heap);
     }
 
@@ -353,22 +355,19 @@ public final class LogisticsGameTests {
         pen.setExtents(0, 4, 0, 1, 0, 4);
         Cow a = h.spawnWithNoFreeWill(EntityTypes.COW, 3, 1, 3);
         Cow b = h.spawnWithNoFreeWill(EntityTypes.COW, 5, 1, 5);
-        h.assertTrue(Gestation.enabled(), "gestation is on by default");
+        h.assertFalse(Gestation.enabled(), "the survival husbandry breeds animals, so this rule is off by default");
 
-        // the vanilla path: two animals in love mate
+        // the vanilla path: two animals in love mate, and the survival husbandry takes it from there
         a.setInLove(null);
         b.setInLove(null);
         a.spawnChildFromBreeding(level, b);
-        h.assertTrue(Gestation.pregnant(a), "mating starts a pregnancy");
-        h.assertFalse(Gestation.pregnant(b), "in one of them");
-        h.assertFalse(a.isInLove() || b.isInLove(), "and ends the courtship");
-        h.assertValueEqual(level.getEntitiesOfClass(Cow.class, pen.bounds()).size(), 2, "no calf yet");
-        // she cannot be bred again while carrying: a second mating makes the other one pregnant, a third nothing
-        h.assertTrue(Gestation.conceive(level, a, b, null), "a second mating");
-        h.assertTrue(Gestation.pregnant(b), "the other cow is now carrying too");
-        long dueBefore = Gestation.due(a);
-        h.assertTrue(Gestation.conceive(level, a, b, null), "a third mating is absorbed");
-        h.assertValueEqual(Gestation.due(a), dueBefore, "and changes nothing");
+        h.assertFalse(Gestation.pregnant(a) || Gestation.pregnant(b), "no pregnancy of this engine's");
+        h.assertFalse(Gestation.conceive(level, a, b, null), "and conceiving is refused while the rule is off");
+        h.assertValueEqual(level.getEntitiesOfClass(Cow.class, pen.bounds()).size(), 2, "no instant calf either");
+        // the engine itself still carries a pregnancy it is given
+        Gestation.begin(level, a, b.getUUID(), null, level.getGameTime() + 240000);
+        Gestation.begin(level, b, a.getUUID(), null, level.getGameTime() + 240000);
+        h.assertTrue(Gestation.pregnant(a) && Gestation.pregnant(b), "both cows are carrying");
 
         Ledger.census(level, society);
         LedgerData.Books books = Ledger.books(server, society);

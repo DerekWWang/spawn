@@ -6,9 +6,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -117,8 +119,23 @@ public final class TechTree {
     public final List<BlockDef> blocks;
     /** item id (our namespace) -> functions that output it */
     public final Map<String, List<FunctionDef>> producersOf;
+    /**
+     * Ids the survival rules register themselves (items, blocks and workstations). The tree does not
+     * register these; it uses the survival item of the same id, and a survival workstation of that id
+     * stands in for the station.
+     */
+    public final Set<String> survival;
 
     private TechTree(JsonObject root) {
+        Set<String> owned = new HashSet<>();
+        for (String section : List.of("items", "stations", "blocks")) {
+            for (JsonElement e : root.getAsJsonArray(section)) {
+                if (bool(e.getAsJsonObject(), "survival")) {
+                    owned.add(str(e.getAsJsonObject(), "id"));
+                }
+            }
+        }
+        this.survival = Set.copyOf(owned);
         List<ResourceDef> res = new ArrayList<>();
         for (JsonElement e : root.getAsJsonArray("resources")) {
             JsonObject o = e.getAsJsonObject();

@@ -1,0 +1,18 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "spawn_9b5fbb9:block/loose_stones_0",
+        "y": 0
+      },
+      {
+        "model": "spawn_9b5fbb9:block/loose_stones_1",
+        "y": 90
+      },
+      {
+        "model": "spawn_9b5fbb9:block/loose_stones_2",
+        "y": 180
+      }
+    ]
+  }
+}

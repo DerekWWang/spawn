@@ -3,11 +3,18 @@ package dev.qube.spawn_9b5fbb9;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * Gameplay rules for the tech tree. Read through the helpers at the bottom so that a value
- * asked for before the config file has loaded falls back to its default instead of throwing.
+ * One config for the whole mod: the survival rules at the top level, then the tech tree's sections.
+ * Read the tech-tree values through the helpers at the bottom so that a value asked for before the
+ * config file has loaded falls back to its default instead of throwing.
  */
 public final class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+
+    public static final ModConfigSpec.IntValue SEASON_DAYS=BUILDER.comment("Game days in each season.").defineInRange("seasonDays",28,4,112);
+    public static final ModConfigSpec.DoubleValue RECREATION_HOURS=BUILDER.comment("Daily game hours of active recreation; sleep does not count.").defineInRange("recreationHours",4.5,4,5);
+    public static final ModConfigSpec.DoubleValue NEEDS_RATE=BUILDER.comment("Physiological time multiplier; identical for human and automated humanoids.").defineInRange("needsRate",1.0,0.1,10);
+    public static final ModConfigSpec.DoubleValue INDUSTRY_TIME=BUILDER.comment("Multiplier on industrial work times. 1.0 is real man-hours on the game clock (1000 ticks per hour): a locomotive is months of work for a full yard.").defineInRange("industryTimeScale",1.0,0.001,10);
+    public static final ModConfigSpec.BooleanValue HUD=BUILDER.comment("Show survival HUD.").define("showHud",true);
 
     static {
         BUILDER.comment("Discovery: how a society claims a function").push("discovery");
@@ -83,12 +90,14 @@ public final class Config {
             .define("gateOreAccess", true);
 
     public static final ModConfigSpec.BooleanValue GATE_VANILLA_ORES = BUILDER
-            .comment("Also apply the two rules above to vanilla iron and coal ores (listed in the mod's block tags).")
-            .define("gateVanillaOres", true);
+            .comment("Also apply the two rules above to vanilla iron and coal ores (listed in the mod's block tags).",
+                    "Off by default: the survival rules and their regional geology decide what vanilla ores yield.")
+            .define("gateVanillaOres", false);
 
     public static final ModConfigSpec.DoubleValue FIBER_CHANCE = BUILDER
-            .comment("Chance that breaking grass or ferns by hand yields Plant fiber.")
-            .defineInRange("plantFiberChance", 0.35, 0.0, 1.0);
+            .comment("Extra chance that breaking grass or ferns by hand yields Plant fiber, on top of the survival",
+                    "rules' own wild-plant drops. 0 by default: the survival rules decide where fibre comes from.")
+            .defineInRange("plantFiberChance", 0.0, 0.0, 1.0);
 
     public static final ModConfigSpec.DoubleValue LATEX_CHANCE = BUILDER
             .comment("Chance that breaking a jungle log yields Rubber latex.")
@@ -125,7 +134,8 @@ public final class Config {
     }
 
     public static final ModConfigSpec.DoubleValue SPOILAGE_RATE = BUILDER
-            .comment("Multiplier on how fast food spoils. 0 disables spoilage.")
+            .comment("Multiplier on how fast food spoils in the tech tree's stores. Food the survival rules age",
+                    "(everything with a shelf life there) is left to them and never spoils twice. 0 disables it.")
             .defineInRange("spoilageRate", 1.0, 0.0, 100.0);
 
     public static final ModConfigSpec.DoubleValue RECORD_NOISE = BUILDER
@@ -134,14 +144,15 @@ public final class Config {
             .defineInRange("recordKeepingError", 1.0, 0.0, 5.0);
 
     public static final ModConfigSpec.IntValue GESTATION_DAYS = BUILDER
-            .comment("Game days an animal carries young before giving birth. 0 keeps vanilla's instant births.")
-            .defineInRange("gestationDays", 1, 0, 30);
+            .comment("Game days an animal carries young before giving birth under the tech tree's rule. 0 by default:",
+                    "the survival rules' husbandry (stock, terms and gestation by kind) breeds every animal instead.")
+            .defineInRange("gestationDays", 0, 0, 30);
 
     static {
         BUILDER.pop();
     }
 
-    static final ModConfigSpec SPEC = BUILDER.build();
+    public static final ModConfigSpec SPEC = BUILDER.build();
 
     private Config() {
     }

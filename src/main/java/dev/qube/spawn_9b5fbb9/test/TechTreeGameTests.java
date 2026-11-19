@@ -17,6 +17,7 @@ import dev.qube.spawn_9b5fbb9.registry.ModContent;
 import dev.qube.spawn_9b5fbb9.spawn_9b5fbb9;
 import dev.qube.spawn_9b5fbb9.station.StationBlock;
 import dev.qube.spawn_9b5fbb9.station.StationBlockEntity;
+import dev.qube.spawn_9b5fbb9.station.SurvivalStations;
 import dev.qube.spawn_9b5fbb9.techtree.TechTree;
 import dev.qube.spawn_9b5fbb9.world.WorldEvents;
 import net.minecraft.core.BlockPos;
@@ -48,10 +49,10 @@ public final class TechTreeGameTests {
     public static void registerFunctions(DeferredRegister<Consumer<GameTestHelper>> reg) {
         add(reg, "tree_is_complete", TechTreeGameTests::treeIsComplete);
         add(reg, "hearth_forms_and_breaks", TechTreeGameTests::hearthFormsAndBreaks);
-        add(reg, "kiln_needs_hollow_open_top", TechTreeGameTests::kilnNeedsHollowOpenTop);
-        add(reg, "forge_tier_scales_batch", TechTreeGameTests::forgeTierScalesBatch);
+        add(reg, "furnace_needs_hollow_open_top", TechTreeGameTests::furnaceNeedsHollowOpenTop);
+        add(reg, "furnace_tier_scales_batch", TechTreeGameTests::furnaceTierScalesBatch);
         add(reg, "hearth_burns_ash", TechTreeGameTests::hearthBurnsAsh);
-        add(reg, "forge_runs_two_batches", TechTreeGameTests::forgeRunsTwoBatches);
+        add(reg, "big_furnace_runs_two_batches", TechTreeGameTests::furnaceRunsTwoBatches);
         add(reg, "station_refuses_unknown_function", TechTreeGameTests::stationRefusesUnknownFunction);
         add(reg, "knowledge_round_trip", TechTreeGameTests::knowledgeRoundTrip);
         add(reg, "shaft_mine_grants_access", TechTreeGameTests::shaftMineGrantsAccess);
@@ -61,18 +62,18 @@ public final class TechTreeGameTests {
         add(reg, "deposits_need_recognition_and_access", TechTreeGameTests::depositsNeedRecognitionAndAccess);
         add(reg, "station_uses_water_bucket", TechTreeGameTests::stationUsesWaterBucket);
         add(reg, "tools_are_required_and_wear", TechTreeGameTests::toolsAreRequiredAndWear);
-        add(reg, "steam_engine_needs_fuel_to_power", TechTreeGameTests::steamEngineNeedsFuel);
+        add(reg, "engine_needs_fuel_to_power", TechTreeGameTests::engineNeedsFuel);
+        add(reg, "survival_workstation_is_the_station", TechTreeGameTests::survivalWorkstationIsTheStation);
         add(reg, "treatise_teaches_another_society", TechTreeGameTests::treatiseTeaches);
         add(reg, "ore_features_place_and_are_added_to_biomes", TechTreeGameTests::oreFeatures);
         add(reg, "grid_substation_covers_radius", TechTreeGameTests::gridCovers);
         add(reg, "machine_tool_needs_running_engine", TechTreeGameTests::machineToolNeedsEngine);
-        add(reg, "big_kiln_runs_three_batches", TechTreeGameTests::bigKiln);
         add(reg, "quiz_options_do_not_reshuffle", TechTreeGameTests::quizStable);
         add(reg, "study_discovers_without_quiz", TechTreeGameTests::studyDiscovers);
         add(reg, "practice_runs_ahead_of_theory", TechTreeGameTests::practiceAheadOfTheory);
         add(reg, "route_planner_orders_prerequisites", TechTreeGameTests::routePlanner);
         add(reg, "idle_machine_burns_no_engine_fuel", TechTreeGameTests::idleMachineBurnsNothing);
-        add(reg, "forge_refuses_wood_fuel", TechTreeGameTests::forgeRefusesWood);
+        add(reg, "furnace_refuses_wood_fuel", TechTreeGameTests::furnaceRefusesWood);
     }
 
     private static void add(DeferredRegister<Consumer<GameTestHelper>> reg, String name, Consumer<GameTestHelper> fn) {
@@ -133,7 +134,18 @@ public final class TechTreeGameTests {
             h.assertTrue(ModContent.item(def.id()) != null, "item registered: " + def.id());
         }
         for (TechTree.StationDef def : tree.stations) {
+            if (SurvivalStations.owned(def.id())) {
+                h.assertTrue(SurvivalStations.block(def.id()) != Blocks.AIR, "a survival workstation stands in for " + def.id());
+                h.assertFalse(ModContent.STATION_BLOCKS.containsKey(def.id()), "and the tree registers no block of its own: " + def.id());
+                continue;
+            }
             h.assertTrue(ModContent.STATION_BLOCKS.containsKey(def.id()), "station block registered: " + def.id());
+        }
+        h.assertTrue(tree.survival.contains("cordage") && ModContent.item("cordage") == net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(Identifier.fromNamespaceAndPath(spawn_9b5fbb9.MODID, "cordage")),
+                "a shared item is the survival item");
+        for (TechTree.FunctionDef f : tree.functions) {
+            h.assertFalse(f.host() != null && SurvivalStations.owned(f.host()),
+                    f.id() + " is done by hand beside the survival " + f.host() + ", not hosted by it");
         }
         for (TechTree.FunctionDef f : tree.functions) {
             for (TechTree.Ref out : f.outputs()) {
@@ -164,36 +176,36 @@ public final class TechTreeGameTests {
         h.succeed();
     }
 
-    private static void kilnNeedsHollowOpenTop(GameTestHelper h) {
+    private static void furnaceNeedsHollowOpenTop(GameTestHelper h) {
         floor(h, 12);
-        h.setBlock(5, 1, 3, controller("kiln"));
+        h.setBlock(5, 1, 3, controller("smelting_furnace"));
         box(h, 5, 1, 3, 3, 3, 3, Blocks.BRICKS, true, true);
         StationBlockEntity be = station(h, 5, 1, 3);
         be.revalidateNow();
-        h.assertTrue(be.isFormed(), "3x3x3 kiln should form: " + be.formation().problem());
-        h.assertValueEqual(be.formation().batch(), 1, "small kiln batch");
+        h.assertTrue(be.isFormed(), "3x3x3 smelting furnace should form: " + be.formation().problem());
+        h.assertValueEqual(be.formation().batch(), 1, "small furnace batch");
         h.setBlock(5, 3, 4, Blocks.BRICKS); // close the top
         be.revalidateNow();
-        h.assertFalse(be.isFormed(), "a kiln with a closed top should not form");
+        h.assertFalse(be.isFormed(), "a furnace with a closed top should not form");
         h.setBlock(5, 3, 4, Blocks.AIR);
         h.setBlock(5, 2, 4, Blocks.BRICKS); // fill the chamber
         be.revalidateNow();
-        h.assertFalse(be.isFormed(), "a kiln with a filled chamber should not form");
+        h.assertFalse(be.isFormed(), "a furnace with a filled chamber should not form");
         h.succeed();
     }
 
-    private static void forgeTierScalesBatch(GameTestHelper h) {
+    private static void furnaceTierScalesBatch(GameTestHelper h) {
         floor(h, 14);
-        h.setBlock(6, 1, 2, controller("forge"));
-        box(h, 6, 1, 2, 3, 2, 3, Blocks.STONE_BRICKS, true, true);
+        h.setBlock(6, 1, 2, controller("smelting_furnace"));
+        box(h, 6, 1, 2, 3, 3, 3, Blocks.STONE_BRICKS, true, true);
         StationBlockEntity be = station(h, 6, 1, 2);
         be.revalidateNow();
-        h.assertTrue(be.isFormed(), "3x3 forge: " + be.formation().problem());
-        h.assertValueEqual(be.formation().batch(), 1, "3x3 forge batch");
-        box(h, 6, 1, 2, 5, 2, 5, Blocks.STONE_BRICKS, true, true);
+        h.assertTrue(be.isFormed(), "3x3x3 furnace: " + be.formation().problem());
+        h.assertValueEqual(be.formation().batch(), 1, "3x3x3 furnace batch");
+        box(h, 6, 1, 2, 5, 4, 5, Blocks.STONE_BRICKS, true, true);
         be.revalidateNow();
-        h.assertTrue(be.isFormed(), "5x5 forge: " + be.formation().problem());
-        h.assertValueEqual(be.formation().batch(), 2, "5x5 forge batch");
+        h.assertTrue(be.isFormed(), "5x4x5 furnace: " + be.formation().problem());
+        h.assertValueEqual(be.formation().batch(), 2, "5x4x5 furnace batch");
         h.succeed();
     }
 
@@ -220,21 +232,23 @@ public final class TechTreeGameTests {
         });
     }
 
-    private static void forgeRunsTwoBatches(GameTestHelper h) {
+    private static void furnaceRunsTwoBatches(GameTestHelper h) {
         floor(h, 14);
-        h.setBlock(6, 1, 2, controller("forge"));
-        box(h, 6, 1, 2, 5, 2, 5, Blocks.STONE_BRICKS, true, true);
-        know(h, "P-048");
+        h.setBlock(6, 1, 2, controller("smelting_furnace"));
+        box(h, 6, 1, 2, 5, 4, 5, Blocks.BRICKS, true, true);
+        know(h, "P-044");
         StationBlockEntity be = station(h, 6, 1, 2);
         be.setOperator(SOCIETY);
-        be.setItem(StationBlockEntity.INPUT_START, ModContent.stack("iron_bloom").copyWithCount(3));
-        be.setItem(StationBlockEntity.INPUT_START + 1, ModContent.stack("charcoal").copyWithCount(3));
-        selectDirect(be, "P-048");
+        // copper smelting: 3 malachite (the survival mineral) + 2 charcoal per run; enough for three runs, two at once
+        be.setItem(StationBlockEntity.INPUT_START, ModContent.stack("malachite").copyWithCount(9));
+        be.setItem(StationBlockEntity.INPUT_START + 1, ModContent.stack("charcoal").copyWithCount(6));
+        be.setItem(StationBlockEntity.TOOL_START, ModContent.stack("crucible"));
+        selectDirect(be, "P-044");
         h.succeedWhen(() -> {
             ItemStack out = be.getItem(StationBlockEntity.OUTPUT_START);
-            h.assertTrue(out.is(ModContent.item("wrought_iron")) && out.getCount() == 2,
-                    "a 5x5 forge works two blooms at once: " + out + " / " + be.statusLines());
-            h.assertValueEqual(be.getItem(StationBlockEntity.INPUT_START).getCount(), 1, "one bloom left");
+            h.assertTrue(out.is(ModContent.item("copper")) && out.getCount() == 2,
+                    "a 5x4x5 furnace smelts two charges at once: " + out + " / " + be.statusLines());
+            h.assertValueEqual(be.getItem(StationBlockEntity.INPUT_START).getCount(), 3, "one charge of malachite left");
         });
     }
 
@@ -284,7 +298,7 @@ public final class TechTreeGameTests {
 
     private static void cleanroomNeedsFilters(GameTestHelper h) {
         floor(h, 14);
-        Block panel = ModContent.SIMPLE_BLOCKS.get("cleanroom_panel").get();
+        Block panel = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getValue(Identifier.fromNamespaceAndPath(spawn_9b5fbb9.MODID, "cleanroom_panel")); // the survival panel
         Block ffu = ModContent.SIMPLE_BLOCKS.get("fan_filter_unit").get();
         h.setBlock(6, 1, 2, controller("cleanroom"));
         box(h, 6, 1, 2, 9, 5, 9, panel, false, false);
@@ -437,20 +451,20 @@ public final class TechTreeGameTests {
         floor(h, 10);
         ServerPlayer p = player(h);
         BlockPos rel = new BlockPos(5, 2, 5);
-        // cassiterite: recognised once Smelting is known; no mine needed
-        BlockState cass = ModContent.SIMPLE_BLOCKS.get("cassiterite_deposit").get().defaultBlockState();
-        Block.dropResources(cass, h.getLevel(), h.absolutePos(rel), null, p, new ItemStack(Items.IRON_PICKAXE));
-        h.assertValueEqual(countDropped(h, rel, st -> st.is(ModContent.item("cassiterite"))), 0, "unrecognised cassiterite");
+        // platinum placer: recognised once Chemical elements is known; no mine needed
+        BlockState placer = ModContent.SIMPLE_BLOCKS.get("platinum_placer").get().defaultBlockState();
+        Block.dropResources(placer, h.getLevel(), h.absolutePos(rel), null, p, new ItemStack(Items.IRON_PICKAXE));
+        h.assertValueEqual(countDropped(h, rel, st -> st.is(ModContent.item("platinum"))), 0, "unrecognised platinum");
         h.assertTrue(countDropped(h, rel, st -> st.is(Items.COBBLESTONE)) > 0, "it is just a coloured rock");
         h.killAllEntitiesOfClass(ItemEntity.class);
-        KnowledgeData.get(h.getLevel().getServer()).grant(Society.keyOf(p), "T-16");
-        Block.dropResources(cass, h.getLevel(), h.absolutePos(rel), null, p, new ItemStack(Items.IRON_PICKAXE));
-        h.assertTrue(countDropped(h, rel, st -> st.is(ModContent.item("cassiterite"))) > 0, "recognised after Smelting");
+        KnowledgeData.get(h.getLevel().getServer()).grant(Society.keyOf(p), "T-42");
+        Block.dropResources(placer, h.getLevel(), h.absolutePos(rel), null, p, new ItemStack(Items.IRON_PICKAXE));
+        h.assertTrue(countDropped(h, rel, st -> st.is(ModContent.item("platinum"))) > 0, "recognised after Chemical elements");
         h.killAllEntitiesOfClass(ItemEntity.class);
-        // galena: also needs a shaft mine
-        BlockState galena = ModContent.SIMPLE_BLOCKS.get("galena_deposit").get().defaultBlockState();
-        Block.dropResources(galena, h.getLevel(), h.absolutePos(rel), null, p, new ItemStack(Items.IRON_PICKAXE));
-        h.assertValueEqual(countDropped(h, rel, st -> st.is(ModContent.item("galena"))), 0, "no shaft mine, no galena");
+        // cinnabar: needs a shaft mine
+        BlockState cinnabar = ModContent.SIMPLE_BLOCKS.get("cinnabar_deposit").get().defaultBlockState();
+        Block.dropResources(cinnabar, h.getLevel(), h.absolutePos(rel), null, p, new ItemStack(Items.IRON_PICKAXE));
+        h.assertValueEqual(countDropped(h, rel, st -> st.is(ModContent.item("cinnabar"))), 0, "no shaft mine, no cinnabar");
         h.killAllEntitiesOfClass(ItemEntity.class);
         // oil-bearing rock: only a drilling rig brings it up
         BlockState oil = ModContent.SIMPLE_BLOCKS.get("oil_reservoir").get().defaultBlockState();
@@ -490,37 +504,34 @@ public final class TechTreeGameTests {
 
     private static void toolsAreRequiredAndWear(GameTestHelper h) {
         floor(h, 14);
-        h.setBlock(6, 1, 2, controller("forge"));
-        box(h, 6, 1, 2, 3, 2, 3, Blocks.STONE_BRICKS, true, true);
-        know(h, "P-076");
+        h.setBlock(6, 1, 2, controller("smelting_furnace"));
+        box(h, 6, 1, 2, 3, 3, 3, Blocks.BRICKS, true, true);
+        know(h, "P-044");
         StationBlockEntity be = station(h, 6, 1, 2);
         be.setOperator(SOCIETY);
         be.revalidateNow();
-        be.setItem(StationBlockEntity.INPUT_START, ModContent.stack("copper"));
-        be.setItem(StationBlockEntity.INPUT_START + 1, ModContent.stack("animal_fat"));
-        be.setItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.CHARCOAL, 4));
-        TechTree.FunctionDef wire = TechTree.get().functionsById.get("P-076");
-        Requirements.Check without = Requirements.station(be, wire, 1, Requirements.Phase.START);
-        h.assertTrue(without.missing().stream().anyMatch(m -> m.contains("Draw plate")), "asks for the draw plate: " + without.missing());
-        ItemStack plate = ModContent.stack("draw_plate");
-        be.setItem(StationBlockEntity.TOOL_START, plate);
-        selectDirect(be, "P-076");
+        be.setItem(StationBlockEntity.INPUT_START, ModContent.stack("malachite").copyWithCount(3));
+        be.setItem(StationBlockEntity.INPUT_START + 1, ModContent.stack("charcoal").copyWithCount(2));
+        TechTree.FunctionDef smelt = TechTree.get().functionsById.get("P-044");
+        Requirements.Check without = Requirements.station(be, smelt, 1, Requirements.Phase.START);
+        h.assertTrue(without.missing().stream().anyMatch(m -> m.contains("Crucible")), "asks for the crucible: " + without.missing());
+        be.setItem(StationBlockEntity.TOOL_START, ModContent.stack("crucible"));
+        selectDirect(be, "P-044");
         h.succeedWhen(() -> {
             ItemStack out = be.getItem(StationBlockEntity.OUTPUT_START);
-            h.assertTrue(out.is(ModContent.item("copper_wire")) && out.getCount() == 2, "wire drawn: " + out + " " + be.statusLines());
-            h.assertValueEqual(be.getItem(StationBlockEntity.TOOL_START).getDamageValue(), 1, "the draw plate wore by one use");
-            h.assertTrue(be.getItem(StationBlockEntity.FUEL_SLOT).getCount() < 4, "the forge burned charcoal (no fuel in the charge)");
+            h.assertTrue(out.is(ModContent.item("copper")) && out.getCount() == 1, "copper smelted: " + out + " " + be.statusLines());
+            h.assertValueEqual(be.getItem(StationBlockEntity.TOOL_START).getDamageValue(), 1, "the crucible wore by one use");
         });
     }
 
-    private static void steamEngineNeedsFuel(GameTestHelper h) {
+    private static void engineNeedsFuel(GameTestHelper h) {
         floor(h, 14);
-        h.setBlock(6, 1, 2, controller("steam_engine"));
-        box(h, 6, 1, 2, 3, 4, 5, Blocks.IRON_BLOCK, false, false);
+        h.setBlock(6, 1, 2, controller("atmospheric_engine"));
+        box(h, 6, 1, 2, 3, 6, 5, Blocks.IRON_BLOCK, false, false);
         h.setBlock(8, 1, 2, Blocks.WATER);
         StationBlockEntity be = station(h, 6, 1, 2);
         be.revalidateNow();
-        h.assertTrue(be.isFormed(), "steam engine forms: " + be.formation().problem());
+        h.assertTrue(be.isFormed(), "atmospheric engine forms: " + be.formation().problem());
         h.assertFalse(be.drawPower(40), "no fuel, no power");
         be.setItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.COAL, 2));
         h.assertTrue(be.drawPower(40), "coal in the firebox gives power");
@@ -595,9 +606,11 @@ public final class TechTreeGameTests {
             h.assertTrue(found > 0, ore.block() + " vein places into " + host.getName().getString());
         }
         var biomes = registries.lookupOrThrow(Registries.BIOME);
-        assertBiomeHas(h, biomes.getOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS).value(), "malachite_deposit");
+        assertBiomeHas(h, biomes.getOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS).value(), "native_copper_deposit");
         assertBiomeHas(h, biomes.getOrThrow(net.minecraft.world.level.biome.Biomes.BEACH).value(), "amber_sand");
-        assertBiomeHas(h, biomes.getOrThrow(net.minecraft.world.level.biome.Biomes.NETHER_WASTES).value(), "sulfur_deposit_extra");
+        h.assertFalse(registries.lookupOrThrow(Registries.PLACED_FEATURE).get(ResourceKey.create(Registries.PLACED_FEATURE,
+                Identifier.fromNamespaceAndPath(spawn_9b5fbb9.MODID, "malachite_deposit"))).isPresent(),
+                "malachite is left to the survival geology");
         h.succeed();
     }
 
@@ -631,23 +644,27 @@ public final class TechTreeGameTests {
         mill.setOperator(SOCIETY);
         mill.revalidateNow();
         h.assertTrue(mill.isFormed(), "rolling mill forms: " + mill.formation().problem());
-        TechTree.FunctionDef plate = TechTree.get().functionsById.get("P-138");
-        know(h, "P-138");
+        TechTree.FunctionDef plate = TechTree.get().functionsById.get("P-139");
+        know(h, "P-139");
         Requirements.Check c = Requirements.station(mill, plate, 1, Requirements.Phase.RUNNING);
         h.assertTrue(c.missing().stream().anyMatch(m -> m.contains("power")), "no engine: " + c.missing());
-        // a steam engine next to it, with water and coal
-        h.setBlock(12, 1, 2, controller("steam_engine"));
-        box(h, 12, 1, 2, 3, 4, 5, Blocks.IRON_BLOCK, false, false);
+        h.assertTrue(c.missing().stream().anyMatch(m -> m.contains("Forge")), "no forge: " + c.missing());
+        // the survival forge within reach is the forge
+        h.setBlock(4, 1, 12, SurvivalStations.block("forge"));
+        c = Requirements.station(mill, plate, 1, Requirements.Phase.RUNNING);
+        h.assertFalse(c.missing().stream().anyMatch(m -> m.contains("Forge")), "the survival forge counts: " + c.missing());
+        // an atmospheric engine next to it, with water and coal
+        h.setBlock(12, 1, 2, controller("atmospheric_engine"));
+        box(h, 12, 1, 2, 3, 6, 5, Blocks.IRON_BLOCK, false, false);
         h.setBlock(14, 1, 2, Blocks.WATER);
         StationBlockEntity engine = station(h, 12, 1, 2);
         engine.revalidateNow();
         h.assertTrue(engine.isFormed(), "engine forms: " + engine.formation().problem());
         c = Requirements.station(mill, plate, 1, Requirements.Phase.RUNNING);
-        h.assertTrue(c.missing().stream().anyMatch(m -> m.contains("power") || m.contains("Steam engine")),
-                "a cold engine gives no power: " + c.missing());
+        h.assertTrue(c.missing().stream().anyMatch(m -> m.contains("power")), "a cold engine gives no power: " + c.missing());
         engine.setItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.COAL, 1));
         c = Requirements.station(mill, plate, 1, Requirements.Phase.RUNNING);
-        h.assertFalse(c.missing().stream().anyMatch(m -> m.contains("power") || m.contains("Steam engine")),
+        h.assertFalse(c.missing().stream().anyMatch(m -> m.contains("power")),
                 "an engine with coal within reach can power the mill: " + c.missing());
         h.assertValueEqual(engine.getItem(StationBlockEntity.FUEL_SLOT).getCount(), 1, "checking alone burns nothing");
         c = Requirements.station(mill, plate, 1, Requirements.Phase.RUNNING, true);
@@ -656,26 +673,31 @@ public final class TechTreeGameTests {
         h.succeed();
     }
 
-    private static void bigKiln(GameTestHelper h) {
-        floor(h, 14);
-        h.setBlock(6, 1, 2, controller("kiln"));
-        box(h, 6, 1, 2, 5, 4, 5, Blocks.BRICKS, true, true);
-        know(h, "P-059");
-        StationBlockEntity be = station(h, 6, 1, 2);
-        be.setOperator(SOCIETY);
-        be.revalidateNow();
-        h.assertTrue(be.isFormed(), "5x4x5 kiln: " + be.formation().problem());
-        h.assertValueEqual(be.formation().batch(), 3, "large kiln batch");
-        // lime burning: 2 limestone + 2 wood per run; give enough for 4 runs, expect 3 at once
-        be.setItem(StationBlockEntity.INPUT_START, ModContent.stack("limestone").copyWithCount(8));
-        be.setItem(StationBlockEntity.INPUT_START + 1, new ItemStack(Items.OAK_LOG, 8));
-        selectDirect(be, "P-059");
-        h.succeedWhen(() -> {
-            ItemStack out = be.getItem(StationBlockEntity.OUTPUT_START);
-            h.assertTrue(out.is(ModContent.item("quicklime")) && out.getCount() == 3, "three batches of quicklime: " + out
-                    + " " + be.statusLines());
-            h.assertValueEqual(be.getItem(StationBlockEntity.INPUT_START).getCount(), 2, "limestone left");
-        });
+    /** Work the tree did at a kiln, forge or loom is hand work beside the survival workstation. */
+    private static void survivalWorkstationIsTheStation(GameTestHelper h) {
+        floor(h, 12);
+        ServerPlayer p = player(h);
+        TechTree.FunctionDef wire = TechTree.get().functionsById.get("P-076");
+        h.assertTrue(wire.mode() == TechTree.Mode.HAND && wire.host() == null, "wire drawing is hand work");
+        KnowledgeData kd = KnowledgeData.get(h.getLevel().getServer());
+        kd.grant(Society.keyOf(p), "P-076");
+        for (String t : wire.theory()) {
+            kd.grant(Society.keyOf(p), t);
+        }
+        p.getInventory().add(ModContent.stack("copper"));
+        p.getInventory().add(ModContent.stack("animal_fat"));
+        p.getInventory().add(ModContent.stack("draw_plate"));
+        Requirements.Check far = Requirements.player(p, wire);
+        h.assertTrue(far.missing().stream().anyMatch(m -> m.contains("Forge")), "no forge near: " + far.missing());
+        h.setBlock(6, 1, 6, SurvivalStations.block("forge"));
+        Requirements.Check near = Requirements.player(p, wire);
+        h.assertTrue(near.ok(), "beside a survival forge the wire can be drawn: " + near.missing());
+        h.assertTrue(SurvivalStations.near(h.getLevel(), "steam_engine", new AABB(h.absolutePos(new BlockPos(6, 1, 6))), 4) == false,
+                "a forge is not an engine");
+        h.setBlock(8, 1, 6, SurvivalStations.block("steam_engine"));
+        h.assertTrue(SurvivalStations.near(h.getLevel(), "steam_engine", new AABB(h.absolutePos(new BlockPos(6, 1, 6))), 4),
+                "the survival stationary engine is the steam engine");
+        h.succeed();
     }
 
     private static void quizStable(GameTestHelper h) {
@@ -698,8 +720,8 @@ public final class TechTreeGameTests {
         floor(h, 30);
         h.setBlock(4, 1, 2, controller("rolling_mill"));
         box(h, 4, 1, 2, 3, 3, 7, Blocks.IRON_BLOCK, false, false);
-        h.setBlock(12, 1, 2, controller("steam_engine"));
-        box(h, 12, 1, 2, 3, 4, 5, Blocks.IRON_BLOCK, false, false);
+        h.setBlock(12, 1, 2, controller("atmospheric_engine"));
+        box(h, 12, 1, 2, 3, 6, 5, Blocks.IRON_BLOCK, false, false);
         h.setBlock(14, 1, 2, Blocks.WATER);
         know(h, "P-138");
         StationBlockEntity mill = station(h, 4, 1, 2);
@@ -715,9 +737,9 @@ public final class TechTreeGameTests {
         });
     }
 
-    private static void forgeRefusesWood(GameTestHelper h) {
+    private static void furnaceRefusesWood(GameTestHelper h) {
         floor(h, 14);
-        h.setBlock(6, 1, 2, controller("forge"));
+        h.setBlock(6, 1, 2, controller("smelting_furnace"));
         StationBlockEntity be = station(h, 6, 1, 2);
         h.assertFalse(be.canPlaceItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.OAK_LOG)), "logs are not hot enough for metal");
         h.assertTrue(be.canPlaceItem(StationBlockEntity.FUEL_SLOT, new ItemStack(Items.CHARCOAL)), "charcoal is");

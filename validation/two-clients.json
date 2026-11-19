@@ -1,0 +1,15 @@
+{
+  "clients": ["p3"],
+  "steps": [
+    {"as":"p3","run":["gamemode survival @s","survival debug @s hunger 40","survival debug @s thirst 20"]},
+    {"as":"p3","camera":{"pos":[-1,-60,-5],"look_at":[2.5,-59,-2.5]}},
+    {"step":20},
+    {"as":"p3","shot":"second-client-needs","hud":true},
+    {"sync":{"entities":"@a[name=p3]","fields":["getSpawnSurvivalHunger","getSpawnSurvivalThirst","getSpawnSurvivalMental"]}},
+    {"as":"p3","run":"survival health"},
+    {"wait":10},
+    {"as":"p3","shot":"second-client-health","hud":true},
+    {"as":"p3","run":"survival health"},
+    {"wait":10}
+  ]
+}

@@ -1,11 +1,9 @@
 {
   "values": [
-    "spawn_9b5fbb9:galena_deposit",
     "spawn_9b5fbb9:sphalerite_deposit",
     "spawn_9b5fbb9:cinnabar_deposit",
     "spawn_9b5fbb9:graphite_deposit",
     "spawn_9b5fbb9:pyrolusite_deposit",
-    "spawn_9b5fbb9:fluorite_deposit",
     "spawn_9b5fbb9:arsenopyrite_deposit",
     "#minecraft:coal_ores"
   ]

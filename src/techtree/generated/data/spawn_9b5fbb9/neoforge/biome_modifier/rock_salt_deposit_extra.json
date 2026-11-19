@@ -1,6 +1,0 @@
-{
-  "type": "neoforge:add_features",
-  "biomes": "#minecraft:is_overworld",
-  "features": "spawn_9b5fbb9:rock_salt_deposit_extra",
-  "step": "underground_ores"
-}

@@ -1051,6 +1051,48 @@ if errors:
     print("\n".join("ERROR: " + e for e in errors))
     sys.exit(1)
 
+# --------------------------------------------------------------------------- what the survival rules own
+# The survival code registers its own items, blocks and workstations in the same namespace. Where an id is
+# both, the survival one is the thing in the world: the tree marks it "survival" (the Java side then uses the
+# survival registration instead of making its own) and writes no texture, model, loot table, lang entry or
+# recipe for it. Deposits of a mineral the survival geology already places are left out: one source per item.
+SURVIVAL_RES = os.path.join(ROOT, "src", "main", "resources")
+_owned_dir = os.path.join(SURVIVAL_RES, "assets", MODID, "items")
+OWNED = {os.path.splitext(f)[0] for f in os.listdir(_owned_dir)} if os.path.isdir(_owned_dir) else set()
+_survival_lang_path = os.path.join(SURVIVAL_RES, "assets", MODID, "lang", "en_us.json")
+SURVIVAL_LANG = json.load(open(_survival_lang_path, encoding="utf-8")) if os.path.exists(_survival_lang_path) else {}
+
+
+def owned(ref):
+    """True for a survival-owned id, written bare or as modid:id."""
+    if ref.startswith(MODID + ":"):
+        return ref.split(":", 1)[1] in OWNED
+    return ":" not in ref and ref in OWNED
+
+
+for _d in list(M.items.values()) + list(M.stations.values()) + list(M.blocks):
+    if _d["id"] in OWNED:
+        _d["survival"] = True
+# What the tree performed at a station the survival rules build is done by hand beside that workstation.
+_by_hand = 0
+for _fn in M.functions:
+    _host = _fn.get("host")
+    if _fn.get("mode") == "station" and _host in OWNED and _host in M.stations:
+        _fn["mode"], _fn["host"] = "hand", None
+        if not any(m["ref"] == "station:" + _host for m in _fn["means"]):
+            _fn["means"].append({"ref": "station:" + _host, "name": M.stations[_host]["name"]})
+        _by_hand += 1
+for _sid, _st in M.stations.items():
+    if _sid in OWNED:
+        _st["hosts"] = []
+print(f"{_by_hand} functions are done by hand beside a survival workstation")
+_left_out = [o for o in M.ores if o["block"] in OWNED or owned(o.get("dropItem", ""))]
+M.ores = [o for o in M.ores if o not in _left_out]
+M.blocks = [b for b in M.blocks if b["id"] not in {o["block"] for o in _left_out}]
+_tree_ids = set(M.items) | set(M.stations) | {b["id"] for b in M.blocks}
+print(f"survival owns {len(OWNED & _tree_ids)} tree ids; deposits left to its geology: "
+      + ", ".join(sorted(o["block"] for o in _left_out)))
+
 # --------------------------------------------------------------------------- write data
 if os.path.isdir(OUT):
     shutil.rmtree(OUT)
@@ -1085,7 +1127,10 @@ for b in M.blocks:
 lang[f"block.{MODID}.cornerstone"] = "Cornerstone"
 with open(os.path.join(HERE, "lang_extra.json"), encoding="utf-8") as f:
     lang.update(json.load(f))
-write_json(os.path.join(ASSETS, "lang", "en_us.json"), lang)
+# The survival resources ship assets/<modid>/lang/en_us.json, and one jar holds one file per path. The game
+# reads lang/en_us.json from every namespace and merges them, so the tree's names go in a folder of their own.
+lang = {k: v for k, v in lang.items() if k not in SURVIVAL_LANG}
+write_json(os.path.join(OUT, "assets", MODID + "_techtree", "lang", "en_us.json"), lang)
 
 # ---- textures, models
 tex_item = os.path.join(ASSETS, "textures", "item")
@@ -1094,7 +1139,7 @@ os.makedirs(tex_item, exist_ok=True)
 os.makedirs(tex_block, exist_ok=True)
 
 for it in M.items.values():
-    if it.get("station"):
+    if it.get("station") or it.get("survival"):
         continue
     tex.render_item(it["shape"], it["name"], os.path.join(tex_item, it["id"] + ".png"), it.get("colour"))
     write_json(os.path.join(ASSETS, "models", "item", it["id"] + ".json"),
@@ -1112,6 +1157,8 @@ def cube_all(bid, texture):
 
 ore_by_block = {o["block"]: o for o in M.ores}
 for i, b in enumerate(M.blocks):
+    if b.get("survival"):
+        continue
     kind, colour = b["texture"]
     path = os.path.join(tex_block, b["id"] + ".png")
     if kind == "stone":
@@ -1144,6 +1191,8 @@ for i, b in enumerate(M.blocks):
 # station controllers
 for i, st in enumerate(M.stations.values()):
     sid = st["id"]
+    if st.get("survival"):
+        continue
     frame, accent = FAMILIES[st["family"]]
     tex.station_front(os.path.join(tex_block, sid + "_front.png"), frame, accent, 500 + i, False)
     tex.station_front(os.path.join(tex_block, sid + "_front_on.png"), frame, accent, 500 + i, True)
@@ -1186,6 +1235,8 @@ def self_drop(bid):
 
 
 for b in M.blocks:
+    if b.get("survival"):
+        continue
     if b["drops"] == "self":
         write_json(os.path.join(DATA, "loot_table", "blocks", b["id"] + ".json"),
                    {"type": "minecraft:block", "pools": [{"rolls": 1, "condition": {"type": "minecraft:survives_explosion"},
@@ -1209,6 +1260,8 @@ write_json(os.path.join(DATA, "loot_table", "blocks", "cornerstone.json"),
                                                   "entries": self_drop("cornerstone")}],
             "random_sequence": ns("blocks/cornerstone")})
 for st in M.stations.values():
+    if st.get("survival"):
+        continue
     write_json(os.path.join(DATA, "loot_table", "blocks", st["id"] + ".json"),
                {"type": "minecraft:block", "pools": [{"rolls": 1, "condition": {"type": "minecraft:survives_explosion"},
                                                       "entries": self_drop(st["id"])}],
@@ -1217,6 +1270,16 @@ for st in M.stations.values():
 
 # ---- tags
 def tag(kind, path, values, namespace=MODID):
+    if namespace != MODID:
+        values = [v for v in values if not owned(v)]  # the survival files say how its own blocks are mined
+    survival = os.path.join(SURVIVAL_RES, "data", namespace, "tags", kind, path + ".json")
+    if namespace != MODID and os.path.exists(survival):
+        # One jar holds one file per path: the tree's part becomes a tag of its own that the survival file includes.
+        ref = f"#{MODID}:techtree/{namespace}/{path}"
+        if ref not in open(survival, encoding="utf-8").read():
+            print(f"ERROR: {os.path.relpath(survival, ROOT)} must list {ref} so the tree's blocks join it")
+            sys.exit(1)
+        namespace, path = MODID, f"techtree/{namespace}/{path}"
     write_json(os.path.join(OUT, "data", namespace, "tags", kind, path + ".json"), {"values": values})
 
 
@@ -1327,12 +1390,16 @@ tag("entity_type", "wild_horses", ["minecraft:horse", "minecraft:donkey", "minec
 
 # ---- vanilla crafting recipes for building blocks made from tree items
 def shaped(rid, pattern, key, result, count=1):
+    if owned(result):
+        return  # the survival rules say how this is made
     write_json(os.path.join(DATA, "recipe", rid + ".json"),
                {"type": "minecraft:crafting_shaped", "category": "building", "key": key, "pattern": pattern,
                 "result": {"count": count, "id": result}})
 
 
 def shapeless(rid, ingredients, result, count=1):
+    if owned(result):
+        return  # the survival rules say how this is made
     write_json(os.path.join(DATA, "recipe", rid + ".json"),
                {"type": "minecraft:crafting_shapeless", "category": "building", "ingredients": ingredients,
                 "result": {"count": count, "id": result}})
@@ -1401,7 +1468,8 @@ def add_ore_feature(fid, block, target, size, count, lo, hi, biomes, air=False, 
                    {"type": "neoforge:add_features", "biomes": bl, "features": ns(fid), "step": "underground_ores"})
 
 
-add_ore_feature("limestone_beds", "limestone", "stone", 60, 2, 0, 110, "#minecraft:is_overworld")
+if "limestone" not in OWNED:  # otherwise the survival geology lays the limestone
+    add_ore_feature("limestone_beds", "limestone", "stone", 60, 2, 0, 110, "#minecraft:is_overworld")
 for o in M.ores:
     if o.get("reservoir"):
         add_ore_feature(o["block"], o["block"], "deepslate", o["size"], 1, o["min"], o["max"], "#minecraft:is_overworld",
