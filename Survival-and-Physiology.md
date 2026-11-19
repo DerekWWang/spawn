@@ -195,7 +195,7 @@ Example: a hit that costs 5 health removes 30 points from a limb. A 10-health hi
 
 ### Edged wounds, bleeding and wound infection
 
-A wound is edged when the attacker's main-hand item is a sword, spear or axe (pickaxes count), when the damage is a gunshot or artillery, or when it is the bite or claws of a wolf, bear or lion (see [Predators](predators)).
+A wound is edged when the attacker's main-hand item is a sword, spear or axe (pickaxes count), when the damage is a gunshot or artillery, or when it is the bite or claws of a wolf, bear or lion (see [Predators](Predators)).
 
 | Effect | Rule | Default |
 | --- | --- | --- |
@@ -241,7 +241,7 @@ Sources of systemic infection, by default:
 
 Nobody has to give you an infection. Each body has the daily chance in the table of coming down with one, and both chances are doubled while hunger or thirst is below 30.
 
-An infectious actor exposes the non-exempt actors around it. In the open that is anyone within `contactRange` (default 2 blocks). Under a roof it is anyone within `sharedRoomRange` (default 6 blocks) who is in line of sight and also under a roof. Each exposed actor has a chance of `contactInfectionChancePerHour` (default 6% per game hour) of catching it. The strain passed on is the carrier's. An actor who is already infected with that strain, or immune to it, cannot catch it again. How to keep a settlement healthy is on [Illness](illness).
+An infectious actor exposes the non-exempt actors around it. In the open that is anyone within `contactRange` (default 2 blocks). Under a roof it is anyone within `sharedRoomRange` (default 6 blocks) who is in line of sight and also under a roof. Each exposed actor has a chance of `contactInfectionChancePerHour` (default 6% per game hour) of catching it. The strain passed on is the carrier's. An actor who is already infected with that strain, or immune to it, cannot catch it again. How to keep a settlement healthy is on [Illness](Illness).
 
 Immunity is per strain and is lost on death.
 

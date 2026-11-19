@@ -132,6 +132,8 @@ The hand recipes that start a settlement:
 
 All but the forge need a crafting table to build, because they have more than four ingredients. Building one earns Construction experience. Each station is a single block and holds one job at a time: one input, one second input, one output.
 
+The kiln, bloomery, forge and loom are also the tech tree's stations of those names. Work the tree does at one of them is done by hand from the journal (**J**) while you stand within 16 blocks of the workstation. See [Tech Tree and Discovery](Tech-Tree-and-Discovery).
+
 ## Fuel
 
 The kiln, bloomery and forge burn a heat reserve measured in ticks.

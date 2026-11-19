@@ -18,17 +18,16 @@ These pages are written for people. They live on their own branch, apart from th
 | [Skills and Learning](Skills-and-Learning) | The skills, how practice builds them, what they gate |
 | [Water Pottery and Food](Water-Pottery-and-Food) | Safe water, jars, storage, spoilage, rations |
 | [Clothing and Medical Care](Clothing-and-Medical-Care) | Clothing, insulation, wear and mending, wounds and treatment |
-| [Illness](illness) | How infections start by chance, how they spread, how to stop them |
+| [Illness](Illness) | How infections start by chance, how they spread, how to stop them |
 
 ## The world
 
 | Page | What it covers |
 | --- | --- |
-| [Weather Climate and Geography](Weather-Climate-and-Geography) | Terrain, climate, seasons, weather and what they do |
+| [Weather Climate and Geography](Weather-Climate-and-Geography) | Terrain, climate, seasons, weather and what they do, including what rain does to fire |
 | [Natural Resources and Mining](Natural-Resources-and-Mining) | Mineral districts, prospecting, what a block of ground holds |
-| [Weather and Fire](weather-and-fire) | What rain does to open fire and campfires, and why a roof matters |
 | [Agriculture and Livestock](Agriculture-and-Livestock) | Crops, seasons, wild plants, animals |
-| [Predators](predators) | Wolves, brown bears, lions and polar bears: when they hunt, what stops them |
+| [Predators](Predators) | Wolves, brown bears, lions and polar bears: when they hunt, what stops them |
 
 ## Making things
 
@@ -39,6 +38,15 @@ These pages are written for people. They live on their own branch, apart from th
 | [Industrial Recipes](Industrial-Recipes) | Every industrial recipe in tables, generated from the code |
 | [Power and Cleanrooms](Power-and-Cleanrooms) | Power stations, kilowatts, cable, the cleanroom rules |
 | [Semiconductors and Computers](Semiconductors-and-Computers) | From sand to a server, step by step |
+
+## The tech tree
+
+| Page | What it covers |
+| --- | --- |
+| [Tech Tree and Discovery](Tech-Tree-and-Discovery) | The journal, discovering functions, theory and practice, societies, and how the tree meets the survival rules |
+| [Tech Tree Stations](Tech-Tree-Stations) | Stations built as structures, power, fuel, tools, and the tree's own deposits |
+| [Buildings and Physics](Buildings-and-Physics) | Load, weather and decay; cornerstones, building uses and schemas |
+| [Logistics and Records](Logistics-and-Records) | Stores, the books and how wrong they are, stock-takes, spoiling goods |
 
 ## Moving and fighting
 
@@ -58,4 +66,4 @@ These pages are written for people. They live on their own branch, apart from th
 ## Elsewhere
 
 - [Source code and README](https://github.com/DerekWWang/spawn)
-- [Realism audit: every process against its real counterpart](https://github.com/DerekWWang/spawn/blob/realism-survival/docs/realism-audit.md)
+- [Realism audit: every process against its real counterpart](https://github.com/DerekWWang/spawn/blob/main/docs/realism-audit.md)

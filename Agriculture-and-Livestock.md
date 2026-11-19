@@ -176,7 +176,7 @@ Every crop begins as a wild stand. Stands are described in [Natural Resources an
 
 ## Livestock
 
-Cows, sheep, pigs and chickens are managed by the rules below. Wolves, bears and lions take stock when they are hungry, and a fence, a fire by the fold and company are what keep them off: see [Predators](predators). Other animals keep vanilla behaviour.
+Cows, sheep, pigs and chickens are managed by the rules below. Wolves, bears and lions take stock when they are hungry, and a fence, a fire by the fold and company are what keep them off: see [Predators](Predators). Other animals keep vanilla behaviour.
 
 ### Feed, water and condition
 

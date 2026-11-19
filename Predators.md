@@ -1,5 +1,7 @@
 ---
 title: Predators
+redirect_from:
+  - /predators
 ---
 {% include nav.html %}
 

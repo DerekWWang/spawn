@@ -3,3 +3,5 @@ description: A natural-world survival mod for Minecraft 26.3 where everything co
 theme: jekyll-theme-cayman
 show_downloads: false
 markdown: kramdown
+plugins:
+  - jekyll-redirect-from

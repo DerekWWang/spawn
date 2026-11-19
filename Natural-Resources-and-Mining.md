@@ -238,6 +238,10 @@ New terrain generates as wild country.
 
 Server owners can extend the lists with the data tags `spawn_9b5fbb9:forbidden_entities` and `spawn_9b5fbb9:forbidden_items`.
 
+## The tech tree's deposits
+
+The tech tree adds 22 kinds of deposit for minerals this geology does not place, from fireclay and native copper to cinnabar, platinum, oil and gas. Some yield only rubble until your society knows the right theory, and some can only be worked from a mine or a drilling rig. See [Tech Tree Stations](Tech-Tree-Stations#deposits).
+
 ## Legacy worlds
 
 A world without the Tectonic profile uses the same ore bodies with simpler rules.

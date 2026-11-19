@@ -1,5 +1,7 @@
 ---
 title: Illness
+redirect_from:
+  - /illness
 ---
 {% include nav.html %}
 
