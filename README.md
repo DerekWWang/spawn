@@ -362,6 +362,13 @@ buildings and player construction are retained; the mod does not erase old
 terrain. Definitions can extend `humanoids`, `forbidden_entities`, and
 `forbidden_items` data tags for additional entity/content types.
 
+Every wild animal spawns under its own kind's rules. The game lists a jungle's
+ocelots among its monsters, which spawn every tick until the monster cap is
+full; an ocelot never counts towards that cap, and with the forbidden monsters
+gone nothing else filled it, so a jungle near a player bred them by the
+thousand. Each spawn entry is now filed under its own creature's category, and
+ocelots appear as other wild animals do.
+
 ## Industry and realistic production chains
 
 Beyond the kiln, bloomery, forge, anvil and loom, nine **works** carry production

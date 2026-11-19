@@ -107,6 +107,7 @@ public final class SurvivalContent {
         TESTS.register("content_only_stock_breeds",()->ContentGameTests::onlyStockBreeds);
         TESTS.register("survival_unconscious_lies_still",()->ContentGameTests::unconsciousLiesStill);
         TESTS.register("reviewfix_records_kept_by_chunk",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::recordsKeptByChunk);
+        TESTS.register("reviewfix_spawns_in_own_category",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::spawnsInOwnCategory);
         TESTS.register("survival_sleep_and_pain",()->ContentGameTests::sleepAndPain);
         TESTS.register("content_litter_lamb_dying_dam",()->ContentGameTests::litterLambAndDyingDam);
         TESTS.register("content_product_recovery",()->ContentGameTests::productRecovery);

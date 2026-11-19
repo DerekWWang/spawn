@@ -223,6 +223,38 @@ stretch of country, `--pid` adds the server's own processor time and memory. The
 A bot keeps its position between runs, so use a fresh `--prefix` to start a run at spawn. Bots are
 ordinary survivors: left standing for about an hour they die of thirst and wake at the world spawn.
 
+## Evaluation worlds
+
+An evaluation should start every time from the same land, with nobody in it. `tools/eval-world.py` keeps
+pinned copies of the dev world and puts one back before a run:
+
+```bash
+python tools/eval-world.py list
+```
+
+```bash
+python tools/eval-world.py restore forest-lake
+```
+
+Stop the server first (`qube server down`); the script refuses while the world is in use. Then
+`qube server up` serves the restored world, and a bot that joins arrives at the template's spawn as a new
+person with empty hands.
+
+Templates live in `run/eval-worlds/<name>/`, outside git. Each one's description, seed and spawn are kept
+in the repository as `tools/eval-worlds/<name>.json`, so a template can be made again:
+`qube server reset --seed <seed>`, `qube server up`, `setworldspawn`, `gamerule respawn_radius 0`, set the
+time and weather, walk a bot round the spawn so the land is generated, `qube server down`, then
+`python tools/eval-world.py save <name> --site tools/eval-worlds/<name>.json`. Saving leaves out every
+player's data. The saved copy, not the seed, is what pins the land: chunks already generated stay as they
+are whatever the mod's world generation does later, while land beyond them is generated from the seed by
+whichever build is running.
+
+| Template | Spawn | What is there |
+| --- | --- | --- |
+| `forest-lake` (seed 20261118) | 42 64 -54 | A sand beach on the north shore of a freshwater lake, with jungle and oak woodland behind it (about 60 trunks within 48 blocks), fallen sticks 6 blocks away, loose stones within 20, wild melons 38 blocks east and a chicken on the beach. Pigs, sheep and shallow clay banks are on the plains across the lake. Spring day 1, morning, clear, 18 °C. |
+
+Drinking straight from the lake works but poisons 18% of the time; boiled water from a fired pot is safe.
+
 ## Capacity
 
 Measured on 16 November 2026 with `test/load.js`: one dev server (NeoForge 26.3.0.77, 8 GB heap) and the

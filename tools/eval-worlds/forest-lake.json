@@ -1,0 +1,17 @@
+{
+  "name": "forest-lake",
+  "seed": "20261118",
+  "spawn": [42, 64, -54],
+  "summary": "Sand beach on the north shore of a freshwater lake, jungle and oak woodland behind it, grass plains with pigs across the water. Spring day 1, 1000 ticks, clear.",
+  "start": {"calendar": "Spring day 1, year 1", "time": 1000, "weather": "clear", "difficulty": "easy", "respawn_radius": 0, "air_c": 18},
+  "features": {
+    "water": "lake surface y 62 along the beach; stand at (40, 63, -52) to drink. Raw water poisons 18% of drinks: boil it in a fired pot for safety. A river biome lies west of the lake (about -16, 64, 0).",
+    "wood": "about 60 trunks within 48 blocks, mostly jungle with oak, e.g. oak at (12, -57), (29, -76); jungle at (22, -66), (48, -62).",
+    "sticks": "fallen sticks at (44, 64, -58), (59, 63, -58), (26, 64, -51) and more within 48 blocks.",
+    "stone": "loose stones at (56, 63, -64), (57, 65, -78), (83, 64, -55).",
+    "clay": "under the lake off the beach at (46, 55, -49), 7 deep; shallow clay banks on the south shore around (13..17, 62, -23..-13).",
+    "food": "wild melons at (77, 63, -59), (79, 64, -56), (80, 63, -55); a chicken on the beach; pigs and sheep on the south plains (about 20, 63, -20); salmon in the lake.",
+    "dirt": "grass and dirt on the slopes behind the beach (x 34..37, y 64..67) and across the plains south of the lake."
+  },
+  "notes": "Generated with the ocelot spawn fix (jungle ocelots spawn as creatures). Chunks within about 160 blocks of the spawn were generated when saved."
+}

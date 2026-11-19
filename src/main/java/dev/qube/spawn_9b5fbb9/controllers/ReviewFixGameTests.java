@@ -110,4 +110,21 @@ public final class ReviewFixGameTests {
         h.assertTrue(records.getCompoundOrEmpty(key).isEmpty()&&!store.get(id).contains(key),"A record removed stays removed");
         h.succeed();
     }
+
+    /** What the natural spawner reads for a biome: its spawn lists live among its environment attributes. */
+    private static net.minecraft.world.level.biome.MobSpawnSettings spawnsOf(net.minecraft.world.level.biome.Biome biome){
+        return biome.getAttributes().applyModifier(net.minecraft.world.attribute.EnvironmentAttributes.NATURAL_MOB_SPAWNS,net.minecraft.world.level.biome.MobSpawnSettings.EMPTY);
+    }
+
+    /** With the forbidden monsters gone, nothing may spawn under a category its own kind does not count towards. */
+    public static void spawnsInOwnCategory(GameTestHelper h){
+        var biomes=h.getLevel().registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME);
+        var jungle=spawnsOf(biomes.getOrThrow(net.minecraft.world.level.biome.Biomes.JUNGLE).value());
+        boolean asMonster=jungle.getMobsToSpawn(net.minecraft.world.entity.MobCategory.MONSTER).unwrap().stream().anyMatch(e->e.value().type()==net.minecraft.world.entity.EntityTypes.OCELOT);
+        boolean asCreature=jungle.getMobsToSpawn(net.minecraft.world.entity.MobCategory.CREATURE).unwrap().stream().anyMatch(e->e.value().type()==net.minecraft.world.entity.EntityTypes.OCELOT);
+        h.assertTrue(!asMonster&&asCreature,"A jungle's ocelots spawn as the creatures they are, not under the monster rules (monster "+asMonster+", creature "+asCreature+")");
+        biomes.listElements().forEach(biome->{var mobs=spawnsOf(biome.value());for(var category:net.minecraft.world.entity.MobCategory.values())for(var entry:mobs.getMobsToSpawn(category).unwrap())
+            h.assertTrue(entry.value().type().getCategory()==category,biome.key().identifier()+" spawns "+entry.value().type().getDescriptionId()+" as "+category);});
+        h.succeed();
+    }
 }

@@ -14,7 +14,7 @@ public final class spawn_9b5fbb9 {
         container.registerConfig(ModConfig.Type.LOCAL,Config.SPEC);
         dev.qube.spawn_9b5fbb9.environment.WorldEnvironment.init();
         dev.qube.spawn_9b5fbb9.survival.RealismData.init();
-        SurvivalContent.register(bus); dev.qube.spawn_9b5fbb9.world.ChunkRecords.register(bus); SurvivalContent.init();
+        SurvivalContent.register(bus); dev.qube.spawn_9b5fbb9.world.ChunkRecords.register(bus); dev.qube.spawn_9b5fbb9.world.SpawnCategories.register(bus); SurvivalContent.init();
         dev.qube.spawn_9b5fbb9.controllers.WorldActions.register(bus);
         dev.qube.spawn_9b5fbb9.controllers.WorldActions.init();
         dev.qube.spawn_9b5fbb9.wildlife.Predators.init();
