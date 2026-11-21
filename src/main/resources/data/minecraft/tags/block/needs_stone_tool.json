@@ -12,6 +12,7 @@
     "spawn_9b5fbb9:bauxite_ore",
     "spawn_9b5fbb9:wolframite_ore",
     "spawn_9b5fbb9:borax_ore",
+    "spawn_9b5fbb9:topaz_ore",
     {
       "id": "#spawn_9b5fbb9:techtree/minecraft/needs_stone_tool",
       "required": false

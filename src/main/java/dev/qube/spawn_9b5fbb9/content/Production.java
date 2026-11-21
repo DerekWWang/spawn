@@ -119,6 +119,41 @@ public final class Production {
         // A cubic metre of rubble dresses down to eight 40 kg balls, half a day of a mason's work each.
         skilled("dress_stone_shot","minecraft:cobblestone",1,"spawn_9b5fbb9:stone_shot",8,32000,"anvil",Skill.MINING,2,true,false,15,.15,"",0);
         skilled("solder","spawn_9b5fbb9:tin_ingot",3,"spawn_9b5fbb9:solder",5,800,"forge",Skill.SMITHING,2,true,true,10,.1,"spawn_9b5fbb9:lead_ingot",2);
+        // Luxuries. Pigment and mordant first: red ochre is ground haematite, and alum was roasted out of pyritic shale and
+        // crystallised with potash, which is why it was dear and why fast reds and yellows were too.
+        skilled("red_ochre","spawn_9b5fbb9:hematite",1,"spawn_9b5fbb9:red_ochre",4,1000,"anvil",Skill.MINING,0,true,false,10,.1,"",0);
+        skilled("alum","spawn_9b5fbb9:pyrite",4,"spawn_9b5fbb9:alum",2,8000,"kiln",null,0,false,true,0,.05,"spawn_9b5fbb9:wood_ash",1);
+        // Dyes. Woad and indigo are vat dyes, fermented in lye and needing no mordant; madder and weld will not hold without alum.
+        // Tyrian purple took thousands of whelks to the gram; thirty-two to a measure is the smallest-amount rule again.
+        skilled("woad_vat","spawn_9b5fbb9:woad_leaves",8,"minecraft:blue_dye",1,6000,"kiln",null,0,false,true,0,.05,"spawn_9b5fbb9:wood_ash",1);
+        skilled("indigo_vat","spawn_9b5fbb9:indigo_leaves",8,"minecraft:blue_dye",2,6000,"kiln",null,0,false,true,0,.05,"spawn_9b5fbb9:wood_ash",1);
+        skilled("madder_red","spawn_9b5fbb9:madder_root",4,"minecraft:red_dye",2,2000,"kiln",null,0,false,true,0,.05,"spawn_9b5fbb9:alum",1);
+        skilled("weld_yellow","spawn_9b5fbb9:weld",4,"minecraft:yellow_dye",2,2000,"kiln",null,0,false,true,0,.05,"spawn_9b5fbb9:alum",1);
+        skilled("tyrian_purple","spawn_9b5fbb9:murex",32,"minecraft:purple_dye",1,12000,"kiln",null,0,false,true,0,.05,"spawn_9b5fbb9:salt",1);
+        skilled("dye_yarn_blue","spawn_9b5fbb9:yarn",4,"spawn_9b5fbb9:dyed_yarn",4,2000,"kiln",null,0,false,true,0,.05,"minecraft:blue_dye",1);
+        skilled("dye_yarn_red","spawn_9b5fbb9:yarn",4,"spawn_9b5fbb9:dyed_yarn",4,2000,"kiln",null,0,false,true,0,.05,"minecraft:red_dye",1);
+        skilled("dye_yarn_yellow","spawn_9b5fbb9:yarn",4,"spawn_9b5fbb9:dyed_yarn",4,2000,"kiln",null,0,false,true,0,.05,"minecraft:yellow_dye",1);
+        skilled("dye_yarn_purple","spawn_9b5fbb9:yarn",4,"spawn_9b5fbb9:dyed_yarn",4,2000,"kiln",null,0,false,true,0,.05,"minecraft:purple_dye",1);
+        // Remedies of particular country: meadowsweet of wet meadows carries the salicylates aspirin was named for, bog moss is an
+        // absorbent, mildly antiseptic dressing, and fever bark is the cinchona of the wet tropics.
+        skilled("meadowsweet_painkiller","spawn_9b5fbb9:meadowsweet",4,"spawn_9b5fbb9:painkiller",1,600,"loom",Skill.MEDICINE,0,true,false,10,.1,"",0);
+        skilled("sphagnum_bandage","spawn_9b5fbb9:sphagnum",2,"spawn_9b5fbb9:bandage",2,400,"loom",Skill.MEDICINE,0,true,false,10,.1,"spawn_9b5fbb9:cordage",1);
+        skilled("fever_bark","spawn_9b5fbb9:cinchona_bark",2,"spawn_9b5fbb9:febrifuge",1,600,"loom",Skill.MEDICINE,0,true,false,10,.1,"",0);
+        // Works of art, rated in the hours they take. Drilling and stringing beads is an afternoon; a tapestry is a week at the loom;
+        // a life-size figure out of a cubic metre of marble is three hundred hours of a practised mason, and that is quick.
+        skilled("shell_beads","spawn_9b5fbb9:seashell",8,"spawn_9b5fbb9:shell_beads",1,3000,"loom",Skill.WEAVING,0,true,false,15,.15,"spawn_9b5fbb9:cordage",1);
+        skilled("amber_pendant","spawn_9b5fbb9:amber",1,"spawn_9b5fbb9:amber_pendant",1,4000,"loom",Skill.WEAVING,0,true,false,15,.15,"spawn_9b5fbb9:cordage",1);
+        skilled("pearl_necklace","spawn_9b5fbb9:pearl",12,"spawn_9b5fbb9:pearl_necklace",1,3000,"loom",Skill.WEAVING,0,true,false,15,.15,"spawn_9b5fbb9:cordage",1);
+        skilled("tapestry","spawn_9b5fbb9:dyed_yarn",24,"spawn_9b5fbb9:tapestry",1,48000,"loom",Skill.WEAVING,6,true,false,40,.15,"spawn_9b5fbb9:yarn",8);
+        skilled("stone_figurine","spawn_9b5fbb9:loose_stone",1,"spawn_9b5fbb9:stone_figurine",1,8000,"anvil",Skill.CONSTRUCTION,0,true,false,20,.15,"",0);
+        skilled("malachite_beads","spawn_9b5fbb9:malachite",1,"spawn_9b5fbb9:malachite_beads",1,6000,"anvil",Skill.CONSTRUCTION,0,true,false,20,.15,"spawn_9b5fbb9:cordage",1);
+        skilled("lapis_amulet","minecraft:lapis_lazuli",2,"spawn_9b5fbb9:lapis_amulet",1,8000,"anvil",Skill.CONSTRUCTION,2,true,false,20,.15,"spawn_9b5fbb9:cordage",1);
+        skilled("topaz_ring","minecraft:copper_ingot",1,"spawn_9b5fbb9:topaz_ring",1,6000,"forge",Skill.SMITHING,4,true,true,25,.15,"spawn_9b5fbb9:topaz",1);
+        skilled("painted_pot","minecraft:clay_ball",8,"spawn_9b5fbb9:painted_pot",1,2400,"kiln",Skill.POTTERY,3,true,true,25,.25,"spawn_9b5fbb9:red_ochre",1);
+        skilled("polished_marble","spawn_9b5fbb9:marble",1,"spawn_9b5fbb9:polished_marble",1,6000,"anvil",Skill.CONSTRUCTION,2,true,false,20,.15,"minecraft:sand",1);
+        skilled("marble_column","spawn_9b5fbb9:marble",1,"spawn_9b5fbb9:marble_column",1,16000,"anvil",Skill.CONSTRUCTION,5,true,false,30,.15,"minecraft:sand",1);
+        skilled("marble_statue","spawn_9b5fbb9:marble",1,"spawn_9b5fbb9:marble_statue",1,320000,"anvil",Skill.CONSTRUCTION,8,true,false,40,.15,"",0);
+        skilled("mosaic","spawn_9b5fbb9:marble",1,"spawn_9b5fbb9:mosaic",8,32000,"anvil",Skill.CONSTRUCTION,6,true,false,30,.15,"spawn_9b5fbb9:quicklime",4);
         DEFAULT_RECIPES=Collections.unmodifiableMap(new LinkedHashMap<>(RECIPES));RECIPES=DEFAULT_RECIPES;
     }
     private static void recipe(String key,String input,int count,String output,int amount,long ticks,boolean forge,String second,int secondCount){RECIPES.put(key,new Recipe(input,count,output,amount,ticks,forge,second,secondCount));}
@@ -156,6 +191,16 @@ public final class Production {
     public static String stationId(WorkstationEntity station){var id=BuiltInRegistries.BLOCK.getKey(station.getBlockState().getBlock());return id.getNamespace().equals(SurvivalContent.MODID)?id.getPath():"";}
     public static boolean canWork(net.minecraft.world.entity.LivingEntity actor,Recipe recipe){var body=SurvivalApi.state(actor);return body.manipulation()>=recipe.minimumManipulation&&body.mental()>.05&&(recipe.skill==null||SkillApi.level(actor,recipe.skill)>=recipe.minimumSkill);}
     public static String start(Player actor,WorkstationEntity be,String recipe){return start((net.minecraft.world.entity.LivingEntity)actor,be,recipe);}
+    /** A worker charges a station from all they carry, not from one handful: like stacks in the pack are drawn into the hand that holds the first. */
+    private static void drawTogether(net.minecraft.world.entity.LivingEntity actor,net.minecraft.world.InteractionHand hand,String item,int wanted){
+        if(!(actor instanceof Player player)||item.isEmpty()||item.startsWith("@"))return;
+        ItemStack held=actor.getItemInHand(hand);if(!id(held).equals(item)||held.getCount()>=wanted)return;
+        int room=Math.min(wanted,held.getMaxStackSize());var pack=player.getInventory();
+        for(int slot=0;slot<pack.getContainerSize()&&held.getCount()<room;slot++){
+            ItemStack more=pack.getItem(slot);if(more==held||more.isEmpty()||!ItemStack.isSameItemSameComponents(more,held))continue;
+            int moved=Math.min(more.getCount(),room-held.getCount());held.grow(moved);more.shrink(moved);
+        }
+    }
     public static String start(net.minecraft.world.entity.LivingEntity actor,WorkstationEntity be,String recipe){
         if(!(actor.level() instanceof ServerLevel level)||be.getLevel()!=level||!actor.isAlive()||!SurvivalApi.isHumanoid(actor)||actor.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(be.getBlockPos()))>36)return "A living humanoid must stand within six blocks in the same world.";
         Recipe r=RECIPES.get(recipe);if(r==null)return "Unknown process.";
@@ -171,6 +216,7 @@ public final class Production {
         if(!be.input.isEmpty()||!be.output.isEmpty())return "Workstation occupied.";
         try{validateRequirements(r);}catch(IllegalArgumentException invalid){return invalid.getMessage();}
         if(!stationId(be).equals(r.station))return "This process needs a "+r.station+".";
+        drawTogether(actor,net.minecraft.world.InteractionHand.MAIN_HAND,r.input,r.count);drawTogether(actor,net.minecraft.world.InteractionHand.OFF_HAND,r.second,r.secondCount);
         ItemStack held=actor.getMainHandItem(),other=actor.getOffhandItem();
         if(!id(held).equals(r.input)||held.getCount()<r.count)return "Missing input.";
         if(r.second.equals("@safe_water")){if(Pottery.waterUnits(other)<r.secondCount||!Pottery.safeWater(other)||ItemAging.data(other).getBooleanOr("sealed",false))return "Offhand needs an open pot of boiled water.";}

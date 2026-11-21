@@ -84,6 +84,18 @@ public final class ReviewFixGameTests {
         pad(h);for(int x:new int[]{-448,-432})feature.place(world,generator,net.minecraft.util.RandomSource.create(0),new BlockPos(x,64,320));var forward=snapshot(h);
         pad(h);for(int x:new int[]{-432,-448})feature.place(world,generator,net.minecraft.util.RandomSource.create(0),new BlockPos(x,64,320));h.assertTrue(forward.equals(snapshot(h)),"Actual neighboring surface adapters must produce the same blocks in both decoration orders");h.succeed();
     }
+    /** Wooded ground grows fibre plants of its own, so a start in the woods is not cut off from fibre; open grassland does not. */
+    public static void woodlandFibre(GameTestHelper h){
+        var feature=h.getLevel().registryAccess().lookupOrThrow(Registries.FEATURE).getOrThrow(ResourceKey.create(Registries.FEATURE,Identifier.fromNamespaceAndPath(SurvivalContent.MODID,"natural_surface"))).value();var generator=h.getLevel().getChunkSource().getGenerator();
+        java.util.function.Function<net.minecraft.resources.ResourceKey<net.minecraft.world.level.biome.Biome>,Integer> grow=biome->{
+            pad(h);var world=testWorld(h,biome);for(int x:new int[]{-448,-432})feature.place(world,generator,net.minecraft.util.RandomSource.create(0),new BlockPos(x,64,320));
+            int count=0;for(int x=-448;x<=-417;x++)for(int z=320;z<336;z++)if(h.getLevel().getBlockState(new BlockPos(x,64,z)).is(SurvivalContent.WILD_PLANTS.get()))count++;return count;
+        };
+        int forest=grow.apply(Biomes.FOREST),jungle=grow.apply(Biomes.JUNGLE),plains=grow.apply(Biomes.PLAINS);pad(h);
+        h.assertTrue(forest>0&&jungle>0,"Forest and jungle floors must carry wild fibre plants: forest "+forest+", jungle "+jungle);
+        h.assertTrue(plains==0,"Open grassland gets its fibre from flax, not woodland undergrowth: "+plains);
+        h.assertTrue(forest<=24,"Undergrowth stays sparse, a few to a chunk: "+forest);h.succeed();
+    }
     public static void coveredHabitat(GameTestHelper h){
         var open=h.absolutePos(new BlockPos(5,2,1));h.getLevel().setBlock(open.below(),Blocks.GRASS_BLOCK.defaultBlockState(),3);
         h.assertTrue(NaturalResourceGeneration.habitat(testWorld(h,Biomes.PLAINS),open,dev.qube.spawn_9b5fbb9.world.ResourceFields.Plant.FIBER),"Natural grassland must support an exposed flax stand");

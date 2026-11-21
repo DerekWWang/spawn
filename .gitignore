@@ -11,3 +11,5 @@ reference/
 # Node bots
 /bots/node_modules/
 __pycache__/
+/bots/commander/logs/
+/bots/commander/.cache/

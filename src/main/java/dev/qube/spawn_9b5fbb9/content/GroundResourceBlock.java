@@ -17,10 +17,12 @@ import net.minecraft.world.phys.shapes.*;
 public class GroundResourceBlock extends Block {
     private final String resource;
     public GroundResourceBlock(Properties properties,String resource){super(properties);this.resource=resource;}
-    @Override protected VoxelShape getShape(BlockState state,BlockGetter level,BlockPos pos,CollisionContext context){int height=resource.equals("fallen_sticks")?1:resource.equals("loose_stone")?3:resource.equals("wild_maize")?16:resource.equals("wild_wheat")||resource.equals("wild_rice")?14:12;return Block.box(2,0,2,14,height,14);}
+    @Override protected VoxelShape getShape(BlockState state,BlockGetter level,BlockPos pos,CollisionContext context){int height=resource.equals("fallen_sticks")?1:resource.equals("loose_stone")||shore()?3:resource.equals("wild_sphagnum")?4:resource.equals("wild_maize")?16:resource.equals("wild_wheat")||resource.equals("wild_rice")?14:12;return Block.box(2,0,2,14,height,14);}
     public String resource(){return resource;}
-    public boolean harvestable(LivingEntity actor){int season=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.season(SurvivalApi.calendar((ServerLevel)actor.level()));return switch(resource){case "wild_bramble","wild_rice","wild_maize","wild_pumpkin","wild_melon"->season==1||season==2;case "wild_flax","wild_yarrow"->season!=3;case "wild_wheat"->season==0||season==2;default->true;};}
-    @Override protected boolean canSurvive(BlockState state,LevelReader level,BlockPos pos){var support=level.getBlockState(pos.below());return resource.equals("loose_stone")||resource.equals("fallen_sticks")?support.isFaceSturdy(level,pos.below(),net.minecraft.core.Direction.UP):support.is(Blocks.GRASS_BLOCK)||support.is(net.minecraft.tags.BlockTags.DIRT)||support.is(Blocks.FARMLAND)||support.is(Blocks.MUD);}
+    /** Lies on the strand, on sand or shingle, not rooted in soil. */
+    private boolean shore(){return resource.equals("seashells")||resource.equals("murex_shells")||resource.equals("pearl_oysters");}
+    public boolean harvestable(LivingEntity actor){int season=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.season(SurvivalApi.calendar((ServerLevel)actor.level()));return switch(resource){case "wild_bramble","wild_rice","wild_maize","wild_pumpkin","wild_melon"->season==1||season==2;case "wild_flax","wild_yarrow","wild_woad","wild_weld","wild_madder","wild_meadowsweet"->season!=3;case "wild_wheat"->season==0||season==2;default->true;};}
+    @Override protected boolean canSurvive(BlockState state,LevelReader level,BlockPos pos){var support=level.getBlockState(pos.below());return resource.equals("loose_stone")||resource.equals("fallen_sticks")||shore()?support.isFaceSturdy(level,pos.below(),net.minecraft.core.Direction.UP):support.is(Blocks.GRASS_BLOCK)||support.is(net.minecraft.tags.BlockTags.DIRT)||support.is(Blocks.FARMLAND)||support.is(Blocks.MUD);}
     @Override protected BlockState updateShape(BlockState state,LevelReader level,ScheduledTickAccess ticks,BlockPos pos,net.minecraft.core.Direction direction,BlockPos neighborPos,BlockState neighborState,net.minecraft.util.RandomSource random){return canSurvive(state,level,pos)?state:Blocks.AIR.defaultBlockState();}
     @Override protected InteractionResult useWithoutItem(BlockState state,Level level,BlockPos pos,Player player,BlockHitResult hit){
         if(!level.isClientSide())player.sendOverlayMessage(net.minecraft.network.chat.Component.literal(gather(player,pos).message()));
@@ -40,6 +42,17 @@ public class GroundResourceBlock extends Block {
                 case "wild_rice"->{drop(level,pos,"rice_grain",2);drop(level,pos,"rice_seeds",2);}
                 case "wild_maize"->{drop(level,pos,"maize",1);drop(level,pos,"maize_seeds",2);}
                 case "wild_wheat"->{Block.popResource(level,pos,new ItemStack(Items.WHEAT));Block.popResource(level,pos,new ItemStack(Items.WHEAT_SEEDS,2));}
+                // A strandline gives a handful of shells; a bank of dye whelks rather more; a pearl is one find.
+                case "seashells"->drop(level,pos,"seashell",3);
+                case "murex_shells"->drop(level,pos,"murex",4);
+                case "pearl_oysters"->{drop(level,pos,"pearl",1);drop(level,pos,"seashell",2);}
+                case "wild_woad"->drop(level,pos,"woad_leaves",4);
+                case "wild_indigo"->drop(level,pos,"indigo_leaves",4);
+                case "wild_madder"->drop(level,pos,"madder_root",2);
+                case "wild_weld"->drop(level,pos,"weld",3);
+                case "wild_meadowsweet"->drop(level,pos,"meadowsweet",2);
+                case "wild_sphagnum"->drop(level,pos,"sphagnum",3);
+                case "wild_cinchona"->drop(level,pos,"cinchona_bark",2);
                 case "wild_carrot"->Block.popResource(level,pos,new ItemStack(Items.CARROT,2));
                 case "wild_potato"->Block.popResource(level,pos,new ItemStack(Items.POTATO,2));
                 case "wild_beetroot"->{Block.popResource(level,pos,new ItemStack(Items.BEETROOT));Block.popResource(level,pos,new ItemStack(Items.BEETROOT_SEEDS,2));}

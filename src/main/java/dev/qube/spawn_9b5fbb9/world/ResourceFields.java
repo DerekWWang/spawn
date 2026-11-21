@@ -81,6 +81,37 @@ public final class ResourceFields {
     /** Exact per-position probabilities; the adapter supplies real habitat classifications. */
     public static boolean looseStone(long seed,int x,int z,boolean rocky){return unit(hash(seed,x,z,91))<(rocky?.03:.001);}
     public static boolean fallenStick(long seed,int x,int z){return unit(hash(seed,x,z,92))<.018;}
+    /** Fibre plants of the woodland floor, about two to a chunk of wooded ground. */
+    public static boolean undergrowth(long seed,int x,int z){return unit(hash(seed,x,z,93))<.008;}
+    /** Dye and medicine plants: one candidate stand to a 48-block cell, kept apart from the food and fibre patches. */
+    public enum Herb { WOAD, INDIGO, MADDER, WELD, MEADOWSWEET, SPHAGNUM, CINCHONA }
+    public record HerbPatch(int x,int z,int radius,int count,Herb herb,long salt){}
+    public static List<HerbPatch> herbPatches(long seed,int chunkX,int chunkZ){
+        var result=new ArrayList<HerbPatch>();int cellX=Math.floorDiv(chunkX,3),cellZ=Math.floorDiv(chunkZ,3);long minX=(long)chunkX*16,minZ=(long)chunkZ*16;
+        for(int cx=cellX-1;cx<=cellX+1;cx++)for(int cz=cellZ-1;cz<=cellZ+1;cz++){
+            long salt=hash(seed,cx,cz,211);int x=cx*48+number(salt,48),z=cz*48+number(hash(salt,0,0,2),48),radius=2+number(hash(salt,0,0,3),3);
+            if(x+radius<minX||x-radius>minX+15||z+radius<minZ||z-radius>minZ+15)continue;
+            result.add(new HerbPatch(x,z,radius,3+number(hash(salt,0,0,4),5),Herb.values()[number(hash(salt,0,0,5),Herb.values().length)],salt));
+        }
+        return List.copyOf(result);
+    }
+    public static List<Point> patchPositions(HerbPatch patch){return patchPositions(new Patch(patch.x,patch.z,patch.radius,patch.count,Plant.FIBER,patch.salt));}
+    /** What the strandline carries. Shells lie on any shore; the dye whelk and the pearl oyster need a warm sea. */
+    public enum Shore { NONE, SHELLS, MUREX, PEARL }
+    public static Shore shore(long seed,int x,int z,boolean beach,boolean sea,boolean warm){
+        double roll=unit(hash(seed,x,z,94));
+        if(roll<(beach?.02:.004))return Shore.SHELLS;
+        if(!sea||!beach)return Shore.NONE;
+        if(warm&&roll<.026)return Shore.MUREX;
+        if(warm&&roll<.0268)return Shore.PEARL;
+        return Shore.NONE;
+    }
+    /** Whether the field offers this column anything at all, before the costly look at its biome and water. */
+    public static boolean shoreCandidate(long seed,int x,int z,boolean beach){return unit(hash(seed,x,z,94))<(beach?.0268:.004);}
+    /** About a third of limestone quarry bodies were baked to marble; decided for the whole body, so a quarry is one stone. */
+    public static boolean marble(long seed,int x,int z){return unit(hash(seed,Math.floorDiv(x,128),Math.floorDiv(z,128),72))<.35;}
+    /** Lapis lazuli is a mineral of contact-metamorphosed limestone: a rare blue knot in the marble. */
+    public static boolean lapis(long seed,int x,int y,int z){return unit(hash(seed^0x1A915L,x,z,y*31L+73))<.012;}
     public static List<Point> grove(long seed,int chunkX,int chunkZ){
         int cx=Math.floorDiv(chunkX,8),cz=Math.floorDiv(chunkZ,8);long salt=hash(seed,cx,cz,99);var result=new ArrayList<Point>();
         int centerX=cx*128+16+number(hash(salt,0,0,1),96),centerZ=cz*128+16+number(hash(salt,0,0,2),96),count=2+number(hash(salt,0,0,3),4);

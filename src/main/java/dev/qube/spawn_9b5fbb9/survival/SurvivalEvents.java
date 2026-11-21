@@ -228,7 +228,7 @@ public final class SurvivalEvents {
         return state;
     }
     private static int garmentSlot(String name){if(!name.startsWith("wool_")&&!name.startsWith("fiber_"))return -1;return name.endsWith("_shirt")?0:name.endsWith("_pants")?1:name.endsWith("_jacket")?2:name.endsWith("_shoes")?3:-1;}
-    private static boolean usefulTreatment(String name,SurvivalState state){return switch(name){case "bandage"->state.bleeding>0;case "antitoxin"->state.poisonTicks>0;case "antiseptic"->state.woundInfection;case "antibiotic"->state.mildSymptoms()||state.severeSymptoms();case "painkiller"->state.bleeding>0&&state.painkillerTicks==0;default->false;};}
+    private static boolean usefulTreatment(String name,SurvivalState state){return switch(name){case "bandage"->state.bleeding>0;case "antitoxin"->state.poisonTicks>0;case "antiseptic"->state.woundInfection;case "antibiotic"->state.mildSymptoms()||state.severeSymptoms();case "painkiller"->state.bleeding>0&&state.painkillerTicks==0;case "febrifuge"->(state.mildSymptoms()||state.severeSymptoms())&&state.feverReliefTicks==0;default->false;};}
     public static boolean brainTick(LivingEntity actor){
         if(!SurvivalApi.isHumanoid(actor)||SurvivalApi.exempt(actor))return true;
         if(dev.qube.spawn_9b5fbb9.warfare.Military.underOrders(actor))return false;

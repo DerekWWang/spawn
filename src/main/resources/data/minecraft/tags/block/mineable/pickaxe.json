@@ -42,6 +42,12 @@
     "spawn_9b5fbb9:wolframite_ore",
     "spawn_9b5fbb9:borax_ore",
     "spawn_9b5fbb9:distillation_column",
+    "spawn_9b5fbb9:marble",
+    "spawn_9b5fbb9:topaz_ore",
+    "spawn_9b5fbb9:polished_marble",
+    "spawn_9b5fbb9:mosaic",
+    "spawn_9b5fbb9:marble_column",
+    "spawn_9b5fbb9:marble_statue",
     {
       "id": "#spawn_9b5fbb9:techtree/minecraft/mineable/pickaxe",
       "required": false

@@ -26,6 +26,8 @@ import static net.minecraft.commands.Commands.*;
 /** Observations of actual loaded blocks and real samples; never reads the generation seed. */
 public final class ResourceActions {
     private ResourceActions(){}
+    /** The most entries of one kind a survey lists. */
+    public static final int PER_KIND=8;
     private record Observation(BlockPos pos,String identity,String kind,String host,boolean ready,String method){}
     public static void init(){NeoForge.EVENT_BUS.addListener(ResourceActions::commands);}
     private static boolean observer(LivingEntity actor){return actor!=null&&actor.isAlive()&&actor.level() instanceof ServerLevel&&SurvivalApi.isHumanoid(actor)&&!SurvivalApi.state(actor).blind();}
@@ -77,11 +79,16 @@ public final class ResourceActions {
         }
         // Sight is the dear part, a ray through the world for each block, and a beach has thousands of sand blocks in
         // range. Take the nearest first and stop at the sixty-fifth seen: that is all the report shows, or needs to
-        // know it was cut short. The answer is the same as looking at every one.
+        // know it was cut short. No one kind may fill the list, or the sand underfoot hides the sticks up the beach:
+        // past PER_KIND of a kind, the rest of it is noted as more and not looked at.
         candidates.sort(Comparator.comparingDouble(o->o.pos.distSqr(center)));
-        var found=new ArrayList<Observation>();
-        for(var observation:candidates)if(visible(actor,observation.pos)){found.add(observation);if(found.size()>64)break;}
-        result.addProperty("radius",radius);result.addProperty("truncated",found.size()>64);
+        var found=new ArrayList<Observation>();var perKind=new HashMap<String,Integer>();var more=new TreeSet<String>();
+        for(var observation:candidates){
+            if(perKind.getOrDefault(observation.identity,0)>=PER_KIND){more.add(observation.identity);continue;}
+            if(visible(actor,observation.pos)){found.add(observation);perKind.merge(observation.identity,1,Integer::sum);if(found.size()>64)break;}
+        }
+        result.addProperty("radius",radius);result.addProperty("truncated",found.size()>64||!more.isEmpty());result.addProperty("perKindLimit",PER_KIND);
+        var moreJson=new JsonArray();more.forEach(moreJson::add);result.add("moreOfKind",moreJson);
         for(var observation:found.subList(0,Math.min(64,found.size()))){
             var entry=new JsonObject();entry.addProperty("identity",observation.identity);entry.addProperty("kind",observation.kind);entry.addProperty("host",observation.host);entry.addProperty("x",observation.pos.getX());entry.addProperty("y",observation.pos.getY());entry.addProperty("z",observation.pos.getZ());entry.addProperty("harvestReady",observation.ready);entry.addProperty("method",observation.method);resources.add(entry);
         }

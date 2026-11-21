@@ -78,6 +78,7 @@ public final class WorldActions {
         TESTS.register("controller_no_work_asleep",()->ControllerGameTests::noWorkAsleep);
         TESTS.register("controller_adventure_permissions",()->ControllerGameTests::adventurePermissions);
         TESTS.register("controller_planning_bounded",()->ControllerGameTests::planningBounded);
+        TESTS.register("controller_recipeinfo_other_makers",()->ControllerGameTests::recipeInfoNamesOtherMakers);
         TESTS.register("controller_farm_adapters",()->ControllerGameTests::farmAdapters);
         TESTS.register("controller_no_offline_labor",()->ControllerGameTests::noOfflineLabor);
         TESTS.register("controller_sow_physical_seed",()->ControllerGameTests::sowPhysicalSeed);
@@ -225,7 +226,7 @@ public final class WorldActions {
     private static void onTick(EntityTickEvent.Post event){if(event.getEntity() instanceof LivingEntity actor)tick(actor);}
     private static void death(LivingDeathEvent event){cancel(event.getEntity(),"Worker died");}
     /** Actual loaded entity-tick adapter. Package visibility allows deterministic GameTests without exposing labor credit to controllers. */
-    static void tick(LivingEntity actor){
+    public static void tick(LivingEntity actor){
         if(!(actor.level() instanceof ServerLevel level)||!actor.getPersistentData().contains(KEY))return;
         Integer last=TICKED.put(actor,actor.tickCount);if(last!=null&&last==actor.tickCount)return;
         var job=actor.getPersistentData().getCompoundOrEmpty(KEY);String operation=job.getStringOr("operation","");var pos=BlockPos.of(job.getLongOr("pos",0));
@@ -434,17 +435,39 @@ public final class WorldActions {
     private static JsonObject craftInfo(LivingEntity actor,String id,CraftingRecipe recipe,int alternativeOffset){
         var info=new JsonObject();info.addProperty("recipe",id);info.addProperty("kind","craft");info.addProperty("craftingTableRequired",width(recipe)>2||height(recipe)>2);info.addProperty("baseWorkTicks",craftTicks(recipe));double currentCapacity=capacity(actor);info.addProperty("loadedTicksAtCurrentCapacity",currentCapacity<=.05?-1:Math.ceil(craftTicks(recipe)/currentCapacity));var ingredients=new JsonArray();boolean more=false;alternativeOffset=Math.max(0,alternativeOffset);
         for(var ingredient:recipe.placementInfo().ingredients()){var slot=new JsonObject();var choices=ingredient.items().toList();var alternatives=new JsonArray();choices.stream().skip(alternativeOffset).limit(8).forEach(i->alternatives.add(BuiltInRegistries.ITEM.getKey(i.value()).toString()));slot.add("alternatives",alternatives);slot.addProperty("totalAlternatives",choices.size());slot.addProperty("truncated",choices.size()>(long)alternativeOffset+8);more|=choices.size()>(long)alternativeOffset+8;ingredients.add(slot);}info.add("ingredientSlots",ingredients);info.addProperty("alternativeOffset",alternativeOffset);info.addProperty("nextAlternativeOffset",more?alternativeOffset+8:-1);
-        List<ItemStack> sample=new ArrayList<>();for(int index:recipe.placementInfo().slotsToIngredientIndex())sample.add(index<0?ItemStack.EMPTY:recipe.placementInfo().ingredients().get(index).items().findFirst().map(i->new ItemStack(i.value())).orElse(ItemStack.EMPTY));while(sample.size()<width(recipe)*height(recipe))sample.add(ItemStack.EMPTY);
-        var output=recipe.assemble(CraftingInput.of(width(recipe),height(recipe),sample));var craftSkill=SkillApi.craftingSkill(output);double rate=SkillApi.manualRate(SurvivalApi.state(actor),craftSkill);info.addProperty("schemaVersion",6);info.addProperty("skill",craftSkill==null?"none":craftSkill.name().toLowerCase(Locale.ROOT));info.addProperty("loadedTicksAtCurrentCapacity",rate<=.05?-1:Math.ceil(craftTicks(recipe)/rate));info.addProperty("output",BuiltInRegistries.ITEM.getKey(output.getItem()).toString());info.addProperty("outputCount",output.getCount());info.addProperty("permitted",!output.isEmpty()&&!NaturalWorldRules.prohibited(output)&&!Production.requiresStation(output));return info;
+        var output=sampleOutput(recipe);var craftSkill=SkillApi.craftingSkill(output);double rate=SkillApi.manualRate(SurvivalApi.state(actor),craftSkill);info.addProperty("schemaVersion",6);info.addProperty("skill",craftSkill==null?"none":craftSkill.name().toLowerCase(Locale.ROOT));info.addProperty("loadedTicksAtCurrentCapacity",rate<=.05?-1:Math.ceil(craftTicks(recipe)/rate));info.addProperty("output",BuiltInRegistries.ITEM.getKey(output.getItem()).toString());info.addProperty("outputCount",output.getCount());info.addProperty("permitted",!output.isEmpty()&&!NaturalWorldRules.prohibited(output)&&!Production.requiresStation(output));return info;
     }
     private static JsonObject processInfo(LivingEntity actor,String id,Production.Recipe recipe){
         var info=new JsonObject();info.addProperty("recipe",id);info.addProperty("kind","process");info.addProperty("input",recipe.input());info.addProperty("inputCount",recipe.count());info.addProperty("secondInput",recipe.second());info.addProperty("secondCount",recipe.secondCount());info.addProperty("output",recipe.output());info.addProperty("outputCount",recipe.amount());info.addProperty("baseWorkTicks",recipe.ticks());info.addProperty("forgeRequired",recipe.station().equals("forge"));info.addProperty("stationRequired",recipe.station());info.addProperty("manual",recipe.manual());info.addProperty("heated",recipe.heated());info.addProperty("minimumManipulation",recipe.minimumManipulation());info.addProperty("minimumSkill",recipe.minimumSkill());info.addProperty("learningWeight",recipe.practice()/25d);info.addProperty("baseExperiencePerActiveTick",.25*recipe.practice()/25d);info.addProperty("schemaVersion",6);
         double cap=recipe.manual()?capacity(actor):1;boolean skilled=recipe.skill()==null||SkillApi.level(actor,recipe.skill())>=recipe.minimumSkill();if(recipe.skill()!=null){info.addProperty("skill",recipe.skill().name().toLowerCase(Locale.ROOT));info.addProperty("skillLevel",SkillApi.level(actor,recipe.skill()));info.addProperty("effectiveSkill",SkillApi.effective(actor,recipe.skill()));if(recipe.manual())cap*=SkillApi.workRate(actor,recipe.skill());}info.addProperty("skillAndCapacityPermit",skilled&&capacity(actor)>.05&&SurvivalApi.state(actor).manipulation()>=recipe.minimumManipulation());info.addProperty("loadedTicksAtCurrentCapacity",cap<=.05?-1:Math.ceil(recipe.ticks()/cap));info.addProperty("heatTicks",!recipe.heated()?0:cap<=.05?-1:(long)Math.ceil(recipe.ticks()/cap));info.addProperty("safeWaterRequired",recipe.second().equals("@safe_water"));return info;
     }
+    /** What a recipe makes from the first choice in each of its slots. */
+    private static ItemStack sampleOutput(CraftingRecipe recipe){
+        List<ItemStack> sample=new ArrayList<>();for(int index:recipe.placementInfo().slotsToIngredientIndex())sample.add(index<0?ItemStack.EMPTY:recipe.placementInfo().ingredients().get(index).items().findFirst().map(i->new ItemStack(i.value())).orElse(ItemStack.EMPTY));while(sample.size()<width(recipe)*height(recipe))sample.add(ItemStack.EMPTY);
+        return recipe.assemble(CraftingInput.of(width(recipe),height(recipe),sample));
+    }
+    /** Every offered recipe whose product is this item, named as `planning` names them. A recipe's name is often its
+     * product's, so asking after one way of making a thing must not hide the others (a campfire by hand, without coal). */
+    public static List<String> recipesMaking(ServerLevel level,Item item){
+        var out=new ArrayList<String>();
+        for(var holder:level.recipeAccess().getRecipes())if(holder.value() instanceof CraftingRecipe recipe&&!recipe.isSpecial()&&!recipe.placementInfo().isImpossibleToPlace()&&!struck(recipe)&&width(recipe)<=3&&height(recipe)<=3){
+            var made=sampleOutput(recipe);if(made.is(item)&&!NaturalWorldRules.prohibited(made))out.add(holder.id().identifier().toString());
+        }
+        var key=BuiltInRegistries.ITEM.getKey(item).toString();Production.RECIPES.forEach((id,r)->{if(r.output().equals(key))out.add(id);});
+        Collections.sort(out);return out;
+    }
     public static JsonObject recipeInfo(LivingEntity actor,String id,int alternativeOffset){
         var invalid=new JsonObject();if(!(actor.level() instanceof ServerLevel level)||!SurvivalApi.isHumanoid(actor)){invalid.addProperty("error","Server humanoid required");return invalid;}
         var process=Production.RECIPES.get(id);var recipe=recipe(level,id);JsonObject info;
-        if(process!=null)info=processInfo(actor,id,process);else if(recipe!=null&&!recipe.isSpecial()&&!recipe.placementInfo().isImpossibleToPlace()&&width(recipe)<=3&&height(recipe)<=3)info=craftInfo(actor,id,recipe,alternativeOffset);else{invalid.addProperty("error","Unknown normal crafting or production recipe");return invalid;}
+        if(process!=null)info=processInfo(actor,id,process);else if(recipe!=null&&!recipe.isSpecial()&&!recipe.placementInfo().isImpossibleToPlace()&&width(recipe)<=3&&height(recipe)<=3)info=craftInfo(actor,id,recipe,alternativeOffset);else info=null;
+        // A name that is an item rather than a recipe is answered with the recipes that make that item.
+        var itemKey=Identifier.tryParse(info!=null&&info.has("output")?info.get("output").getAsString():id);var item=itemKey==null?null:BuiltInRegistries.ITEM.getOptional(itemKey).orElse(null);
+        var makers=new JsonArray();if(item!=null&&item!=net.minecraft.world.item.Items.AIR){var typed=Identifier.tryParse(id);String self=info==null?"":Production.RECIPES.containsKey(id)?id:typed==null?id:typed.toString();for(var other:recipesMaking(level,item))if(!other.equals(self))makers.add(other);}
+        if(info==null){
+            if(makers.isEmpty()){invalid.addProperty("error","Unknown normal crafting or production recipe");return invalid;}
+            invalid.addProperty("error","Not a recipe name; these recipes make that item");invalid.add("recipesMakingItem",makers);return invalid;
+        }
+        if(!makers.isEmpty())info.add("otherRecipesForSameItem",makers);
         if(bytes(info)>PLANNING_BYTE_LIMIT){info.remove("ingredientSlots");info.addProperty("detailsTruncated",true);}if(bytes(info)>PLANNING_BYTE_LIMIT){invalid.addProperty("error","Recipe definition exceeds the response budget");return invalid;}return info;
     }
     public static SurvivalApi.ActionResult livestock(LivingEntity actor,net.minecraft.world.entity.animal.Animal animal){
@@ -466,6 +489,9 @@ public final class WorldActions {
     }
     @FunctionalInterface private interface ActorLookup{LivingEntity get(com.mojang.brigadier.context.CommandContext<CommandSourceStack> context)throws com.mojang.brigadier.exceptions.CommandSyntaxException;}
     private static void addPlannerAndFarmCommands(com.mojang.brigadier.builder.ArgumentBuilder<CommandSourceStack,?> node,ActorLookup actor){
+        // What the society's art and monuments are worth, and the act of founding a monument where one stands.
+        node.then(literal("score").executes(c->json(c.getSource(),dev.qube.spawn_9b5fbb9.culture.Culture.score(actor.get(c)))));
+        node.then(literal("dedicate").executes(c->reply(c.getSource(),dev.qube.spawn_9b5fbb9.culture.Culture.dedicate(actor.get(c)))));
         node.then(literal("planning").executes(c->json(c.getSource(),planning(actor.get(c))))
             .then(argument("offset",IntegerArgumentType.integer(0)).executes(c->json(c.getSource(),planning(actor.get(c),IntegerArgumentType.getInteger(c,"offset"))))
                 .then(argument("cropOffset",IntegerArgumentType.integer(0)).executes(c->json(c.getSource(),planning(actor.get(c),IntegerArgumentType.getInteger(c,"offset"),IntegerArgumentType.getInteger(c,"cropOffset")))))));

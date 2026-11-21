@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "spawn_9b5fbb9:block/marble_column"
+    },
+    "axis=z": {
+      "model": "spawn_9b5fbb9:block/marble_column",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "spawn_9b5fbb9:block/marble_column",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

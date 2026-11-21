@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cross",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "cross": "spawn_9b5fbb9:block/wild_indigo"
+  }
+}

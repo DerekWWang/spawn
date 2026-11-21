@@ -1,0 +1,43 @@
+{
+  "render_type": "minecraft:cutout",
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "spawn_9b5fbb9:block/seashells",
+    "top": "spawn_9b5fbb9:block/seashells"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0.25,
+        0
+      ],
+      "to": [
+        16,
+        0.25,
+        16
+      ],
+      "shade": false,
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#top"
+        },
+        "down": {
+          "uv": [
+            0,
+            16,
+            16,
+            0
+          ],
+          "texture": "#top"
+        }
+      }
+    }
+  ]
+}

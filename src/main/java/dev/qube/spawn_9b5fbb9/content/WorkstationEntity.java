@@ -66,6 +66,7 @@ public class WorkstationEntity extends BlockEntity {
         if(elapsed>=required){
             ItemStack consumed=input;output=pendingOutput.isEmpty()?Production.finish(recipe,consumed,level):pendingOutput.copy();ItemAging.inherit(output,List.of(consumed,secondary),level);
             if(!legacy&&learned==Skill.POTTERY&&output.is(SurvivalContent.item("fired_pot"))){var data=ItemAging.data(output);data.putString("potQuality",qualityScore>=12?"fine":qualityScore>=5?"standard":"rough");ItemAging.data(output,data);}
+            if(!legacy&&actor!=null)dev.qube.spawn_9b5fbb9.culture.Culture.finished(actor,output,learned==null?-1:SkillApi.effective(actor,learned));
             input=ItemStack.EMPTY;secondary=ItemStack.EMPTY;pendingOutput=ItemStack.EMPTY;elapsed=0;required=0;wear++;
             // Save hunger before the skill adapter reloads/saves the body; never overwrite its award.
             if(!practiceAwarded&&jobManual&&actor!=null&&learned!=null&&jobPractice>0){practiceAwarded=true;setChanged();SkillApi.awardWork(actor,learned,activeTicks,jobPractice/25d);}

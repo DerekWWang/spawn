@@ -48,13 +48,26 @@ public final class SurvivalContent {
     public static final DeferredBlock<Block> MALACHITE_ORE=BLOCKS.registerSimpleBlock("malachite_ore",p->p.strength(3).requiresCorrectToolForDrops());
     public static final DeferredBlock<Block> CASSITERITE_ORE=BLOCKS.registerSimpleBlock("cassiterite_ore",p->p.strength(3).requiresCorrectToolForDrops());
     public static final DeferredBlock<Block> HEMATITE_ORE=BLOCKS.registerSimpleBlock("hematite_ore",p->p.strength(3).requiresCorrectToolForDrops());
+    // Ornamental stone. Marble and the topaz lode are won with a pick; worked stone lifts by hand so a monument can be moved.
+    public static final DeferredBlock<Block> MARBLE=BLOCKS.registerSimpleBlock("marble",p->p.strength(2.5f).requiresCorrectToolForDrops());
+    public static final DeferredBlock<Block> TOPAZ_ORE=BLOCKS.registerSimpleBlock("topaz_ore",p->p.strength(3).requiresCorrectToolForDrops());
+    public static final DeferredBlock<Block> POLISHED_MARBLE=BLOCKS.registerSimpleBlock("polished_marble",p->p.strength(2.5f));
+    public static final DeferredBlock<Block> MOSAIC=BLOCKS.registerSimpleBlock("mosaic",p->p.strength(2));
+    public static final DeferredBlock<net.minecraft.world.level.block.RotatedPillarBlock> MARBLE_COLUMN=BLOCKS.registerBlock("marble_column",net.minecraft.world.level.block.RotatedPillarBlock::new,p->p.strength(2.5f));
+    public static final DeferredBlock<Block> MARBLE_STATUE=BLOCKS.registerSimpleBlock("marble_statue",p->p.strength(2.5f).noOcclusion());
     public static final net.neoforged.neoforge.registries.DeferredHolder<BlockEntityType<?>,BlockEntityType<WorkstationEntity>> WORKSTATION_ENTITY = BLOCK_ENTITIES.register("workstation",()->new BlockEntityType<>(WorkstationEntity::new,Set.of(KILN.get(),FORGE.get(),TROUGH.get(),BLOOMERY.get(),ANVIL.get(),LOOM.get())));
     private static final DeferredRegister<Consumer<GameTestHelper>> TESTS = DeferredRegister.create(Registries.TEST_FUNCTION, MODID);
     static {
-        for(String source:new String[]{"fallen_sticks","wild_flax","wild_yarrow","wild_bramble","wild_rice","wild_maize","wild_wheat","wild_carrot","wild_potato","wild_beetroot","wild_pumpkin","wild_melon"}){
+        for(String source:new String[]{"fallen_sticks","wild_flax","wild_yarrow","wild_bramble","wild_rice","wild_maize","wild_wheat","wild_carrot","wild_potato","wild_beetroot","wild_pumpkin","wild_melon",
+            // Shore finds, then the dye and medicine plants of particular climates.
+            "seashells","murex_shells","pearl_oysters","wild_woad","wild_indigo","wild_madder","wild_weld","wild_meadowsweet","wild_sphagnum","wild_cinchona"}){
             var block=BLOCKS.registerBlock(source,p->new GroundResourceBlock(p,source),p->p.noCollision().instabreak());FORAGE.put(source,block);MATERIALS.put(source,ITEMS.registerSimpleBlockItem(block));
         }
         for(String material:new String[]{"flax_fiber","yarrow_leaves","malachite","cassiterite","hematite"})MATERIALS.put(material,ITEMS.registerSimpleItem(material));
+        // Luxuries: what the shore, the lode and particular plants give, the dyes and remedies made of them, and finished works of art.
+        // Amber is the tech tree's own item, dug from amber-bearing beach sand.
+        for(String luxury:new String[]{"seashell","murex","pearl","topaz","woad_leaves","indigo_leaves","madder_root","weld","meadowsweet","sphagnum","cinchona_bark","alum","red_ochre","dyed_yarn","febrifuge",
+            "shell_beads","amber_pendant","pearl_necklace","malachite_beads","lapis_amulet","topaz_ring","stone_figurine","painted_pot","tapestry"})MATERIALS.put(luxury,ITEMS.registerSimpleItem(luxury));
         for(String id:new String[]{"wooden_toy","loose_stone","stone_edge","obsidian_flake","plant_fiber","dried_fiber","cordage","yarn","wool_cloth","fiber_cloth","unfired_pot","pot_lid","crushed_copper","roasted_copper","crushed_tin","roasted_tin","crushed_iron","roasted_iron","tin_ingot","bronze_ingot","iron_bloom","medicinal_leaves","clean_cloth","bandage","painkiller","antitoxin","antiseptic","antibiotic","ceramic_shard","metal_scrap","fertilized_egg"}) MATERIALS.put(id,ITEMS.registerSimpleItem(id));
         MATERIALS.put("fired_pot",ITEMS.registerSimpleItem("fired_pot",p->p.stacksTo(1).durability(96)));
         for(String cloth:new String[]{"wool","fiber"}) for(String piece:new String[]{"shirt","pants","jacket","shoes"}) {
@@ -83,7 +96,7 @@ public final class SurvivalContent {
         MATERIALS.put("bronze_shovel",ITEMS.registerSimpleItem("bronze_shovel",p->p.shovel(bronze,1.5f,-3)));
         var bronzeArmor=new net.minecraft.world.item.equipment.ArmorMaterial(18,java.util.Map.of(net.minecraft.world.item.equipment.ArmorType.HELMET,2,net.minecraft.world.item.equipment.ArmorType.CHESTPLATE,6,net.minecraft.world.item.equipment.ArmorType.LEGGINGS,5,net.minecraft.world.item.equipment.ArmorType.BOOTS,2),1,net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_COPPER,0,0,ItemTags.COPPER_TOOL_MATERIALS,net.minecraft.world.item.equipment.EquipmentAssets.COPPER);
         for(var type:new net.minecraft.world.item.equipment.ArmorType[]{net.minecraft.world.item.equipment.ArmorType.HELMET,net.minecraft.world.item.equipment.ArmorType.CHESTPLATE,net.minecraft.world.item.equipment.ArmorType.LEGGINGS,net.minecraft.world.item.equipment.ArmorType.BOOTS}){String id="bronze_"+type.getName();MATERIALS.put(id,ITEMS.registerSimpleItem(id,p->p.humanoidArmor(bronzeArmor,type)));}
-        for(var block:List.of(KILN,FORGE,BLOOMERY,ANVIL,LOOM,TROUGH,TIN_ORE,FRUIT_TREE,LIMESTONE,MALACHITE_ORE,CASSITERITE_ORE,HEMATITE_ORE)) MATERIALS.put(block.getId().getPath(),ITEMS.registerSimpleBlockItem(block));
+        for(var block:List.of(KILN,FORGE,BLOOMERY,ANVIL,LOOM,TROUGH,TIN_ORE,FRUIT_TREE,LIMESTONE,MALACHITE_ORE,CASSITERITE_ORE,HEMATITE_ORE,MARBLE,TOPAZ_ORE,POLISHED_MARBLE,MOSAIC,MARBLE_COLUMN,MARBLE_STATUE)) MATERIALS.put(block.getId().getPath(),ITEMS.registerSimpleBlockItem(block));
         TESTS.register("world_prohibited_additions", () -> WorldGameTests::prohibitedAdditions);
         TESTS.register("world_container_prohibition",()->WorldGameTests::containerProhibition);
         TESTS.register("content_preservation",()->ContentGameTests::preservation);
@@ -140,8 +153,17 @@ public final class SurvivalContent {
         TESTS.register("reviewfix_grid_parity",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::gridParity);
         TESTS.register("reviewfix_repeated_extraction",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::repeatedExtraction);
         TESTS.register("reviewfix_decoration_order",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::decorationOrder);
+        TESTS.register("reviewfix_woodland_fibre",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::woodlandFibre);
         TESTS.register("reviewfix_covered_habitat",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::coveredHabitat);
         TESTS.register("reviewfix_full_animal",()->dev.qube.spawn_9b5fbb9.controllers.ReviewFixGameTests::fullAnimal);
+        TESTS.register("culture_shore_and_herbs",()->dev.qube.spawn_9b5fbb9.culture.CultureGameTests::shoreAndHerbs);
+        TESTS.register("culture_gathered_luxuries",()->dev.qube.spawn_9b5fbb9.culture.CultureGameTests::gatheredLuxuries);
+        TESTS.register("culture_recipes_resolve",()->dev.qube.spawn_9b5fbb9.culture.CultureGameTests::recipesResolve);
+        TESTS.register("culture_art_is_scored",()->dev.qube.spawn_9b5fbb9.culture.CultureGameTests::artIsScored);
+        TESTS.register("culture_handfuls_drawn_together",()->dev.qube.spawn_9b5fbb9.culture.CultureGameTests::handfulsDrawnTogether);
+        TESTS.register("culture_monument",()->dev.qube.spawn_9b5fbb9.culture.CultureGameTests::monument);
+        TESTS.register("culture_remedies",()->dev.qube.spawn_9b5fbb9.culture.CultureGameTests::remedies);
+        TESTS.register("culture_flowers_do_not_dye",()->dev.qube.spawn_9b5fbb9.culture.CultureGameTests::flowersDoNotDye);
         TESTS.register("environment_profile",()->dev.qube.spawn_9b5fbb9.environment.EnvironmentGameTests::profile);
         TESTS.register("environment_terrain",()->dev.qube.spawn_9b5fbb9.environment.EnvironmentGameTests::terrain);
         TESTS.register("environment_packet",()->dev.qube.spawn_9b5fbb9.environment.EnvironmentGameTests::packet);

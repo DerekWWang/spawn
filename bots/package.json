@@ -10,7 +10,7 @@
   },
   "scripts": {
     "setup": "node scripts/setup-data.js",
-    "test": "node --test test/unit.test.js",
+    "test": "node --test test/unit.test.js test/paths.test.js test/food.test.js",
     "live": "node test/live.js"
   },
   "dependencies": {

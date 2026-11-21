@@ -30,6 +30,9 @@ public final class SurvivalState {
     public long dailyQuotaTicks=4500;
     public long thermalRecoveryTicks;
     public long poisonTicks,painkillerTicks,mildTicks,severeTicks,mildImmunity,severeImmunity,thermalTicks;
+    /** Fever bark brings a fever down for half a day. It cures nothing: the illness runs its course at half the harm. */
+    public long feverReliefTicks;
+    public static final long FEVER_RELIEF_TICKS=12000;
     public boolean woundInfection;
     public final String[] clothing={"","","",""};
     public final long[] clothingWear=new long[4];
@@ -108,6 +111,7 @@ public final class SurvivalState {
             case "painkiller" -> {if(bleeding<=0||painkillerTicks>0)return false;painkillerTicks=rules.ticks("painkillerTicks");}
             case "antitoxin" -> {if(poisonTicks<=0)return false;poisonTicks=0;}
             case "antiseptic" -> {if(!woundInfection)return false;woundInfection=false;}
+            case "febrifuge" -> {if(!severeSymptoms()&&!mildSymptoms()||feverReliefTicks>0)return false;feverReliefTicks=FEVER_RELIEF_TICKS;}
             case "antibiotic" -> {
                 if(severeTicks<=0&&mildTicks<=0)return false;
                 if(severeTicks>0)severeImmunity=livedTicks+rules.ticks("immunityTicks");
@@ -147,7 +151,8 @@ public final class SurvivalState {
             damage+=bleeding*step/rules.number("bleedingDamageTicks");
             if(hunger<=0)damage+=step/1000d;
             if(poisonTicks>0){damage+=step/rules.number("poisonDamageTicks");poisonTicks=Math.max(0,poisonTicks-step);}
-            if(severeSymptoms())damage+=step/rules.number("severeDamageTicks");
+            if(severeSymptoms())damage+=step/rules.number("severeDamageTicks")*(feverReliefTicks>0?.5:1);
+            feverReliefTicks=Math.max(0,feverReliefTicks-step);
             if(woundInfection){damage+=step/rules.number("woundDamageTicks");}
             painkillerTicks=Math.max(0,painkillerTicks-step);
             if(mildTicks>0){mildTicks=Math.max(0,mildTicks-step);if(mildTicks==0)mildImmunity=livedTicks+rules.ticks("immunityTicks");}
@@ -180,12 +185,12 @@ public final class SurvivalState {
         if(mildSymptoms())s.append("RESPIRATORY INFECTION ");if(severeSymptoms())s.append("SYSTEMIC INFECTION ");
         if(woundInfection)s.append("WOUND INFECTION ");if(blind())s.append("PERMANENT BLINDNESS ");
         if(temperature<rules.number("coldThreshold"))s.append("HYPOTHERMIA ");if(temperature>rules.number("hotThreshold"))s.append("HEAT STROKE ");
-        if(painkillerTicks>0)s.append("PAIN RELIEF ");return s.isEmpty()?"Stable":s.toString().trim();
+        if(painkillerTicks>0)s.append("PAIN RELIEF ");if(feverReliefTicks>0)s.append("FEVER RELIEF ");return s.isEmpty()?"Stable":s.toString().trim();
     }
     public byte[] encode(){
         try{
             ByteArrayOutputStream bytes=new ByteArrayOutputStream();DataOutputStream out=new DataOutputStream(bytes);
-            out.writeInt(6);
+            out.writeInt(7);
             for(double value:new double[]{hunger,thirst,recreation,temperature,bleeding})out.writeDouble(value);
             for(long value:new long[]{livedTicks,dayElapsed,recreationTicks,quotaTicks,poisonTicks,painkillerTicks,
                 mildTicks,severeTicks,mildImmunity,severeImmunity,thermalTicks})out.writeLong(value);
@@ -196,13 +201,14 @@ public final class SurvivalState {
             out.writeLong(thermalRecoveryTicks);for(int color:clothingColors)out.writeInt(color);
             rules.write(out);
             skills.write(out);
+            out.writeLong(feverReliefTicks);
             return bytes.toByteArray();
         }catch(IOException impossible){throw new IllegalStateException(impossible);}
     }
     public static SurvivalState decode(byte[] data){
         SurvivalState s=new SurvivalState();if(data.length==0||data.length>8192)return s;
         try{
-            DataInputStream in=new DataInputStream(new ByteArrayInputStream(data));int version=in.readInt();if(version<1||version>6)return s;
+            DataInputStream in=new DataInputStream(new ByteArrayInputStream(data));int version=in.readInt();if(version<1||version>7)return s;
             s.hunger=bounded(in.readDouble(),0,100);s.thirst=bounded(in.readDouble(),0,100);
             s.recreation=bounded(in.readDouble(),0,100);s.temperature=bounded(in.readDouble(),25,45);s.bleeding=bounded(in.readDouble(),0,10);
             s.livedTicks=Math.max(0,in.readLong());s.dayElapsed=Math.floorMod(in.readLong(),DAY);
@@ -217,6 +223,7 @@ public final class SurvivalState {
             if(version>=4)s.rules=SimulationRules.read(in);
             if(version>=6)s.skills.read(in);else if(version==5)s.skills.readLegacy(in);
             if(version<6)s.skills.alignDay(s.dayElapsed);
+            if(version>=7)s.feverReliefTicks=Math.max(0,Math.min(FEVER_RELIEF_TICKS,in.readLong()));
             return s;
         }catch(IOException|IllegalArgumentException invalid){return new SurvivalState();}
     }

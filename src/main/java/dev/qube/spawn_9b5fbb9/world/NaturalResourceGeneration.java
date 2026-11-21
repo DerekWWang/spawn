@@ -22,7 +22,8 @@ public final class NaturalResourceGeneration {
     static {FEATURES.register("natural_surface",()->SurfaceFeature.CODEC);FEATURES.register("regional_geology",()->GeologyFeature.CODEC);}
     public static void register(IEventBus bus){FEATURES.register(bus);}
     private static boolean soil(BlockState state){return state.is(Blocks.GRASS_BLOCK)||state.is(BlockTags.DIRT)||state.is(Blocks.MUD);}
-    private static boolean stone(BlockState state){return state.is(BlockTags.BASE_STONE_OVERWORLD)||state.is(SurvivalContent.LIMESTONE.get());}
+    private static boolean stone(BlockState state){return state.is(BlockTags.BASE_STONE_OVERWORLD)||state.is(SurvivalContent.LIMESTONE.get())||state.is(SurvivalContent.MARBLE.get());}
+    private static BlockState marble(long seed,int x,int y,int z){return ResourceFields.lapis(seed,x,y,z)?Blocks.LAPIS_ORE.defaultBlockState():SurvivalContent.MARBLE.get().defaultBlockState();}
     private static BlockState host(ResourceFields.Host host){return switch(host){case GRANITE->Blocks.GRANITE.defaultBlockState();case LIMESTONE->SurvivalContent.LIMESTONE.get().defaultBlockState();case SANDSTONE->Blocks.SANDSTONE.defaultBlockState();default->Blocks.STONE.defaultBlockState();};}
     private static BlockState ore(ResourceFields.Mineral mineral){return switch(mineral){case COPPER->SurvivalContent.MALACHITE_ORE.get().defaultBlockState();case TIN->SurvivalContent.CASSITERITE_ORE.get().defaultBlockState();case IRON->SurvivalContent.HEMATITE_ORE.get().defaultBlockState();case COAL->Blocks.COAL_ORE.defaultBlockState();default->Blocks.STONE.defaultBlockState();};}
     /** Accessory minerals ride inside the primary deposits without moving them: galena with
@@ -37,6 +38,8 @@ public final class NaturalResourceGeneration {
         // weathered ironstone grades into lateritic bauxite.
         if(mineral==ResourceFields.Mineral.COAL&&roll>.80)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.TAR_SAND.get().defaultBlockState();
         if(mineral==ResourceFields.Mineral.COAL&&roll>.76)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.BORAX_ORE.get().defaultBlockState();
+        // Topaz is a mineral of tin-bearing granite (greisen), found with the cassiterite it formed beside.
+        if(mineral==ResourceFields.Mineral.TIN&&roll>.97)return SurvivalContent.TOPAZ_ORE.get().defaultBlockState();
         if(mineral==ResourceFields.Mineral.TIN&&roll<.15)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.WOLFRAMITE_ORE.get().defaultBlockState();
         if(mineral==ResourceFields.Mineral.IRON&&roll<.10)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.BAUXITE_ORE.get().defaultBlockState();
         if(mineral==ResourceFields.Mineral.COAL&&roll<.12)return dev.qube.spawn_9b5fbb9.industry.IndustrialContent.PYRITE_ORE.get().defaultBlockState();
@@ -50,6 +53,40 @@ public final class NaturalResourceGeneration {
     private static boolean nearWood(WorldGenLevel world,BlockPos pos){
         for(int dx=-4;dx<=4;dx+=2)for(int dz=-4;dz<=4;dz+=2)for(int dy=0;dy<=3;dy+=3){var p=pos.offset(dx,dy,dz);if(own(p.getX(),p.getZ(),pos.getX()>>4,pos.getZ()>>4)){var state=world.getBlockState(p);if(state.is(BlockTags.LOGS)||state.is(BlockTags.LEAVES)||state.is(SurvivalContent.FRUIT_TREE.get()))return true;}}
         return false;
+    }
+    /** Wooded ground in a temperate-to-tropical biome: a forest, taiga or jungle, by its stable biome tags. */
+    public static boolean woodland(WorldGenLevel world,BlockPos pos){
+        var biome=world.getBiome(pos);float temperature=biome.value().getBaseTemperature();
+        return temperature>=.2&&temperature<=1.2&&(biome.is(BiomeTags.IS_FOREST)||biome.is(BiomeTags.IS_TAIGA)||biome.is(BiomeTags.IS_JUNGLE));
+    }
+    /** Open water at or just below the foot of this column, within four blocks: a shore. */
+    private static boolean shoreline(WorldGenLevel world,BlockPos pos){
+        for(int dx=-4;dx<=4;dx+=2)for(int dz=-4;dz<=4;dz+=2)for(int dy=-1;dy>=-3;dy--){var p=pos.offset(dx,dy,dz);if(accessible(world,p)&&world.getFluidState(p).is(FluidTags.WATER))return true;}
+        return false;
+    }
+    public static String source(ResourceFields.Herb herb){return "wild_"+herb.name().toLowerCase(java.util.Locale.ROOT);}
+    public static String source(ResourceFields.Shore shore){return switch(shore){case SHELLS->"seashells";case MUREX->"murex_shells";case PEARL->"pearl_oysters";default->"";};}
+    /** Where a dye or medicine plant grows wild. Each belongs to a climate, so no one place has them all. */
+    public static boolean habitat(WorldGenLevel world,BlockPos pos,ResourceFields.Herb herb){
+        if(!world.isEmptyBlock(pos)||!soil(world.getBlockState(pos.below())))return false;
+        if(world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,pos.getX(),pos.getZ())>pos.getY())return false;
+        var biome=world.getBiome(pos);float temperature=biome.value().getBaseTemperature();
+        boolean jungle=biome.is(BiomeTags.IS_JUNGLE),taiga=biome.is(BiomeTags.IS_TAIGA),wood=biome.is(BiomeTags.IS_FOREST)||taiga||jungle,wet=nearWater(world,pos);
+        // Biome temperature stands for the climate where no regional model runs: taiga 0.25, forest 0.7, plains 0.8, jungle 0.95, savanna and desert 2.
+        double c=temperature<.3?4:temperature<.65?10:temperature<.9?15:temperature<1.5?25:28;
+        if(WorldEnvironment.active(world.getLevel())){
+            var terrain=TerrainSampling.sample(world,world.getLevel().getChunkSource().getGenerator(),pos.getX(),pos.getZ());c=EnvironmentModel.baseline(terrain);
+            if(terrain.relief()>45||terrain.humidity()<.15)return false;
+        }
+        return switch(herb){
+            case WOAD->!wood&&!wet&&c>=5&&c<=18;
+            case WELD->!wood&&!wet&&c>=8&&c<=22;
+            case MADDER->!wood&&!wet&&c>=14&&c<=28;
+            case INDIGO->c>=22&&(jungle||biome.is(BiomeTags.IS_SAVANNA));
+            case MEADOWSWEET->wet&&!jungle&&c>=4&&c<=18;
+            case SPHAGNUM->wet&&c<=12&&(taiga||c<=6||wood);
+            case CINCHONA->jungle;
+        };
     }
     private static BlockPos ground(WorldGenLevel world,int x,int z){return new BlockPos(x,world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,x,z),z);}
     public static String source(ResourceFields.Patch patch){
@@ -91,12 +128,27 @@ public final class NaturalResourceGeneration {
                 if(!own(point.x(),point.z(),cx,cz))continue;var pos=ground(world,point.x(),point.z());
                 if(habitat(world,pos,patch.plant()))placed|=world.setBlock(pos,SurvivalContent.FORAGE.get(source(patch)).get().defaultBlockState(),2);
             }
+            for(var patch:ResourceFields.herbPatches(seed,cx,cz))for(var point:ResourceFields.patchPositions(patch)){
+                if(!own(point.x(),point.z(),cx,cz))continue;var pos=ground(world,point.x(),point.z());
+                if(habitat(world,pos,patch.herb()))placed|=world.setBlock(pos,SurvivalContent.FORAGE.get(source(patch.herb())).get().defaultBlockState(),2);
+            }
             for(int x=cx*16;x<cx*16+16;x++)for(int z=cz*16;z<cz*16+16;z++){
                 var pos=ground(world,x,z);if(!world.isEmptyBlock(pos))continue;var below=world.getBlockState(pos.below());
                 if(!below.isFaceSturdy(world,pos.below(),Direction.UP))continue;
+                // The strandline: only columns the field picks are looked at, so the biome and the water are read for a few in a hundred.
+                boolean beach=below.is(Blocks.SAND)||below.is(Blocks.GRAVEL)||below.is(Blocks.CLAY)||below.is(Blocks.RED_SAND);
+                if((beach||soil(below))&&ResourceFields.shoreCandidate(seed,x,z,beach)&&shoreline(world,pos)){
+                    var biome=world.getBiome(pos);boolean sea=biome.is(BiomeTags.IS_BEACH)||biome.is(BiomeTags.IS_OCEAN)||biome.is(BiomeTags.IS_DEEP_OCEAN);float temperature=biome.value().getBaseTemperature();
+                    boolean warm=temperature>=.6;
+                    if(WorldEnvironment.active(world.getLevel()))warm=EnvironmentModel.baseline(TerrainSampling.sample(world,generator,x,z))>=18;
+                    var find=ResourceFields.shore(seed,x,z,beach,sea,warm);
+                    if(find!=ResourceFields.Shore.NONE){placed|=world.setBlock(pos,SurvivalContent.FORAGE.get(source(find)).get().defaultBlockState(),2);continue;}
+                }
                 boolean rocky=stone(below)||below.is(Blocks.GRAVEL)||below.is(Blocks.SANDSTONE);
                 if(ResourceFields.looseStone(seed,x,z,rocky))placed|=world.setBlock(pos,SurvivalContent.LOOSE_STONES.get().defaultBlockState(),2);
                 else if(soil(below)&&ResourceFields.fallenStick(seed,x,z)&&nearWood(world,pos))placed|=world.setBlock(pos,SurvivalContent.FORAGE.get("fallen_sticks").get().defaultBlockState(),2);
+                // Woods have their own fibre plants (nettle, bast, vine) in the undergrowth, where flax will not grow.
+                else if(soil(below)&&ResourceFields.undergrowth(seed,x,z)&&woodland(world,pos))placed|=world.setBlock(pos,SurvivalContent.WILD_PLANTS.get().defaultBlockState(),2);
             }
             return placed;
         }
@@ -123,7 +175,8 @@ public final class NaturalResourceGeneration {
                     int qx=Math.floorDiv(x,128),qz=Math.floorDiv(z,128);long salt=ResourceFields.hash(seed,qx,qz,71);
                     int centerX=qx*128+40+(int)Math.floorMod(ResourceFields.hash(salt,0,0,1),48),centerZ=qz*128+40+(int)Math.floorMod(ResourceFields.hash(salt,0,0,2),48);
                     boolean exposure=(x-centerX)*(x-centerX)+(z-centerZ)*(z-centerZ)<100;
-                    for(int y=Math.max(world.getMinY()+5,top.getY()-12);y<=top.getY();y++){var p=new BlockPos(x,y,z);var state=world.getBlockState(p);if(stone(state)||exposure&&soil(state))placed|=world.setBlock(p,host(quarry),2);}
+                    boolean baked=quarry==ResourceFields.Host.LIMESTONE&&ResourceFields.marble(seed,x,z);
+                    for(int y=Math.max(world.getMinY()+5,top.getY()-12);y<=top.getY();y++){var p=new BlockPos(x,y,z);var state=world.getBlockState(p);if(stone(state)||exposure&&soil(state))placed|=world.setBlock(p,baked?marble(seed,x,y,z):host(quarry),2);}
                 }
                 if(soil(world.getBlockState(top))&&ResourceFields.unit(ResourceFields.hash(seed,Math.floorDiv(x,12),Math.floorDiv(z,12),111))<.35&&nearWater(world,top.above())){
                     for(int depth=0;depth<3;depth++){var p=top.below(depth);if(soil(world.getBlockState(p))||world.getBlockState(p).is(Blocks.GRAVEL))placed|=world.setBlock(p,Blocks.CLAY.defaultBlockState(),2);}

@@ -9,12 +9,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 
 public final class ResourceActionGameTests {
-    /** A survey of open ground lists the sixty-four nearest things in sight, nearest first, and says when there were more. */
+    /** A survey of open ground lists the nearest things in sight, nearest first, no more than eight of a kind, and says when there were more. */
     public static void nearestFirstAndBounded(GameTestHelper h){
         for(int x=0;x<13;x++)for(int z=0;z<13;z++)h.setBlock(x,1,z,Blocks.SAND);
+        h.setBlock(12,2,12,SurvivalContent.LOOSE_STONES.get());
         var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(6,2,6));actor.setNoAi(true);SurvivalApi.enroll(actor);
         var center=actor.blockPosition();var report=ResourceActions.discover(actor,16);var entries=report.getAsJsonArray("resources");
-        h.assertTrue(entries.size()==64&&report.get("truncated").getAsBoolean(),"A field of sand fills the list and is marked as cut short: "+entries.size());
+        int sand=0;boolean stones=false;for(var value:entries){var id=value.getAsJsonObject().get("identity").getAsString();if(id.equals("sand"))sand++;if(id.equals("loose_stone"))stones=true;}
+        h.assertTrue(sand==ResourceActions.PER_KIND&&report.get("truncated").getAsBoolean()&&report.get("moreOfKind").toString().contains("sand"),"A field of sand is listed only up to the limit of a kind and marked as more: "+sand);
+        h.assertTrue(stones,"The sand underfoot must not hide the loose stones across the field: "+report);
         double last=-1;
         for(var value:entries){var entry=value.getAsJsonObject();double distance=new BlockPos(entry.get("x").getAsInt(),entry.get("y").getAsInt(),entry.get("z").getAsInt()).distSqr(center);
             h.assertTrue(distance>=last,"The list runs from nearest to farthest");last=distance;

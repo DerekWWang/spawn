@@ -107,7 +107,7 @@ Everything else is mineflayer: `bot.blockAt`, `bot.findBlock`, `bot.dig`, `bot.p
 
 | Member | Returns |
 | --- | --- |
-| `query()` | The bot's body as JSON: needs, temperature, health, capacities, anatomy, clothing, conditions, skills |
+| `query()` | The bot's body as JSON: needs, temperature, health, capacities, anatomy, clothing, conditions, skills, and `position` (where the server has the body; with `riding` and `sleeping`) |
 | `climate()` | Air temperature, roof, nearby fire and rain where the bot stands |
 | `resources(radius?)` | What the bot can see to gather, fell or mine within `radius` blocks (1 to 16; the server's default is 12) |
 | `weather` | The latest local weather report (temperature, rain, wind, snow), or `null` before the first |

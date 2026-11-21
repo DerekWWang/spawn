@@ -36,6 +36,12 @@ public final class TechTreeCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("techtree")
+                // A bare /techtree says what it can be asked, rather than failing as an incomplete command.
+                .executes(ctx -> {
+                    ctx.getSource().sendSuccess(() -> Component.literal(
+                            "/techtree list | info <function> | status <function> | plan <target> | discover <function> | make <function> [times] | stop"), false);
+                    return 1;
+                })
                 .then(Commands.literal("grant").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(Commands.argument("targets", EntityArgument.players())
                                 .then(Commands.argument("function", StringArgumentType.word()).suggests(TechTreeCommand::suggest)

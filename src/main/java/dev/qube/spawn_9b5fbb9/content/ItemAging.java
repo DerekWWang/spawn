@@ -156,7 +156,9 @@ public final class ItemAging {
         var heap=new ItemEntity(level,entity.getX(),entity.getY(),entity.getZ(),next,0,0,0);heap.setDefaultPickUpDelay();
         heap(heap,under-next.getCount());level.addFreshEntity(heap);
     }
-    private static final java.util.Set<String> INERT=java.util.Set.of("hematite","malachite","cassiterite","galena","pyrite","salt","fluorite","bauxite","wolframite","oil_sand","borax","coal","charcoal","coke","clay_ball","brick","flint","quicklime","limestone","sulfur","pig_iron");
+    private static final java.util.Set<String> INERT=java.util.Set.of("hematite","malachite","cassiterite","galena","pyrite","salt","fluorite","bauxite","wolframite","oil_sand","borax","coal","charcoal","coke","clay_ball","brick","flint","quicklime","limestone","sulfur","pig_iron",
+        // Shell, gem and pigment do not rot either, nor the ornaments made of them.
+        "seashell","murex","pearl","topaz","amber","alum","red_ochre","lapis_lazuli","marble","shell_beads","pearl_necklace","amber_pendant","malachite_beads","lapis_amulet","topaz_ring");
     public static void weather(ItemEntity entity) {
         if(!(entity.level() instanceof ServerLevel level))return;
         // Kept from the five-minute sweep by being made young again each second, not by being marked everlasting:
