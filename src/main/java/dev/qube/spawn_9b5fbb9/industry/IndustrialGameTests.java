@@ -86,6 +86,7 @@ public final class IndustrialGameTests {
         TESTS.register("farming_plough_drawn_by_horses",()->dev.qube.spawn_9b5fbb9.agriculture.FarmingGameTests::ploughDrawnByHorses);
         TESTS.register("farming_plough_turns_a_furrow",()->dev.qube.spawn_9b5fbb9.agriculture.FarmingGameTests::ploughTurnsAFurrow);
         TESTS.register("farming_tilled_ground_lasts",()->dev.qube.spawn_9b5fbb9.agriculture.FarmingGameTests::tilledGroundLasts);
+        TESTS.register("farming_carrying_limit",()->dev.qube.spawn_9b5fbb9.agriculture.FarmingGameTests::carryingLimit);
         TESTS.register("farming_spring_food",()->dev.qube.spawn_9b5fbb9.agriculture.FarmingGameTests::springFood);
         TESTS.register("farming_coffee_and_tea_bushes",()->dev.qube.spawn_9b5fbb9.agriculture.FarmingGameTests::coffeeAndTeaBushes);
         TESTS.register("farming_brew_and_drink",()->dev.qube.spawn_9b5fbb9.agriculture.FarmingGameTests::brewAndDrink);

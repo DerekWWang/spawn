@@ -152,7 +152,7 @@ public final class WorldActions {
                 if(!ResourceActions.exposed(level,pos))return "That block is buried: dig your way to a face of it first";
                 return "";
             }
-            case "till":return hoe(held)&&(state.is(Blocks.DIRT)||state.is(Blocks.GRASS_BLOCK)||state.is(Blocks.DIRT_PATH))&&level.isEmptyBlock(pos.above())?"":"Hold a hoe beside unobstructed dirt or grass";
+            case "till":if(!(hoe(held)&&(state.is(Blocks.DIRT)||state.is(Blocks.GRASS_BLOCK)||state.is(Blocks.DIRT_PATH))&&level.isEmptyBlock(pos.above())))return "Hold a hoe beside unobstructed dirt or grass";return SeasonalCrops.frozen(level,pos)?"The ground is frozen hard":"";
             case "sow":{
                 Block crop=plant(seed);if(crop==null)return "Hold a declared crop seed in the main hand";
                 var cropKey=BuiltInRegistries.BLOCK.getKey(crop);String id=cropKey.getPath();long now=SurvivalApi.calendar(level);

@@ -96,7 +96,9 @@ hours; a log holds a kiln twelve times as long but cannot reach working heat
 in a bloomery or forge; a stick is kindling. Four cubic metres of wood char to
 eight sacks over two days. Broken ore, coal and clay lie where they fell and
 do not rot, and what you carry weighs on you: 35 kg costs nothing, 120 kg or more
-leaves you at a tenth of your pace. Bulk goes on wheels.
+leaves you at a tenth of your pace, and 120 kg is the most anyone takes up: from a
+heap of dug clay or ore you take what brings you to it and the rest stays lying.
+Bulk goes on wheels.
 
 Grid crafting also takes 100 loaded ticks of manual work, scaled by mental and
 manipulation capacity and the relevant skill. One actor can perform one manual job at a time across
@@ -240,7 +242,8 @@ cutting), and drive: the plough turns a furrow of farmland behind it at a slow
 walk. One horse cuts broken ground (dirt, paths); breaking old turf takes two.
 Grass and weeds are turned under; sown crops and anything solid are passed over.
 Turned ground lies open for a season before it closes back into dirt, and takes
-up water from rain or within four blocks of water as farmland does.
+up water from rain or within four blocks of water as farmland does. Frozen ground
+(below about -2 °C, or the depth of a cold winter) takes neither hoe nor plough.
 
 **Coffee and tea.** Both start in the wild: arabica coffee in the understory of
 tropical forest (picked in autumn and winter), tea in warm, wet hill forest

@@ -112,7 +112,7 @@ public final class SurvivalCommands {
         json.addProperty("movement",s.movement());json.addProperty("manipulation",s.manipulation());json.addProperty("mental",s.mental());json.addProperty("conditions",s.conditions());
         json.addProperty("calendar",SurvivalApi.calendar(source.getLevel()));
         // Where the server has this body. A client reports its own movement, and the two can part; this is the one that counts.
-        var where=new com.google.gson.JsonArray();where.add(actor.getX());where.add(actor.getY());where.add(actor.getZ());json.add("position",where);json.addProperty("riding",actor.isPassenger());json.addProperty("sleeping",actor.isSleeping());
+        var where=new com.google.gson.JsonArray();where.add(actor.getX());where.add(actor.getY());where.add(actor.getZ());json.add("position",where);json.addProperty("riding",actor.isPassenger());json.addProperty("carried",dev.qube.spawn_9b5fbb9.industry.Ledger.carried(actor));json.addProperty("sleeping",actor.isSleeping());
         json.addProperty("schemaVersion",6);json.add("skills",SkillApi.inspect(s));json.add("service",dev.qube.spawn_9b5fbb9.warfare.Military.inspect(actor));
         var parts=new com.google.gson.JsonObject();for(var part:SurvivalState.Part.values())parts.addProperty(part.name(),s.anatomy[part.ordinal()]);json.add("anatomy",parts);
         var clothes=new com.google.gson.JsonArray();for(String garment:s.clothing)clothes.add(garment);json.add("clothing",clothes);

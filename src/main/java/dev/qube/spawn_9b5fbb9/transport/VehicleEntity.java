@@ -204,6 +204,7 @@ public class VehicleEntity extends Entity {
         if(!cover.isAir()&&!(cover.canBeReplaced()&&cover.getFluidState().isEmpty()))return;
         // Whoever holds the handles needs the right to work that ground, as with a hoe.
         if(driver instanceof Player player&&(!player.mayBuild()||player.blockActionRestricted(level,soil,player instanceof ServerPlayer server?server.gameMode():net.minecraft.world.level.GameType.SURVIVAL)||!level.mayInteract(player,soil)))return;
+        if(dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.frozen(level,soil)){if(driver instanceof Player player&&tickCount%40==0)player.sendOverlayMessage(Component.literal("The ground is frozen hard: the share will not go in"));return;}
         // Stony or root-bound ground is only broken up by the first pass; the next turns it to tilth.
         if(hard){level.setBlock(soil,Blocks.DIRT.defaultBlockState(),3);return;}
         double pull=0;for(UUID id:team)pull+=Vehicles.draught(level.getEntity(id));

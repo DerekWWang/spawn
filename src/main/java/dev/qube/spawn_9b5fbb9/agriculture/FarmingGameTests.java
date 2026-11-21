@@ -112,6 +112,28 @@ public final class FarmingGameTests {
         }
         h.succeed();
     }
+    /** Nobody takes up more than they can bear: from a heavy heap a person takes what brings them to 120 kg and leaves the rest lying. */
+    public static void carryingLimit(GameTestHelper h){
+        var player=(net.minecraft.server.level.ServerPlayer)h.makeMockServerPlayer(net.minecraft.world.level.GameType.SURVIVAL);player.setPos(h.absoluteVec(new Vec3(2.5,2,2.5)));player.getInventory().clearContent();
+        var clay=new ItemStack(net.minecraft.world.item.Items.CLAY_BALL,64);
+        h.assertTrue(!SurvivalApi.exempt(player)&&!player.isSpectator(),"The test player is an ordinary survival player");
+        h.assertTrue(dev.qube.spawn_9b5fbb9.industry.Ledger.liftable(player,clay)==32,"Thirty-two 3.75 kg lumps of clay are 120 kg: "+dev.qube.spawn_9b5fbb9.industry.Ledger.liftable(player,clay));
+        h.assertTrue(dev.qube.spawn_9b5fbb9.industry.Ledger.liftable(player,new ItemStack(net.minecraft.world.item.Items.DIRT,64))==64,"Building blocks stay Minecraft's own convention");
+        var drop=new ItemEntity(h.getLevel(),player.getX(),player.getY(),player.getZ(),clay.copy());drop.setNoPickUpDelay();h.getLevel().addFreshEntity(drop);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Pre(player,drop));
+        int held=0;for(int i=0;i<player.getInventory().getContainerSize();i++)if(player.getInventory().getItem(i).is(net.minecraft.world.item.Items.CLAY_BALL))held+=player.getInventory().getItem(i).getCount();
+        h.assertTrue(held==32&&drop.getItem().getCount()==32,"From a stack of 64 the player takes 32 and leaves 32: took "+held+", left "+drop.getItem().getCount());
+        h.assertTrue(dev.qube.spawn_9b5fbb9.industry.Ledger.liftable(player,new ItemStack(net.minecraft.world.item.Items.CLAY_BALL,10))==0,"At 120 kg no more is taken");
+        drop.discard();player.getInventory().clearContent();
+        var mine=new ItemEntity(h.getLevel(),player.getX(),player.getY(),player.getZ(),new ItemStack(net.minecraft.world.item.Items.CLAY_BALL,4));mine.setNoPickUpDelay();mine.setThrower(player);h.getLevel().addFreshEntity(mine);
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.post(new net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent.Pre(player,mine));
+        h.assertTrue(mine.getItem().getCount()==4&&player.getInventory().countItem(net.minecraft.world.item.Items.CLAY_BALL)==0,"What a person has just put down is not scooped up again in passing");
+        mine.discard();
+        // Frozen ground: neither hoe nor plough breaks it.
+        h.assertTrue(SeasonalCrops.frozenAir(-5)&&!SeasonalCrops.frozenAir(1),"Ground freezes hard below about -2 C");
+        h.assertTrue(SeasonalCrops.frozenBiome(.25f,3)&&!SeasonalCrops.frozenBiome(.25f,0)&&!SeasonalCrops.frozenBiome(.95f,3),"A taiga winter freezes the ground; its spring and a jungle winter do not");
+        h.succeed();
+    }
     /** Spring food: ramsons in the woods and wild peas in the grass, picked only in their seasons; field peas sown in spring ripen within it. */
     public static void springFood(GameTestHelper h){
         try(var calendar=new Calendar(h)){

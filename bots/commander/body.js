@@ -234,6 +234,24 @@ async function unwedge (actor) {
   }
   return cleared
 }
+/** Out of a pit: cut a step into the wall on the side where there is firm ground to stand on, and climb it. A wall of
+ * rock (which needs a pickaxe) or one that would let water in is left alone. Answers whether a step was made and climbed. */
+async function climbOut (actor) {
+  const bot = actor.bot; const f = bot.entity.position.floored()
+  if (groundAt(bot, f.x, f.z, f.y) === null) return false
+  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const x = f.x + dx; const z = f.z + dz
+    if (standable(bot, x, f.y + 1, z) || standable(bot, x, f.y, z)) continue // not walled on this side
+    const floor = bot.blockAt(new Vec3(x, f.y, z)); if (!solid(floor)) continue
+    const cut = [new Vec3(x, f.y + 1, z), new Vec3(x, f.y + 2, z)].map(p => bot.blockAt(p)).filter(b => b && !passable(b))
+    if (cut.some(b => !solid(b) || mineable(b) || floods(bot, b.position))) continue
+    let ok = true
+    for (const b of cut) { try { await bot.lookAt(b.position.offset(0.5, 0.5, 0.5), true); await withTimeout(bot.dig(b, true), 8000, 'cutting a step') } catch { try { bot.stopDigging() } catch {} ok = false; break } }
+    if (!ok) continue
+    if (await steer(actor, { x, y: f.y + 1, z })) { await settle(bot); return true }
+  }
+  return false
+}
 /** Walk to within `within` blocks of (x, z) on dry land. */
 async function walk (actor, x, z, within = 1.5) {
   const bot = actor.bot
@@ -251,6 +269,8 @@ async function walk (actor, x, z, within = 1.5) {
     }
     // Not moved at all: the body may be caught with its head in a crown. Break out, then try again.
     if (failed && was - left() < 0.3 && await unwedge(actor)) { await settle(bot); continue }
+    // Not moved and the search found no way: the body may be down a pit of its own digging. Cut a step and go on.
+    if (route.partial && was - left() < 0.3 && route.cells.length <= 2 && await climbOut(actor)) continue
     const gained = was - left()
     if (!failed && route.partial && gained < 3) return { arrived: false, why: `no dry way found; stopped ${round(left())} blocks short`, pos: pos(bot.entity.position) }
     if (gained < 1) stalls++
@@ -540,4 +560,4 @@ async function resync (actor) {
   if (!bot._syncWindow || !bot.inventory) return false
   try { await Promise.race([bot._syncWindow(bot.inventory), sleep(2500)]); actor.syncedAt = Date.now(); return true } catch { return false }
 }
-module.exports = { unwedge, clearOverhead, comeBack, footing, climbable, clearWay, onScan, floods, inland, resync, byReach, scanIndex, nearIndex,  started, firstLine, inReach, GROUND, Vec3, sleep, full, round, pos, MOD, itemsOf, isWater, passable, solid, water, surface, findBlocks, nearby, standable, groundAt, findPath, steer, walk, settle, openAbove, drinkable, nearestDry, leaveWater, command, commandJson, job, finishJob, readBody, bodySummary, pickup, approach, gainsBetween, work, place, hold, mineable }
+module.exports = { climbOut, unwedge, clearOverhead, comeBack, footing, climbable, clearWay, onScan, floods, inland, resync, byReach, scanIndex, nearIndex,  started, firstLine, inReach, GROUND, Vec3, sleep, full, round, pos, MOD, itemsOf, isWater, passable, solid, water, surface, findBlocks, nearby, standable, groundAt, findPath, steer, walk, settle, openAbove, drinkable, nearestDry, leaveWater, command, commandJson, job, finishJob, readBody, bodySummary, pickup, approach, gainsBetween, work, place, hold, mineable }

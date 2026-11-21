@@ -67,6 +67,35 @@ public final class LogisticsEvents {
         }
     }
 
+    /** A player takes up only what they can bear: from a heap or a heavy stack, as much as brings them to their limit, the rest left lying. */
+    @SubscribeEvent
+    static void beforePickup(ItemEntityPickupEvent.Pre event) {
+        if (!(event.getPlayer() instanceof ServerPlayer player) || player.isSpectator() || dev.qube.spawn_9b5fbb9.survival.SurvivalApi.exempt(player)) {
+            return;
+        }
+        var drop = event.getItemEntity();
+        // What a person has just put down they do not scoop up again by walking past it: taking something up is meant.
+        if (drop.getOwner() == player && drop.getAge() < 1200) {
+            event.setCanPickup(net.minecraft.util.TriState.FALSE);
+            return;
+        }
+        ItemStack stack = drop.getItem();
+        int can = dev.qube.spawn_9b5fbb9.industry.Ledger.liftable(player, stack);
+        if (can >= stack.getCount()) {
+            return;
+        }
+        event.setCanPickup(net.minecraft.util.TriState.FALSE);
+        if (can <= 0 || drop.hasPickUpDelay()) {
+            return;
+        }
+        ItemStack part = stack.split(can);
+        if (!player.getInventory().add(part)) {
+            stack.grow(part.getCount());
+        }
+        drop.setItem(stack);
+        player.take(drop, can - part.getCount());
+    }
+
     /** What is picked up off the ground, other than things a player dropped, was gathered from the world. */
     @SubscribeEvent
     static void onPickup(ItemEntityPickupEvent.Post event) {

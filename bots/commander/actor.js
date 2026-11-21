@@ -206,6 +206,23 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
     return B.drinkable(bot, bot.entity.position.floored()) ? { ok: true, at: [s.x, s.y, s.z] } : { ok: false, why: 'could not reach the shore at ' + [s.x, s.y, s.z].join(',') }
   }
 
+  /** A heap gives more than was wanted, and a body loaded past a soldier's 35 kg slows to a crawl. Walk clear of the heap,
+   * put the surplus down facing back towards it, and walk on, keeping what the work needs. */
+  async function shed (actor, item, keep, goal, heap) {
+    const bot = actor.bot; let b
+    try { b = await B.readBody(actor) } catch { return }
+    if (!(b.carried > 35)) return
+    const here = bot.entity.position.clone(); const from = heap ? new Vec3(heap.x + 0.5, here.y, heap.z + 0.5) : here.offset(1, 0, 0)
+    let dir = here.minus(from); dir.y = 0; const len = Math.hypot(dir.x, dir.z) || 1; dir = dir.scaled(1 / len)
+    if (!Number.isFinite(dir.x)) dir = new Vec3(1, 0, 0)
+    const clear = here.plus(dir.scaled(6)); await B.walk(actor, clear.x, clear.z, 1.5)
+    const extra = have(bot, item) - keep; const stack = bot.inventory.items().find(i => i.name === norm(item))
+    if (extra <= 0 || !stack) return
+    await bot.lookAt(bot.entity.position.minus(dir).offset(0, 1.6, 0), true)
+    try { await bot.toss(stack.type, null, extra) } catch { return }
+    const on = bot.entity.position.plus(dir.scaled(5)); await B.walk(actor, on.x, on.z, 1.5); await B.resync(actor)
+    goal.trace.push(`put down ${extra} ${item} too heavy to carry (was ${round(b.carried)} kg)`)
+  }
   const ROUTES = {
     /** Kill an animal by hand and take up what it leaves: walk to it by the paths, then close and strike. */
     async hunt (actor, r, item, count, goal, depth) {
@@ -247,17 +264,21 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
       return have(bot, item) >= count ? null : reason || 'too few ' + item
     },
     async gather (actor, r, item, count, goal, depth) {
-      const bot = actor.bot; const tried = new Set(); let fails = 0; let reason = ''
+      const bot = actor.bot; const tried = new Set(); let fails = 0; let reason = ''; let lastAt = null
       if (r.tool) { const tool = await makeAny(actor, r.tool, 1, goal, depth); if (!tool) return 'needs a pickaxe'; await B.hold(actor, tool) }
       while (have(bot, item) < count && fails < 5) {
         if (actor.order && actor.order.abort) return actor.order.abort
-        const found = B.byReach(bot, bot.findBlocks({ matching: b => b && b.name === r.block, maxDistance: 48, count: 32 }).filter(p => !tried.has(p.toString()) && !B.floods(bot, p)))
+        const feet = bot.entity.position.floored()
+        const found = B.byReach(bot, bot.findBlocks({ matching: b => b && b.name === r.block, maxDistance: 48, count: 32 }).filter(p => !tried.has(p.toString()) && !B.floods(bot, p) && !(p.x === feet.x && p.z === feet.z && p.y < feet.y)))
         if (!found.length) return reason || 'no more ' + r.block + ' in sight'
         const p = found[0]; tried.add(p.toString())
-        const w = await B.work(actor, p)
+        const w = await B.work(actor, p); lastAt = p
         if (w.ok && w.gained) book.learnYield(r.block, w.gained)
         if (!w.ok) { fails++; reason = w.server || w.why || 'failed' }
+        // Taken but nothing came to hand: a body at the most it can bear picks up no more, and digging on is waste.
+        if (w.ok && w.gained && !Object.keys(w.gained).length) { let b = null; try { b = await B.readBody(actor) } catch {} if (b && b.carried >= 115) { reason = `cannot carry any more: already bearing ${round(b.carried)} kg`; break } }
       }
+      if (have(bot, item) > count) await shed(actor, item, count, goal, lastAt)
       return have(bot, item) >= count ? null : reason
     },
     async craft (actor, r, item, count, goal, depth) {
@@ -376,7 +397,16 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
 
   // ------------------------------------------------------------ tasks the commander can order
   const ORDERS = {
-    async go ({ x, z, within = 1.5 }) { return B.walk(this, +x, +z, +within) },
+    async go ({ x, z, within = 1.5 }) { if (!Number.isFinite(+x) || !Number.isFinite(+z) || x === null || z === null) return { ok: false, why: 'go needs x and z' }; return B.walk(this, +x, +z, +within) },
+    /** Fill a carried pot with water from the nearest shore (open water: boil it before drinking it safely). */
+    async fill_pot () {
+      const bot = this.bot; const pot = bot.inventory.items().find(i => /fired_pot$/.test(i.name))
+      if (!pot) return { ok: false, why: 'carries no fired pot' }
+      const s = await toShore(this); if (!s.ok) return { ok: false, why: s.why }
+      const h = await B.hold(this, pot.name); if (!h.ok) return { ok: false, why: h.why }
+      const reply = await B.command(this, '/survival vessel fill', 300)
+      return { ok: /^Collected/.test(B.firstLine(reply)), server: B.firstLine(reply), at: s.at }
+    },
     async go_to ({ name, within = 2 }) { const o = actors[name]; if (!o) return { ok: false, why: 'no such person ' + name }; const p = o.bot.entity.position; return B.walk(this, p.x, p.z, +within) },
     async make ({ item, count = 1 }) {
       const goal = { failed: new Set(), trace: [] }; const id = resolveItem(this.bot, item)

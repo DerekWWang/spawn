@@ -134,3 +134,11 @@ test('a body with its head in a crown breaks the leaves it is caught in', async 
   bot.entity.position = new Vec3(6.5, 64, 6.5)
   assert.equal(await B.unwedge({ bot }), false)
 })
+
+test('a one-block pit two deep has no walking way out (climbOut is what gets a body out)', () => {
+  const blocks = []
+  for (let x = 0; x < 8; x++) for (let z = 0; z < 8; z++) if (!(x === 4 && z === 4)) blocks.push([x, 64, z, 'dirt'], [x, 65, z, 'dirt'])
+  const route = B.findPath(world(8, blocks, [4, 64, 4]), { x: 7, z: 4 }, 0)
+  assert.equal(route.partial, true)
+  assert.equal(route.cells.length, 1)
+})

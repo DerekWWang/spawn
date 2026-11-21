@@ -233,6 +233,19 @@ public final class SeasonalCrops {
     /** Tilled ground left bare. Vanilla lets dry farmland slump back to dirt within a minute or two; turned soil really lies
      * open for weeks before weeds and rain close it. It takes water as vanilla farmland does, and goes back to dirt only
      * after lying bare and dry for a whole season. */
+    /** Ground frozen hard: the air well below freezing where the regional model runs, else the depth of winter where the biome's
+     * mean less its seasonal swing is below freezing. Neither a hoe nor a plough breaks it. */
+    public static boolean frozen(ServerLevel level,BlockPos pos){
+        long now=SurvivalApi.calendar(level);
+        if(WorldEnvironment.active(level))return frozenAir(EnvironmentApi.at(level,pos.above(),now).temperature());
+        return frozenBiome(level.getBiome(pos).value().getBaseTemperature(),season(now));
+    }
+    public static boolean frozenAir(double celsius){return celsius<-2;}
+    public static boolean frozenBiome(float biomeTemperature,int season){
+        if(season!=3)return false;
+        float t=biomeTemperature;double mean=t<.3?4:t<.65?10:t<.9?15:t<1.5?25:28,swing=mean>=22?2:10;
+        return mean-swing<0;
+    }
     /** Ground has just been turned: whatever clock it kept while it lay bare before starts again. */
     public static void tilled(ServerLevel level,BlockPos pos){var all=records(level);String key=soilKey(pos);var soil=all.getCompoundOrEmpty(key);if(soil.contains("bareSince")){soil.remove("bareSince");all.put(key,soil);}}
     public static boolean farmland(BlockState state,ServerLevel level,BlockPos pos){

@@ -255,6 +255,14 @@ const handlers = {
   if (!book.restore(cache, key)) { await book.loadServer(ask); book.save(cache, key); raw('book read from the server') } else raw('book restored from cache')
   book.loadTechtree()
   raw('book', JSON.stringify(book.summary()))
+  // The people are one people: one scoreboard team, so they share one society, its knowledge and its culture score.
+  // A stage hand's act at the start, like placing them on the beach; nothing the commander can do.
+  try {
+    const hand = stageHand || await lib.rcon.connect({ port: settings.rconPort, password: settings.rconPassword })
+    await hand.send('team add people').catch(() => {})
+    for (const name of NAMES) await hand.send('team join people ' + name)
+    if (!stageHand) hand.close()
+  } catch (error) { raw('could not put the actors on one team:', error.message) }
   // What the team has built is kept beside the log, so that a host started again on the same run still knows of it.
   crew = createCrew({ actors, alert, record, book, waiters, memory: path.join(LOGS, 'team-memory.json') })
   for (const a of Object.values(actors)) { crew.enroll(a); try { await B.readBody(a) } catch {} }

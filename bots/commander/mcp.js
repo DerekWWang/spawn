@@ -18,6 +18,7 @@ const TASKS = {
   gather: '{what, count?, radius?} take the nearest blocks whose id contains `what` ("oak_log", "sand", "gravel"...) by whatever the world requires (timed hand-gathering, timed mining, or breaking), and pick up the drops; or {x, y, z} for one block',
   dig: '{x, y, z} take one block',
   craft: '{recipe, times?} craft one exact recipe id (e.g. "minecraft:oak_planks") with what is at hand; nothing is fetched (make does that)',
+  fill_pot: '{} go to the nearest shore and fill a carried fired pot with open water (boil it before it is safe to drink)',
   drink: '{until?} drink until thirst reaches `until`: from a carried pot if there is one, else from the nearest shore standing on dry land (as the water policy allows)',
   eat: '{item?} eat an item from the inventory; without an item, eat the best food carried, or find or make some and eat it',
   place: '{item, x, y, z} place a block',

@@ -120,6 +120,15 @@ public final class Ledger {
         }
         return kilograms;
     }
+    /** The most a person can bear at all: at 120 kg they are down to a tenth of their pace, and they lift no more. */
+    public static final double MOST_BORNE=120;
+    /** How many of a loose stack an actor can take up without going over what they can bear. Building blocks and weightless
+     * things are Minecraft's own convention and are always taken whole. */
+    public static int liftable(LivingEntity actor,ItemStack stack){
+        if(stack.isEmpty()||building(stack.getItem()))return stack.getCount();
+        double each=mass(id(stack));if(each<=0)return stack.getCount();
+        double room=MOST_BORNE-carried(actor);return (int)Math.max(0,Math.min(stack.getCount(),Math.floor(room/each+1e-9)));
+    }
     /** Marching pace under load: a soldier's 35 kg is carried all day; beyond it pace falls away to a tenth at 120 kg. */
     public static double pace(double kilograms){return kilograms<=35?1:Math.max(.1,1-.9*(kilograms-35)/85);}
     public static double mass(Map<String,Long> ledger){double sum=0;for(var entry:ledger.entrySet())sum+=mass(entry.getKey())*entry.getValue();return sum;}
