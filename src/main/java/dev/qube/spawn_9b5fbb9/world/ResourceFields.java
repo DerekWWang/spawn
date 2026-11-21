@@ -131,6 +131,9 @@ public final class ResourceFields {
         return Shore.NONE;
     }
     /** Whether the field offers this column anything at all, before the costly look at its biome and water. */
+    /** Cobbles at the water's edge, which waves and shore ice wash out of the bank and leave lying: about one column in
+     * twenty of a sand or gravel beach, one in eighty of a grassy shore. */
+    public static boolean strandStone(long seed,int x,int z,boolean beach){return unit(hash(seed,x,z,95))<(beach?.05:.0125);}
     public static boolean shoreCandidate(long seed,int x,int z,boolean beach){return unit(hash(seed,x,z,94))<(beach?.0268:.004);}
     /** About a third of limestone quarry bodies were baked to marble; decided for the whole body, so a quarry is one stone. */
     public static boolean marble(long seed,int x,int z){return unit(hash(seed,Math.floorDiv(x,128),Math.floorDiv(z,128),72))<.35;}

@@ -32,7 +32,7 @@ const CARE = new Set(['drink', 'feed', 'eat', 'leave_water', 'flee', 'go_home', 
 
 function createCrew ({ actors, alert, record, book, waiters, memory }) {
   // stations: every workstation anyone has set down or seen, by kind, so that nobody builds a second for want of looking.
-  const team = { wet: [], herds: new Map(), stations: remembered(memory), avoid: new Map(), water: null, shores: [], food: new Map(), season: null, notes: [] } // shared knowledge
+  const team = { wet: [], herds: new Map(), stations: remembered(memory), avoid: new Map(), water: null, shores: [], food: new Map(), finds: new Map(), season: null, notes: [] } // shared knowledge
   const wake = () => { for (const w of waiters) w() }
   const note = (actor, text) => { team.notes.push(`${actor.name}: ${text}`); if (team.notes.length > 30) team.notes.shift(); alert(actor.name, text) }
 
@@ -72,7 +72,7 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
     return {
       season: team.season ? team.season.value : undefined,
       have: it => have(bot, it),
-      nearest: block => near(block, 48),
+      nearest: block => { const d = near(block, 48); if (d !== null) return d; const far = knownSite(actor, block); return far && far.block === block ? far.d : null },
       stationNear: id => { const d = near(norm(id), 32); if (d !== null) return d; const known = knownStation(actor, norm(id)); return known ? known.d : null },
       waterNear: () => near('water', 24) !== null,
       creatureNear: name => { const seen = quarry(actor, name); return seen ? seen.d + (seen.live ? 0 : 12) : null }
@@ -107,13 +107,40 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
     return best
   }
 
+  // ------------------------------------------------------------ places where things lie
+  // Every hand-gathered resource anyone has seen (stones, shells, sticks, wild plants), kept per kind, so that when
+  // none is in sight the gatherer walks to one seen further off instead of giving up.
+  function noteSite (block, p) {
+    let m = team.finds.get(block); if (!m) team.finds.set(block, m = new Map())
+    const k = p.join(); if (m.has(k)) return
+    m.set(k, p); if (m.size > 48) m.delete(m.keys().next().value)
+  }
+  function spentSite (block, p) { const m = team.finds.get(block); if (m) { m.delete([p.x, p.y, p.z].join()); m.delete(Array.isArray(p) ? p.join() : '') } }
+  /** The nearest remembered site of a block (an exact id, or one whose id contains `want`), within a long walk, not yet
+   * gone to in this errand. */
+  function knownSite (actor, want, skip = new Set(), max = 160) {
+    const here = actor.bot.entity.position; let best = null
+    for (const [block, m] of team.finds) {
+      if (block !== want && !block.replace(/^minecraft:/, '').includes(String(want).replace(/^minecraft:/, ''))) continue
+      for (const p of m.values()) { if (skip.has(p.join())) continue; const d = Math.hypot(p[0] - here.x, p[2] - here.z); if (d <= max && (!best || d < best.d)) best = { block, p, d } }
+    }
+    return best
+  }
+  /** Walk to a remembered site; if it can be seen on arrival and is gone, strike it off. */
+  async function toSite (actor, site) {
+    await B.walk(actor, site.p[0] + 0.5, site.p[2] + 0.5, 3)
+    const b = actor.bot.blockAt(new Vec3(site.p[0], site.p[1], site.p[2]))
+    if (b && b.name !== site.block) spentSite(site.block, site.p)
+    return Math.hypot(site.p[0] - actor.bot.entity.position.x, site.p[2] - actor.bot.entity.position.z) <= 8
+  }
+
   // Every sweep of the land by anyone adds the food sources in it to what the team remembers.
   let foodBlocks = null
   const isFoodBlock = name => {
     if (!foodBlocks) foodBlocks = new Set(FORAGE.flatMap(f => book.routesFor(f).filter(r => r.kind === 'gather').map(r => r.block)))
     return foodBlocks.has(name)
   }
-  B.onScan.hook = (actor, index) => { const w = index.get('water'); if (w) { const k = Math.round(w.p[0] / 16) + ',' + Math.round(w.p[2] / 16); if (!team.wet.some(q => q.k === k)) { team.wet.push({ k, p: w.p }); if (team.wet.length > 16) team.wet.shift() } } for (const [name, e] of index) if (isFoodBlock(name)) { team.food.set(name + '@' + e.p.join(), { block: name, p: e.p }); if (team.food.size > 60) team.food.delete(team.food.keys().next().value) } }
+  B.onScan.hook = (actor, index) => { for (const s of index.sites || []) noteSite(s.block, s.p); const w = index.get('water'); if (w) { const k = Math.round(w.p[0] / 16) + ',' + Math.round(w.p[2] / 16); if (!team.wet.some(q => q.k === k)) { team.wet.push({ k, p: w.p }); if (team.wet.length > 16) team.wet.shift() } } for (const [name, e] of index) if (isFoodBlock(name)) { team.food.set(name + '@' + e.p.join(), { block: name, p: e.p }); if (team.food.size > 60) team.food.delete(team.food.keys().next().value) } }
 
   // ------------------------------------------------------------ making an item
   async function makeItem (actor, item, count, goal, depth = 0) {
@@ -180,6 +207,10 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
     if (at.p.distanceTo(actor.bot.entity.position) > 5.5) { goal.trace.push(`could not get back to the ${name} at ${at.p}`); return null }
     return at
   }
+  /** The nearest burning fire: a lit campfire, or open fire. */
+  function litFire (bot, r) {
+    return bot.findBlocks({ matching: b => b && (b.name === 'fire' || (b.name === 'campfire' && (b.getProperties ? b.getProperties().lit !== false : true))), maxDistance: r, count: 1 })[0] || null
+  }
   async function placeBeside (actor, item) {
     const bot = actor.bot; const o = bot.entity.position.floored()
     for (const [dx, dz] of [[2, 0], [0, 2], [-2, 0], [0, -2], [2, 1], [1, 2], [-2, 1], [1, -2], [2, 2], [-2, -2]]) {
@@ -220,6 +251,7 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
     if (extra <= 0 || !stack) return
     await bot.lookAt(bot.entity.position.minus(dir).offset(0, 1.6, 0), true)
     try { await bot.toss(stack.type, null, extra) } catch { return }
+    actor.putDown = [...(actor.putDown || []).filter(q => Date.now() - q.at < 600000), { item: norm(item), p: bot.entity.position.clone(), at: Date.now() }].slice(-12)
     const on = bot.entity.position.plus(dir.scaled(5)); await B.walk(actor, on.x, on.z, 1.5); await B.resync(actor)
     goal.trace.push(`put down ${extra} ${item} too heavy to carry (was ${round(b.carried)} kg)`)
   }
@@ -264,19 +296,26 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
       return have(bot, item) >= count ? null : reason || 'too few ' + item
     },
     async gather (actor, r, item, count, goal, depth) {
-      const bot = actor.bot; const tried = new Set(); let fails = 0; let reason = ''; let lastAt = null
+      const bot = actor.bot; const tried = new Set(); let fails = 0; let reason = ''; let lastAt = null; const went = new Set(); let lightened = false
+      const loose = B.GROUND.test(r.block) // taking what lies on the ground opens no way for water
       if (r.tool) { const tool = await makeAny(actor, r.tool, 1, goal, depth); if (!tool) return 'needs a pickaxe'; await B.hold(actor, tool) }
       while (have(bot, item) < count && fails < 5) {
         if (actor.order && actor.order.abort) return actor.order.abort
         const feet = bot.entity.position.floored()
-        const found = B.byReach(bot, bot.findBlocks({ matching: b => b && b.name === r.block, maxDistance: 48, count: 32 }).filter(p => !tried.has(p.toString()) && !B.floods(bot, p) && !(p.x === feet.x && p.z === feet.z && p.y < feet.y)))
-        if (!found.length) return reason || 'no more ' + r.block + ' in sight'
+        const found = B.byReach(bot, bot.findBlocks({ matching: b => b && b.name === r.block, maxDistance: 48, count: 256 }).filter(p => !tried.has(p.toString()) && B.exposed(bot, p) && (loose || !B.floods(bot, p)) && !(p.x === feet.x && p.z === feet.z && p.y < feet.y)))
+        if (!found.length) {
+          const far = went.size < 4 && knownSite(actor, r.block, went)
+          if (!far) return reason || 'no more ' + r.block + ' in sight'
+          went.add(far.p.join()); goal.trace.push(`going to the ${r.block} seen at ${far.p.join(',')} (${round(far.d)} blocks)`)
+          await toSite(actor, far); continue
+        }
         const p = found[0]; tried.add(p.toString())
         const w = await B.work(actor, p); lastAt = p
+        if (w.ok) spentSite(r.block, p)
         if (w.ok && w.gained) book.learnYield(r.block, w.gained)
         if (!w.ok) { fails++; reason = w.server || w.why || 'failed' }
         // Taken but nothing came to hand: a body at the most it can bear picks up no more, and digging on is waste.
-        if (w.ok && w.gained && !Object.keys(w.gained).length) { let b = null; try { b = await B.readBody(actor) } catch {} if (b && b.carried >= 115) { reason = `cannot carry any more: already bearing ${round(b.carried)} kg`; break } }
+        if (w.ok && w.gained && !Object.keys(w.gained).length) { let b = null; try { b = await B.readBody(actor) } catch {} if (b && b.carried >= 115) { if (!lightened && (lightened = true) && await lighten(actor, item, goal)) { await B.pickup(actor, 4, p.offset(0.5, 0, 0.5)); await B.resync(actor); continue } reason = `cannot carry any more: already bearing ${round(b.carried)} kg`; break } }
       }
       if (have(bot, item) > count) await shed(actor, item, count, goal, lastAt)
       return have(bot, item) >= count ? null : reason
@@ -292,7 +331,9 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
         for (const alts of r.slots) {
           const held = alts.find(a => have(bot, a) - (need[a] || 0) >= times)
           let pick = held
-          if (!pick) { pick = await makeAny(actor, alts, (need[alts[0]] || 0) + times, goal, depth); if (!pick) return 'cannot get any of ' + alts.slice(0, 4).join('/') }
+          // Every slot that takes the same things is fetched for at once: two clay slots are one trip to the clay, not two.
+          const alike = r.slots.filter(a => a.join() === alts.join()).length * times
+          if (!pick) { pick = await makeAny(actor, alts, Math.max((need[alts[0]] || 0) + times, alike), goal, depth); if (!pick) return 'cannot get any of ' + alts.slice(0, 4).join('/') }
           need[pick] = (need[pick] || 0) + times
         }
         let short = false
@@ -407,6 +448,49 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
       const reply = await B.command(this, '/survival vessel fill', 300)
       return { ok: /^Collected/.test(B.firstLine(reply)), server: B.firstLine(reply), at: s.at }
     },
+    /** Boil the water in a carried pot: fill it if it is empty, find a lit fire (or make a campfire and set it down), stand
+     * by it holding the pot, and stay there until the pot says the water is boiled. Ordinary hunger and thirst wait the
+     * minute this takes; critical need, water and danger do not. */
+    async boil () {
+      const bot = this.bot; const goal = { failed: new Set(), trace: [] }
+      const pot = () => bot.inventory.items().find(i => /fired_pot$/.test(i.name))
+      if (!pot()) return { ok: false, why: 'carries no fired pot' }
+      const status = async () => { const h = await B.hold(this, pot().name); if (!h.ok) return 'could not hold the pot: ' + h.why; return B.firstLine(await B.command(this, '/survival vessel status', 300)) }
+      let s = await status()
+      if (/^Boiled/.test(s)) return { ok: true, server: s, note: 'already boiled' }
+      if (/^Sealed|stored food/.test(s)) return { ok: false, server: s }
+      if (/^Empty/.test(s)) { const f = await ORDERS.fill_pot.call(this, {}); if (!f.ok) return { ok: false, why: 'could not fill the pot: ' + (f.why || f.server) }; goal.trace.push('filled the pot at ' + f.at) }
+      let fire = litFire(bot, 32)
+      if (!fire) {
+        goal.trace.push('no lit fire in sight: making a campfire')
+        if (!(await makeItem(this, 'campfire', 1, goal, 0))) return { ok: false, why: 'no fire, and could not make a campfire', trace: goal.trace.slice(-12) }
+        if (!(await placeBeside(this, 'campfire'))) return { ok: false, why: 'could not set down the campfire', trace: goal.trace.slice(-12) }
+        fire = litFire(bot, 8); if (!fire) return { ok: false, why: 'the campfire set down is not burning', trace: goal.trace.slice(-12) }
+        goal.trace.push('set down a campfire at ' + fire)
+      }
+      for (let attempt = 0; attempt < 3; attempt++) {
+        if (this.order.abort) break
+        if (fire.distanceTo(bot.entity.position) > 2.8) { await B.walk(this, fire.x + 0.5, fire.z + 0.5, 2); if (fire.distanceTo(bot.entity.position) > 2.8) await B.approach(this, fire, 2.2) }
+        if (fire.distanceTo(bot.entity.position) > 3.5) return { ok: false, why: 'could not get beside the fire at ' + fire, trace: goal.trace.slice(-12) }
+        await bot.lookAt(fire.offset(0.5, 0.5, 0.5), true)
+        const h = await B.hold(this, pot().name); if (!h.ok) return { ok: false, why: h.why }
+        const reply = B.firstLine(await B.command(this, '/survival vessel boil', 300))
+        if (!/^Hold the open pot/.test(reply)) return { ok: false, server: reply, trace: goal.trace.slice(-12) }
+        this.order.hold = true; this.order.progress = 'boiling water at ' + fire
+        const end = Date.now() + 75000
+        while (Date.now() < end && !this.order.abort) {
+          await sleep(5000)
+          s = B.firstLine(await B.command(this, '/survival vessel status', 300))
+          if (!/^Boiling/.test(s)) break
+          this.order.progress = s
+        }
+        this.order.hold = false
+        if (/^Boiled/.test(s)) return { ok: true, server: s, at: [fire.x, fire.y, fire.z], trace: goal.trace.slice(-12) }
+        goal.trace.push('the boil stopped: ' + s)
+        if (!litFire(bot, 32)) break
+      }
+      return { ok: false, server: s, why: this.order.abort || 'the water did not come to the boil', trace: goal.trace.slice(-12) }
+    },
     async go_to ({ name, within = 2 }) { const o = actors[name]; if (!o) return { ok: false, why: 'no such person ' + name }; const p = o.bot.entity.position; return B.walk(this, p.x, p.z, +within) },
     async make ({ item, count = 1 }) {
       const goal = { failed: new Set(), trace: [] }; const id = resolveItem(this.bot, item)
@@ -416,19 +500,25 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
       return { ok, item: id.item, have: have(this.bot, id.item), also: id.also, gained: B.gainsBetween(before, itemsOf(this.bot)), trace: goal.trace.slice(-25) }
     },
     async gather ({ what, count = 1, radius = 32, x, y, z }) {
-      const bot = this.bot; const problems = []; const tried = new Set(); const total = {}
+      const bot = this.bot; const problems = []; const tried = new Set(); const total = {}; const went = new Set()
       if (x !== undefined) { const w = await B.work(this, new Vec3(+x, +y, +z)); if (w.ok) book.learnYield(w.block, w.gained); return w }
       let fails = 0
       for (let i = 0; i < Math.min(+count, 64) && fails < 6; i++) {
         if (this.order.abort) break
-        const found = B.byReach(bot, B.findBlocks(bot, what, +radius, 32).filter(f => !tried.has(f.slice(0, 3).join(','))).map(f => new Vec3(f[0], f[1], f[2])).filter(p => !B.floods(bot, p))).map(p => [p.x, p.y, p.z])
-        if (!found.length) { problems.push(`no more ${what} within ${radius} blocks`); break }
+        const found = B.byReach(bot, B.findBlocks(bot, what, +radius, 256).filter(f => !tried.has(f.slice(0, 3).join(','))).map(f => new Vec3(f[0], f[1], f[2])).filter(p => B.exposed(bot, p) && (B.GROUND.test(bot.blockAt(p).name) || !B.floods(bot, p)))).map(p => [p.x, p.y, p.z])
+        if (!found.length) {
+          // Told how far to look, or nothing remembered further off: done. Otherwise walk to where the team saw more.
+          const far = this.order.args.radius === undefined && went.size < 4 && knownSite(this, what, went)
+          if (!far) { problems.push(`no more ${what} within ${radius} blocks` + (went.size ? ` of the ${went.size} places the team had seen some` : '')); break }
+          went.add(far.p.join()); problems.push(`went to the ${far.block.replace(MOD, '')} seen at ${far.p.join(',')} (${round(far.d)} blocks)`)
+          await toSite(this, far); i--; continue
+        }
         const [fx, fy, fz] = found[0]; tried.add([fx, fy, fz].join(','))
         this.order.progress = `${what} ${i + 1}/${count} at ${fx},${fy},${fz}`
         const r = await B.work(this, new Vec3(fx, fy, fz))
         if (r.gained) for (const [k, v] of Object.entries(r.gained)) total[k] = (total[k] || 0) + v
         // Count down on the order itself, so that a paused gather taken up again goes on for what is left.
-        if (r.ok) { book.learnYield(r.block, r.gained); this.order.args.count = Math.max(0, (+this.order.args.count || 1) - 1) }
+        if (r.ok) { book.learnYield(r.block, r.gained); spentSite(r.block, new Vec3(fx, fy, fz)); this.order.args.count = Math.max(0, (+this.order.args.count || 1) - 1) }
         // One that cannot be reached or worked is passed over for the next nearest; it does not use up the count.
         else { problems.push(`${fx},${fy},${fz}: ${r.why || r.server || 'failed'}`); fails++; i-- }
       }
@@ -529,6 +619,22 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
     return { ok: false, why: `no item called ${name}` + (close.length ? '; did you mean ' + close.join(', ') : '') }
   }
 
+  // Bulk stuff that weighs a body down: earth, clay, stone, timber.
+  const BULK = /(^|:)(clay_ball|clay|loose_stone|seashell|dirt|coarse_dirt|sand|red_sand|gravel|cobblestone|stone|[a-z_]+_log|[a-z_]+_planks|limestone|granite|sandstone)$/
+  /** Too loaded to take up what is wanted (walking past a heap loads a body to its limit): put down the bulk stuff the
+   * errand is not after, largest heap first, keeping a few of each, until the load is light enough to work under. */
+  async function lighten (actor, keepItem, goal) {
+    const bot = actor.bot; let b; try { b = await B.readBody(actor) } catch { return false }
+    const was = b.carried; let left = b.carried
+    const heaps = Object.entries(itemsOf(bot)).filter(([n, c]) => BULK.test(n) && n !== norm(keepItem) && c > 4).sort((x, y) => y[1] - x[1])
+    for (const [name] of heaps) {
+      if (left <= 60 || (actor.order && actor.order.abort)) break
+      await shed(actor, name, 4, goal, null)
+      try { left = (await B.readBody(actor)).carried } catch { break }
+    }
+    if (left < was) goal.trace.push(`lightened the load from ${round(was)} to ${round(left)} kg to take up ${keepItem}`)
+    return left < was
+  }
   async function drink (actor, until) {
     const bot = actor.bot; const start = await B.readBody(actor)
     if (start.thirst >= until) return { ok: true, thirst: round(start.thirst), note: 'not thirsty' }
@@ -540,9 +646,10 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
       for (let i = 0; i < 4 && have(bot, cup); i++) { if ((await B.readBody(actor)).thirst >= until || !(await sip())) break; from = cup }
       if (sips) break
     }
-    // Then safe water: a carried pot.
-    for (const pot of bot.inventory.items().filter(i => /pot$/.test(i.name))) {
+    // Then safe water: a carried pot of boiled water. Untreated water in a pot is no safer than the lake it came from.
+    for (const pot of bot.inventory.items().filter(i => /fired_pot$/.test(i.name))) {
       if (!(await B.hold(actor, pot.name)).ok) continue
+      if (!/^Boiled/.test(B.firstLine(await B.command(actor, '/survival vessel status', 300)))) continue
       for (let i = 0; i < 8; i++) { if ((await B.readBody(actor)).thirst >= until || !(await sip())) break; from = pot.name }
       if (sips) break
     }
@@ -563,7 +670,7 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
         s = await toShore(actor)
       }
       if (!s.ok) return { ok: false, why: s.why, retryIn: 60 }
-      if (bot.heldItem && /pot$/.test(bot.heldItem.name)) bot.setQuickBarSlot((bot.quickBar + 1) % 9)
+      if (bot.heldItem && /pot$/.test(bot.heldItem.name)) bot.setQuickBarSlot(((bot.quickBarSlot || 0) + 1) % 9)
       for (let i = 0; i < 14; i++) { if (actor.order && actor.order.abort) break; if ((await B.readBody(actor)).thirst >= until || !(await sip())) break; from = 'open water at ' + s.at.join(',') }
       if (sips && !team.shores.some(k => k.join() === s.at.join())) { team.shores.push(s.at); if (team.shores.length > 8) team.shores.shift() }
     }
@@ -697,12 +804,12 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
       record({ bot: actor.name, done: run.task, by: run.by, result })
       if (run.resume) {
         // Paused, not finished: put it back at the head of the queue to take up again.
-        actor.queue.unshift({ task: run.task, args: run.args, by: run.by })
+        actor.queue.unshift({ task: run.task, args: run.args, by: run.by, resumed: true })
         actor.history.push({ ...entry, paused: run.abort })
       } else {
         actor.history.push(entry)
         if (run.by !== 'self') actor.last = entry
-        if (result.ok === false && run.by === 'commander' && actor.policy.onFail === 'stop' && actor.queue.length) { entry.droppedQueue = actor.queue.length; actor.queue = actor.queue.filter(q => q.by === 'self') }
+        if (result.ok === false && run.by === 'commander' && !run.superseded && actor.policy.onFail === 'stop' && actor.queue.length) { entry.droppedQueue = actor.queue.length; actor.queue = actor.queue.filter(q => q.by === 'self') }
       }
       if (run.care && run.drive) actor.retryAt[run.drive.replace('_critical', '')] = Date.now() + 1000 * ((result.ok === false && result.retryIn) || (result.ok === false ? 30 : 0))
       if (actor.history.length > 12) actor.history.splice(0, actor.history.length - 12)
@@ -724,6 +831,7 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
     const running = actor.order && actor.order.care ? actor.order.rank || 1 : 0
     const waiting = actor.pendingCare ? actor.pendingCare.rank || 1 : 0
     if (level <= running || level <= waiting) return false
+    if (actor.order && actor.order.hold && level < RANK.drink_critical) return false
     actor.pendingCare = { task, args, by: 'self', rank: level, drive }
     record({ bot: actor.name, self: task, drive, why })
     pause(actor, why)
@@ -817,13 +925,30 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
   }
 
   // ------------------------------------------------------------ the commander's handles
-  function order (actor, task, args, then) {
-    // A new order replaces the old one; self-care that is under way finishes first.
-    if (actor.order && !actor.order.care) { actor.order.abort = 'replaced by a new order'; actor.order.resume = false }
-    actor.queue = (then || []).map(o => ({ task: o.task, args: o.args || {}, by: 'commander' }))
+  // Orders that are no job of work: cutting them off wastes nothing.
+  const LIGHT = new Set(['wait', 'follow', 'go', 'go_to', 'go_home', 'pickup', 'command', 'say'])
+  const sameArgs = (a, b) => { const strip = o => JSON.stringify(Object.fromEntries(Object.entries(o || {}).filter(([k]) => k !== 'count').sort())); return strip(a) === strip(b) }
+  function order (actor, task, args, then, now = false) {
     if (!ORDERS[task]) return { ok: false, why: 'unknown task ' + task }
-    actor.queue.unshift({ task, args: args || {}, by: 'commander' })
-    return { ok: true, queued: actor.queue.length, note: actor.order ? 'starts as soon as the current step lets go' : undefined }
+    const steps = [{ task, args: args || {}, by: 'commander' }, ...(then || []).map(o => ({ task: o.task, args: o.args || {}, by: 'commander' }))]
+    // The job under way: the commander's running order, or one paused for self-care and waiting to be taken up again.
+    const run = actor.order && !actor.order.care ? actor.order : null
+    const paused = !run && actor.queue[0] && actor.queue[0].resumed ? actor.queue[0] : null
+    const job = run && run.by === 'commander' && !LIGHT.has(run.task) ? run : paused && !LIGHT.has(paused.task) ? paused : null
+    // The same order again while it is under way: it carries on, and the new steps follow it.
+    if (job && !now && job.task === task && sameArgs(job.args, args)) {
+      actor.queue = paused ? [paused, ...steps.slice(1)] : steps.slice(1); if (run) run.superseded = true
+      return { ok: true, queued: actor.queue.length, note: `already doing that (${task}); it carries on` + (steps.length > 1 ? ' and the further steps follow it' : '') }
+    }
+    if (job && !now) {
+      // A job half done is not thrown away: the new order waits for it. `now` cuts it off.
+      actor.queue = paused ? [paused, ...steps] : steps; if (run) run.superseded = true
+      const what = job.task + (job.args && job.args.item ? ' ' + String(job.args.item).replace(MOD, '') : '') + (run && run.progress ? ` (${String(run.progress).slice(0, 80)})` : '')
+      return { ok: true, queued: actor.queue.length, note: `waits until the ${what} under way is done; pass now: true to cut it off` }
+    }
+    if (run) { run.abort = 'replaced by a new order'; run.resume = false }
+    actor.queue = steps
+    return { ok: true, queued: actor.queue.length, note: run || actor.order ? 'starts as soon as the current step lets go' : undefined }
   }
   function setPolicy (actor, changes) {
     const p = { ...actor.policy }

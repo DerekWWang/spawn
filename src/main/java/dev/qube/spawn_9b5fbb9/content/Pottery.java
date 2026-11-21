@@ -60,7 +60,13 @@ public final class Pottery {
                 if(operation.equals("store")){ItemStack food=actor.getOffhandItem();if(!ItemAging.isFood(food)||food.has(DataComponents.CONTAINER))return "Hold unpackaged food in your offhand.";if(items.size()>=capacity(pot))return "Pot is full.";ItemAging.update(food,level,1);items.add(food.copy());food.setCount(0);pot.set(DataComponents.CONTAINER,ItemContainerContents.fromItems(items));wear(pot,1,actor);return "Food stored; use a lid to preserve it.";}
                 if(items.isEmpty())return "Pot is empty.";ItemStack out=items.removeLast();pot.set(DataComponents.CONTAINER,ItemContainerContents.fromItems(items));SurvivalApi.give(actor,out);wear(pot,1,actor);return "Retrieved food; pot remains open.";
             }
-            default -> {return "Vessel actions: fill, boil, seal, store, retrieve.";}
+            case "status" -> {
+                int water=waterUnits(pot);if(sealed)return "Sealed pot.";if(water<=0)return contentsEmpty(pot)?"Empty pot.":"Pot holds stored food.";
+                if(safeWater(pot))return "Boiled water: "+water+"/"+capacity(pot)+" portions, safe to drink.";
+                if(tag.getBooleanOr("boiling",false))return "Boiling: "+tag.getLongOr("boilProgress",0)+"/1000 ticks; untreated water: "+water+"/"+capacity(pot)+" portions.";
+                return "Untreated water: "+water+"/"+capacity(pot)+" portions; boil it before drinking.";
+            }
+            default -> {return "Vessel actions: fill, boil, status, seal, store, retrieve.";}
         }
     }
     private static void use(PlayerInteractEvent.RightClickBlock event){if(event.getEntity().isSpectator())return;

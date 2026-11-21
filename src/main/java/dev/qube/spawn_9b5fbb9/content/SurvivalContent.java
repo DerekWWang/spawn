@@ -117,6 +117,7 @@ public final class SurvivalContent {
         TESTS.register("content_juvenile_feeding",()->ContentGameTests::juvenileFeeding);
         TESTS.register("content_controller_vessels",()->ContentGameTests::controllerVessels);
         TESTS.register("content_npc_boiling",()->ContentGameTests::npcBoiling);
+        TESTS.register("content_strand_stones",()->ContentGameTests::strandStones);
         TESTS.register("content_slow_harvest",()->ContentGameTests::slowHarvest);
         TESTS.register("content_repeat_fruit",()->ContentGameTests::repeatFruit);
         TESTS.register("content_daily_eggs",()->ContentGameTests::dailyEggs);

@@ -41,7 +41,7 @@ public final class SurvivalCommands {
                     SurvivalApi.save(actor,body);return skills(c.getSource(),actor);
                 }))))));
         dispatcher.register(literal("survival")
-            .then(literal("vessel").then(argument("operation",StringArgumentType.word()).suggests((c,b)->SharedSuggestionProvider.suggest(new String[]{"fill","boil","seal","store","retrieve"},b))
+            .then(literal("vessel").then(argument("operation",StringArgumentType.word()).suggests((c,b)->SharedSuggestionProvider.suggest(new String[]{"fill","boil","status","seal","store","retrieve"},b))
                 .executes(c->vessel(c.getSource(),c.getSource().getPlayerOrException(),StringArgumentType.getString(c,"operation")))))
             .then(literal("recipes").executes(c->{c.getSource().sendSuccess(()->Component.literal(String.join(", ",dev.qube.spawn_9b5fbb9.content.Production.RECIPES.keySet())),false);return 1;}))
             .then(literal("produce").then(argument("recipe",StringArgumentType.word()).suggests((c,b)->SharedSuggestionProvider.suggest(dev.qube.spawn_9b5fbb9.content.Production.RECIPES.keySet(),b))

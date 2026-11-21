@@ -155,12 +155,14 @@ public final class NaturalResourceGeneration {
                 if(!below.isFaceSturdy(world,pos.below(),Direction.UP))continue;
                 // The strandline: only columns the field picks are looked at, so the biome and the water are read for a few in a hundred.
                 boolean beach=below.is(Blocks.SAND)||below.is(Blocks.GRAVEL)||below.is(Blocks.CLAY)||below.is(Blocks.RED_SAND);
-                if((beach||soil(below))&&ResourceFields.shoreCandidate(seed,x,z,beach)&&shoreline(world,pos)){
+                boolean strand=(beach||soil(below))&&ResourceFields.strandStone(seed,x,z,beach);
+                if((beach||soil(below))&&(strand||ResourceFields.shoreCandidate(seed,x,z,beach))&&shoreline(world,pos)){
                     var biome=world.getBiome(pos);boolean sea=biome.is(BiomeTags.IS_BEACH)||biome.is(BiomeTags.IS_OCEAN)||biome.is(BiomeTags.IS_DEEP_OCEAN);float temperature=biome.value().getBaseTemperature();
                     boolean warm=temperature>=.6;
                     if(WorldEnvironment.active(world.getLevel()))warm=EnvironmentModel.baseline(TerrainSampling.sample(world,generator,x,z))>=18;
                     var find=ResourceFields.shore(seed,x,z,beach,sea,warm);
                     if(find!=ResourceFields.Shore.NONE){placed|=world.setBlock(pos,SurvivalContent.FORAGE.get(source(find)).get().defaultBlockState(),2);continue;}
+                    if(strand){placed|=world.setBlock(pos,SurvivalContent.LOOSE_STONES.get().defaultBlockState(),2);continue;}
                 }
                 boolean rocky=stone(below)||below.is(Blocks.GRAVEL)||below.is(Blocks.SANDSTONE);
                 if(ResourceFields.looseStone(seed,x,z,rocky))placed|=world.setBlock(pos,SurvivalContent.LOOSE_STONES.get().defaultBlockState(),2);

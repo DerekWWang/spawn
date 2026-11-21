@@ -173,6 +173,10 @@ Hold a fired pot in your main hand:
 
 - `/survival vessel fill`: collect nearby untreated surface water.
 - `/survival vessel boil`: begin boiling beside lit heat; remain nearby holding it.
+  Boiling takes 1,000 ticks within four blocks of the fire; stepping away or letting
+  the fire go out starts it again.
+- `/survival vessel status`: what the held pot holds: empty, untreated or boiled
+  water and how many portions, or how far its boiling has got.
 - `/survival vessel store`: move unpackaged offhand food into the pot.
 - `/survival vessel retrieve`: retrieve food, opening the pot when necessary.
 - `/survival vessel seal`: consume an offhand lid to seal, or recover the lid when opening.
@@ -371,7 +375,10 @@ progression is disabled.
 Surface plants grow in coherent, habitat-limited stands rather than scattered
 mixed seed piles. Rice needs warm wet ground, brambles belong to woodland, and
 open-ground crops need exposed suitable soil. Apple trees form small groves.
-Ordinary soil has very little loose stone; exposed rock has more.
+Ordinary soil has very little loose stone; exposed rock has more, and so does the
+waterline: waves and shore ice wash cobbles out of a bank and leave them lying,
+about one column in twenty along a sand or gravel beach and one in eighty along a
+grassy shore.
 
 Copper (malachite), tin (cassiterite), iron (hematite), and coal form finite
 regional deposits, with rock hosts, mineral grades and barren layers. Granite,

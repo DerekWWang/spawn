@@ -201,12 +201,12 @@ const LOOKS = {
 }
 const handlers = {
   async team () {
-    return { world: world(), actors: NAMES.map(n => actors[n] ? summary(actors[n]) : { name: n, missing: true }), shared: { stations: crew.team.stations, avoid: Object.fromEntries(crew.team.avoid), water: crew.team.water || undefined, season: crew.team.season ? ['spring', 'summer', 'autumn', 'winter'][crew.team.season.value] : undefined, foodSeen: [...new Set([...crew.team.food.values()].map(f => f.block))] }, ...news() }
+    return { world: world(), actors: NAMES.map(n => actors[n] ? summary(actors[n]) : { name: n, missing: true }), shared: { stations: crew.team.stations, avoid: Object.fromEntries(crew.team.avoid), water: crew.team.water || undefined, season: crew.team.season ? ['spring', 'summer', 'autumn', 'winter'][crew.team.season.value] : undefined, foodSeen: [...new Set([...crew.team.food.values()].map(f => f.block))], sitesSeen: Object.fromEntries([...crew.team.finds].map(([k, m]) => [k.replace(/^spawn_9b5fbb9:/, ''), m.size])) }, ...news() }
   },
-  async order ({ actor: name, task, args, then }) {
+  async order ({ actor: name, task, args, then, now }) {
     const a = actors[name]; if (!a) throw new Error('no person ' + name)
     if (a.dead) return { ok: false, why: name + ' is dead' }
-    return crew.order(a, task, args, then)
+    return crew.order(a, task, args, then, !!now)
   },
   async cancel ({ actor: name }) {
     const a = actors[name]; if (!a) throw new Error('no person ' + name)

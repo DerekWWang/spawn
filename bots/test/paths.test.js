@@ -142,3 +142,20 @@ test('a one-block pit two deep has no walking way out (climbOut is what gets a b
   assert.equal(route.partial, true)
   assert.equal(route.cells.length, 1)
 })
+
+test('a step down under a low bough is not taken blind: the bough is named to push aside, or a wall is gone round', () => {
+  // A ledge one block up (y 64 to 66 of dirt at x 0..3), the walk going east and dropping to the floor at x 4,
+  // with leaves at the old head height over the first cell below the drop (the shape that stopped Ada west of camp).
+  const ledge = []
+  for (let x = 0; x <= 3; x++) for (let z = 0; z < 6; z++) ledge.push([x, 64, z, 'dirt'])
+  const bough = [...ledge]; for (let z = 0; z < 6; z++) bough.push([4, 66, z, 'oak_leaves'])
+  const under = B.findPath(world(8, bough, [2, 65, 2]), { x: 6, z: 2 }, 0)
+  assert.equal(under.partial, false)
+  const drop = under.cells.find(c => c.x === 4)
+  assert.ok(drop && drop.y === 64 && drop.clear && drop.clear.some(([x, y]) => x === 4 && y === 66), 'the leaves at the old head height are listed to break: ' + JSON.stringify(drop))
+  // A beam of solid wood there instead, with a gap at z 5: the route goes round by the gap.
+  const beam = [...ledge]; for (let z = 0; z < 5; z++) beam.push([4, 66, z, 'oak_log'])
+  const round = B.findPath(world(8, beam, [2, 65, 2]), { x: 6, z: 2 }, 0)
+  assert.equal(round.partial, false)
+  assert.ok(round.cells.filter(c => c.x === 4).every(c => c.z === 5), 'drops down only where the head is clear: ' + JSON.stringify(round.cells.map(c => [c.x, c.y, c.z])))
+})

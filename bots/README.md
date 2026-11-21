@@ -251,7 +251,7 @@ whichever build is running.
 
 | Template | Spawn | What is there |
 | --- | --- | --- |
-| `forest-lake` (seed 20261118) | 42 64 -54 | A sand beach on the north shore of a freshwater lake, with jungle and oak woodland behind it (about 60 trunks within 48 blocks), fallen sticks 6 blocks away, loose stones within 20, wild melons 38 blocks east and a chicken on the beach. Pigs, sheep and shallow clay banks are on the plains across the lake. Spring day 1, morning, clear, 18 °C. |
+| `forest-lake` (seed 20261118) | 42 64 -54 | A sand beach on the north shore of a freshwater lake, with jungle and oak woodland behind it (about 60 trunks within 48 blocks), fallen sticks 4 blocks away, loose stones on the beach 4 blocks away (35 piles within 64), wild melons about 140 blocks off and a chicken on the beach. Pigs, sheep and shallow clay banks are on the plains across the lake. Spring day 1, morning, clear, 18 °C. |
 
 Drinking straight from the lake works but poisons 18% of the time; boiled water from a fired pot is safe.
 

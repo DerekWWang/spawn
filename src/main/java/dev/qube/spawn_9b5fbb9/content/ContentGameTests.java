@@ -193,9 +193,21 @@ public final class ContentGameTests {
     public static void npcBoiling(GameTestHelper h){
         var actor=h.spawn(EntityTypes.VILLAGER,new BlockPos(1,2,1));SurvivalApi.enroll(actor);ItemStack pot=new ItemStack(SurvivalContent.item("fired_pot"));var data=ItemAging.data(pot);data.putInt("water",4);ItemAging.data(pot,data);actor.setItemInHand(InteractionHand.MAIN_HAND,pot);
         BlockPos fire=h.absolutePos(new BlockPos(1,1,2));h.getLevel().setBlock(fire,Blocks.CAMPFIRE.defaultBlockState().setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.LIT,false),3);
+        h.assertTrue(Pottery.action(actor,"status").startsWith("Untreated water: 4/"),"A filled pot says its water is untreated: "+Pottery.action(actor,"status"));
         h.assertTrue(Pottery.action(actor,"boil").contains("lit fire"),"Unlit campfires cannot boil water");h.getLevel().setBlock(fire,Blocks.CAMPFIRE.defaultBlockState(),3);Pottery.action(actor,"boil");
-        for(int i=0;i<49;i++)NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(actor));h.assertFalse(Pottery.safeWater(pot),"NPC water cannot become safe before complete boiling");NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(actor));h.assertTrue(Pottery.safeWater(pot),"NPC holding water at lit heat must boil it after1000ticks");
+        for(int i=0;i<49;i++)NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(actor));h.assertFalse(Pottery.safeWater(pot),"NPC water cannot become safe before complete boiling");
+        h.assertTrue(Pottery.action(actor,"status").startsWith("Boiling: 980/1000"),"A pot on the boil says how far it has gone: "+Pottery.action(actor,"status"));
+        NeoForge.EVENT_BUS.post(new EntityTickEvent.Post(actor));h.assertTrue(Pottery.safeWater(pot),"NPC holding water at lit heat must boil it after1000ticks");
+        h.assertTrue(Pottery.action(actor,"status").startsWith("Boiled water: 4/"),"A boiled pot says it is safe: "+Pottery.action(actor,"status"));
         var tag=ItemAging.data(pot);tag.putBoolean("sealed",true);ItemAging.data(pot,tag);h.assertFalse(Pottery.consumeWater(pot),"Sealed vessels cannot be drunk or drained");h.assertTrue(Pottery.waterUnits(pot)==4,"Rejected sealed drainage must preserve quantity");h.succeed();
+    }
+    /** Cobbles lie along a beach's waterline far more often than on a grassy bank, and both far more than on the forest floor. */
+    public static void strandStones(GameTestHelper h){
+        int beach=0,bank=0,floor=0;
+        for(int x=0;x<200;x++)for(int z=0;z<200;z++){long seed=20261118L;if(dev.qube.spawn_9b5fbb9.world.ResourceFields.strandStone(seed,x,z,true))beach++;if(dev.qube.spawn_9b5fbb9.world.ResourceFields.strandStone(seed,x,z,false))bank++;if(dev.qube.spawn_9b5fbb9.world.ResourceFields.looseStone(seed,x,z,false))floor++;}
+        h.assertTrue(beach>1700&&beach<2300,"About one beach column in twenty: "+beach+" of 40000");
+        h.assertTrue(bank>380&&bank<620&&floor<bank/5,"About one grassy shore column in eighty, and the forest floor far fewer: "+bank+", "+floor);
+        h.succeed();
     }
     public static void preservation(GameTestHelper h){
         long now=SurvivalApi.calendar(h.getLevel());ItemStack exposed=new ItemStack(Items.BEEF);var age=ItemAging.data(exposed);age.putLong("freshTick",now-24000);ItemAging.data(exposed,age);

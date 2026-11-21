@@ -125,7 +125,15 @@ function findPath (bot, goal, within = 1, limit = 9000) {
   const stand = (x, z, nearY) => {
     const k = ((x + 33000) * 66000 + (z + 33000)) * 512 + (nearY + 128); const known = memo.get(k); if (known !== undefined) return known
     let best = null
-    for (let y = nearY + 1; y >= nearY - 3; y--) { const f = foot(x, y, z); if (f && (!best || f.extra < best.extra)) { best = { y, extra: f.extra, clear: f.clear }; if (!f.extra) break } }
+    for (let y = nearY + 1; y >= nearY - 3; y--) {
+      const f = foot(x, y, z); if (!f) continue
+      // A step down is walked at the old height before the drop: the cells over the new footing up to the old head must
+      // be open (or leaves, pushed aside), or the body walks into them and stops.
+      let extra = f.extra; let clear = f.clear; let shut = false
+      for (let yy = y + 2; yy <= nearY + 1; yy++) { const v = kind(x, yy, z); if (open1(v)) continue; if (v !== 3) { shut = true; break } extra += 4; clear = [...clear, [x, yy, z]] }
+      if (shut) continue
+      if (!best || extra < best.extra) { best = { y, extra, clear }; if (!extra) break }
+    }
     memo.set(k, best); return best
   }
   // The open cells, kept as a heap with the most promising on top.
@@ -392,7 +400,9 @@ function bodySummary (b) {
 async function pickup (actor, r = 5, center) {
   const bot = actor.bot; const c = center || bot.entity.position.clone(); let visited = 0
   for (let round = 0; round < 3; round++) {
-    const drops = Object.values(bot.entities).filter(e => e.name === 'item' && e.position.distanceTo(c) <= r)
+    // Not what this body put down itself as too heavy to carry: walking over to it would only take the load up again.
+    const leftHere = e => { const it = e.getDroppedItem && e.getDroppedItem(); return !!it && (actor.putDown || []).some(q => q.item === it.name && Date.now() - q.at < 600000 && e.position.distanceTo(q.p) < 5) }
+    const drops = Object.values(bot.entities).filter(e => e.name === 'item' && e.position.distanceTo(c) <= r && !leftHere(e))
     if (!drops.length) break
     for (const drop of drops) {
       if (actor.order && actor.order.abort) return visited
@@ -521,13 +531,14 @@ function byReach (bot, positions) {
 }
 /** One sweep of the land around the feet: the nearest block of every kind, for planning without a scan per kind. */
 function scanIndex (bot, r = 40, down = 14, up = 14) {
-  const o = bot.entity.position.floored(); const index = new Map()
+  const o = bot.entity.position.floored(); const index = new Map(); const sites = []; index.sites = sites
   for (let dx = -r; dx <= r; dx++) {
     for (let dz = -r; dz <= r; dz++) {
       const flat = Math.hypot(dx, dz); if (flat > r) continue
       for (let dy = -down; dy <= up; dy++) {
         let b; try { b = bot.blockAt(o.offset(dx, dy, dz), false) } catch { b = null }
         if (!b || b.name === 'air' || b.name === 'cave_air') continue
+        if (GROUND.test(b.name) && sites.length < 400) sites.push({ block: b.name, p: [o.x + dx, o.y + dy, o.z + dz] })
         const d = Math.hypot(flat, dy); const seen = index.get(b.name)
         if (!seen || d < seen.d) index.set(b.name, { d, p: [o.x + dx, o.y + dy, o.z + dz] })
       }
@@ -537,6 +548,12 @@ function scanIndex (bot, r = 40, down = 14, up = 14) {
 }
 /** Whoever wants to hear of every sweep (the crew, to remember food it has seen). */
 const onScan = { hook: null }
+/** Can a hand get at this block: is there open air (not water) above it or beside it? A block walled in by others, or
+ * lying under a lake, is not to be had without digging or diving to it. */
+function exposed (bot, p) {
+  for (const [dx, dy, dz] of [[0, 1, 0], [1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1]]) { const b = bot.blockAt(p.offset(dx, dy, dz)); if (b && passable(b) && !isWater(b)) return true }
+  return false
+}
 /** Would taking this block let water in? A block with water beside or above it is not dug. */
 function floods (bot, p) {
   for (const [dx, dy, dz] of [[1, 0, 0], [-1, 0, 0], [0, 0, 1], [0, 0, -1], [0, 1, 0]]) if (isWater(bot.blockAt(p.offset(dx, dy, dz)))) return true
@@ -560,4 +577,4 @@ async function resync (actor) {
   if (!bot._syncWindow || !bot.inventory) return false
   try { await Promise.race([bot._syncWindow(bot.inventory), sleep(2500)]); actor.syncedAt = Date.now(); return true } catch { return false }
 }
-module.exports = { climbOut, unwedge, clearOverhead, comeBack, footing, climbable, clearWay, onScan, floods, inland, resync, byReach, scanIndex, nearIndex,  started, firstLine, inReach, GROUND, Vec3, sleep, full, round, pos, MOD, itemsOf, isWater, passable, solid, water, surface, findBlocks, nearby, standable, groundAt, findPath, steer, walk, settle, openAbove, drinkable, nearestDry, leaveWater, command, commandJson, job, finishJob, readBody, bodySummary, pickup, approach, gainsBetween, work, place, hold, mineable }
+module.exports = { exposed, climbOut, unwedge, clearOverhead, comeBack, footing, climbable, clearWay, onScan, floods, inland, resync, byReach, scanIndex, nearIndex,  started, firstLine, inReach, GROUND, Vec3, sleep, full, round, pos, MOD, itemsOf, isWater, passable, solid, water, surface, findBlocks, nearby, standable, groundAt, findPath, steer, walk, settle, openAbove, drinkable, nearestDry, leaveWater, command, commandJson, job, finishJob, readBody, bodySummary, pickup, approach, gainsBetween, work, place, hold, mineable }
