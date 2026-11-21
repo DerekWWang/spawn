@@ -90,6 +90,9 @@ public final class SurvivalApi {
             }
             case "drink" -> {
                 if(state.thirst>=99)return fail("Already hydrated");
+                String cup=BuiltInRegistries.ITEM.getKey(held.getItem()).toString();
+                // Tea and coffee are boiled water: they slake thirst without the risk of the stream, and a cup is a break from work.
+                if(cup.equals("spawn_9b5fbb9:tea")||cup.equals("spawn_9b5fbb9:coffee")){held.shrink(1);state.drink(20);contamination(actor,state,true);state.recreationTicks=Math.min(state.quotaTicks,state.recreationTicks+300);save(actor,state);syncFood(actor,state);return new ActionResult(true,"Drank a cup of "+cup.substring(14));}
                 if(Pottery.waterUnits(held)>0){boolean safe=Pottery.safeWater(held);if(!Pottery.consumeWater(held))return fail("Open the pot before drinking");state.drink(25);contamination(actor,state,safe);}
                 else if(held.is(Items.POTION)&&isWater(held)){
                     held.shrink(1);give(actor,new ItemStack(Items.GLASS_BOTTLE));state.drink(25);contamination(actor,state,false);

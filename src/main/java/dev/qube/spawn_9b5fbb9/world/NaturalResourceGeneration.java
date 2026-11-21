@@ -65,6 +65,20 @@ public final class NaturalResourceGeneration {
         return false;
     }
     public static String source(ResourceFields.Herb herb){return "wild_"+herb.name().toLowerCase(java.util.Locale.ROOT);}
+    public static String source(ResourceFields.Forage forage){return "wild_"+forage.name().toLowerCase(java.util.Locale.ROOT);}
+    /** Where a forage plant grows wild: in the open, on soil, in the climate {@link ResourceFields#forageClimate} gives it. */
+    public static boolean habitat(WorldGenLevel world,BlockPos pos,ResourceFields.Forage forage){
+        if(!world.isEmptyBlock(pos)||!soil(world.getBlockState(pos.below())))return false;
+        if(world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,pos.getX(),pos.getZ())>pos.getY())return false;
+        var biome=world.getBiome(pos);float temperature=biome.value().getBaseTemperature();
+        boolean jungle=biome.is(BiomeTags.IS_JUNGLE),taiga=biome.is(BiomeTags.IS_TAIGA),wood=biome.is(BiomeTags.IS_FOREST)||taiga||jungle,wet=nearWater(world,pos);
+        double c=temperature<.3?4:temperature<.65?10:temperature<.9?15:temperature<1.5?25:28;
+        if(WorldEnvironment.active(world.getLevel())){
+            var terrain=TerrainSampling.sample(world,world.getLevel().getChunkSource().getGenerator(),pos.getX(),pos.getZ());c=EnvironmentModel.baseline(terrain);
+            if(terrain.relief()>45||terrain.humidity()<(forage==ResourceFields.Forage.PEAS?.15:.3))return false;
+        }
+        return ResourceFields.forageClimate(forage,c,wood,wet,jungle,taiga);
+    }
     public static String source(ResourceFields.Shore shore){return switch(shore){case SHELLS->"seashells";case MUREX->"murex_shells";case PEARL->"pearl_oysters";default->"";};}
     /** Where a dye or medicine plant grows wild. Each belongs to a climate, so no one place has them all. */
     public static boolean habitat(WorldGenLevel world,BlockPos pos,ResourceFields.Herb herb){
@@ -127,6 +141,10 @@ public final class NaturalResourceGeneration {
             for(var patch:ResourceFields.surfacePatches(seed,cx,cz))for(var point:ResourceFields.patchPositions(patch)){
                 if(!own(point.x(),point.z(),cx,cz))continue;var pos=ground(world,point.x(),point.z());
                 if(habitat(world,pos,patch.plant()))placed|=world.setBlock(pos,SurvivalContent.FORAGE.get(source(patch)).get().defaultBlockState(),2);
+            }
+            for(var patch:ResourceFields.foragePatches(seed,cx,cz))for(var point:ResourceFields.patchPositions(patch)){
+                if(!own(point.x(),point.z(),cx,cz))continue;var pos=ground(world,point.x(),point.z());
+                if(habitat(world,pos,patch.forage()))placed|=world.setBlock(pos,SurvivalContent.FORAGE.get(source(patch.forage())).get().defaultBlockState(),2);
             }
             for(var patch:ResourceFields.herbPatches(seed,cx,cz))for(var point:ResourceFields.patchPositions(patch)){
                 if(!own(point.x(),point.z(),cx,cz))continue;var pos=ground(world,point.x(),point.z());

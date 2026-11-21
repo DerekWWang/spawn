@@ -96,6 +96,30 @@ public final class ResourceFields {
         return List.copyOf(result);
     }
     public static List<Point> patchPositions(HerbPatch patch){return patchPositions(new Patch(patch.x,patch.z,patch.radius,patch.count,Plant.FIBER,patch.salt));}
+    /** Spring greens and pulses, and the wild coffee and tea that cultivation begins from: one candidate stand to a 32-block cell. */
+    public enum Forage { GARLIC, PEAS, COFFEE, TEA }
+    public record ForagePatch(int x,int z,int radius,int count,Forage forage,long salt){}
+    public static List<ForagePatch> foragePatches(long seed,int chunkX,int chunkZ){
+        var result=new ArrayList<ForagePatch>();int cellX=Math.floorDiv(chunkX,2),cellZ=Math.floorDiv(chunkZ,2);long minX=(long)chunkX*16,minZ=(long)chunkZ*16;
+        for(int cx=cellX-1;cx<=cellX+1;cx++)for(int cz=cellZ-1;cz<=cellZ+1;cz++){
+            long salt=hash(seed,cx,cz,223);int x=cx*32+number(salt,32),z=cz*32+number(hash(salt,0,0,2),32),radius=2+number(hash(salt,0,0,3),3);
+            if(x+radius<minX||x-radius>minX+15||z+radius<minZ||z-radius>minZ+15)continue;
+            result.add(new ForagePatch(x,z,radius,4+number(hash(salt,0,0,4),5),Forage.values()[number(hash(salt,0,0,5),Forage.values().length)],salt));
+        }
+        return List.copyOf(result);
+    }
+    public static List<Point> patchPositions(ForagePatch patch){return patchPositions(new Patch(patch.x,patch.z,patch.radius,patch.count,Plant.FIBER,patch.salt));}
+    /** The climate each wild forage plant lives in. {@code c} is the mean air temperature in degrees C.
+     * Ramsons carpet damp temperate broadleaf woods; wild peas grow in open warm-temperate grass and scrub; wild arabica is a
+     * shrub of the tropical forest understory; tea is a plant of warm, wet hill forest from the subtropics into the tropics. */
+    public static boolean forageClimate(Forage forage,double c,boolean wood,boolean wet,boolean jungle,boolean taiga){
+        return switch(forage){
+            case GARLIC->wood&&!jungle&&!taiga&&c>=5&&c<=16;
+            case PEAS->!wood&&c>=8&&c<=22;
+            case COFFEE->jungle&&c>=18;
+            case TEA->wood&&!taiga&&(wet||jungle)&&c>=13&&c<=28;
+        };
+    }
     /** What the strandline carries. Shells lie on any shore; the dye whelk and the pearl oyster need a warm sea. */
     public enum Shore { NONE, SHELLS, MUREX, PEARL }
     public static Shore shore(long seed,int x,int z,boolean beach,boolean sea,boolean warm){

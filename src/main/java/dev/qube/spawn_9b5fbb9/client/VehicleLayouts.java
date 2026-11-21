@@ -9,6 +9,7 @@ public final class VehicleLayouts {
     public record Rod(String model,float x,float z,float axle,float crank,float phase){}
     public record Layout(float[] centres,Wheel[] wheels,Rod[] rods){}
     public static final Map<String,Layout> LAYOUTS=Map.ofEntries(
+        Map.entry("plough",new Layout(new float[]{0.030f},new Wheel[]{},new Rod[]{})),
         Map.entry("cart",new Layout(new float[]{0.675f},new Wheel[]{new Wheel("wheel_spoked",0.860f,0.000f,0.650f),new Wheel("wheel_spoked",-0.860f,0.000f,0.650f)},new Rod[]{})),
         Map.entry("wagon",new Layout(new float[]{-0.620f,2.260f},new Wheel[]{new Wheel("wheel_spoked",0.920f,1.350f,0.500f),new Wheel("wheel_spoked",-0.920f,1.350f,0.500f),new Wheel("wheel_spoked",0.920f,-1.350f,0.660f),new Wheel("wheel_spoked",-0.920f,-1.350f,0.660f)},new Rod[]{})),
         Map.entry("chariot",new Layout(new float[]{0.990f},new Wheel[]{new Wheel("wheel_spoked",0.820f,-0.200f,0.550f),new Wheel("wheel_spoked",-0.820f,-0.200f,0.550f)},new Rod[]{})),

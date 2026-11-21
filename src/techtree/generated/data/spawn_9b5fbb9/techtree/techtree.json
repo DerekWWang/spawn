@@ -3010,7 +3010,8 @@
       ],
       "usedBy": 0,
       "stack": 64,
-      "shape": "device"
+      "shape": "device",
+      "survival": true
     },
     {
       "id": "screw_press",

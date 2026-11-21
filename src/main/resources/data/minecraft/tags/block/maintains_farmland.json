@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "spawn_9b5fbb9:rice_crop",
+    "spawn_9b5fbb9:maize_crop",
+    "spawn_9b5fbb9:fiber_crop",
+    "spawn_9b5fbb9:medicinal_crop",
+    "spawn_9b5fbb9:flax_crop",
+    "spawn_9b5fbb9:yarrow_crop",
+    "spawn_9b5fbb9:bramble_crop",
+    "spawn_9b5fbb9:pea_crop"
+  ]
+}

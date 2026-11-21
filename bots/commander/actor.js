@@ -504,7 +504,13 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
     if (start.thirst >= until) return { ok: true, thirst: round(start.thirst), note: 'not thirsty' }
     let reply = ''; let sips = 0; let from = null
     const sip = async () => { reply = await B.command(actor, '/survival act drink', 300); const ok = !/Need|Already|cannot|Open|dead/i.test(B.firstLine(reply)); if (ok) sips++; return ok }
-    // Safe water first: a carried pot.
+    // A cup of tea or coffee first: it is boiled water, and a break from work.
+    for (const cup of [MOD + 'tea', MOD + 'coffee']) {
+      if (!have(bot, cup) || !(await B.hold(actor, cup)).ok) continue
+      for (let i = 0; i < 4 && have(bot, cup); i++) { if ((await B.readBody(actor)).thirst >= until || !(await sip())) break; from = cup }
+      if (sips) break
+    }
+    // Then safe water: a carried pot.
     for (const pot of bot.inventory.items().filter(i => /pot$/.test(i.name))) {
       if (!(await B.hold(actor, pot.name)).ok) continue
       for (let i = 0; i < 8; i++) { if ((await B.readBody(actor)).thirst >= until || !(await sip())) break; from = pot.name }
@@ -565,7 +571,7 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
     return { ok: after.hunger > start.hunger, eaten, hunger: [round(start.hunger), round(after.hunger)], conditions: after.conditions }
   }
   // What a hungry person looks for, cheapest first; the planner finds where and how (gather, harvest, craft, cook).
-  const FORAGE = ['apple', 'carrot', 'potato', 'melon_slice', 'sweet_berries', MOD + 'blackberries', 'beetroot', 'bread', 'mushroom_stew', MOD + 'maize', 'cooked_beef', 'cooked_porkchop', 'cooked_mutton', 'cooked_chicken', 'cooked_cod', 'cooked_salmon']
+  const FORAGE = [MOD + 'peas', MOD + 'ramsons', 'apple', 'carrot', 'potato', 'melon_slice', 'sweet_berries', MOD + 'blackberries', 'beetroot', 'bread', 'mushroom_stew', MOD + 'maize', 'cooked_beef', 'cooked_porkchop', 'cooked_mutton', 'cooked_chicken', 'cooked_cod', 'cooked_salmon']
   const RAW_MEAT = PREY_TABLE.map(([, out]) => Object.keys(out)[0])
   async function season (actor) {
     if (team.season && Date.now() - team.season.at < 180000) return team.season.value
@@ -588,7 +594,8 @@ function createCrew ({ actors, alert, record, book, waiters, memory }) {
       const options = menu.map(f => ({ f, c: (rank(book, f, 1, view, goal.failed)[0] || { cost: Infinity }).cost })).filter(o => o.c < Infinity).sort((x, y) => x.c - y.c)
       for (const { f } of options.slice(0, 3)) {
         if (actor.order && actor.order.abort) return false
-        if (await makeItem(actor, f, 2, goal, 1)) return true
+        // Two of a food when there is time; one, the nearest meal, when the body is running out.
+        if (await makeItem(actor, f, b.hunger < CRITICAL + 10 ? 1 : 2, goal, 1)) return true
       }
       return foodsHeld(actor, b.hunger).length > 0
     }

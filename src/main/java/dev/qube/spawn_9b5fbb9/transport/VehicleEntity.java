@@ -84,6 +84,8 @@ public class VehicleEntity extends Entity {
             case "cart"->{up=1.0;forward=.75;}
             case "wagon"->{side=index==0?-.4:.4;up=1.7;forward=1.7;}
             case "chariot"->{side=index==0?-.25:.25;up=.7;forward=index==0?.05:-.3;}
+            // The ploughman walks between the handles behind the share.
+            case "plough"->{up=.05;forward=-spec().length()/2-.35;}
             case "motor_truck"->{side=index==0?-.45:.45;up=1.28;forward=.7;}
             case "locomotive"->{side=index==0?-.55:.55;up=1.18;forward=-1.5;}
             case "rail_carriage"->{side=index%2==0?-.6:.6;up=1.1;forward=2.1-1.4*(index/2);}
@@ -146,6 +148,8 @@ public class VehicleEntity extends Entity {
         else if(below.is(BlockTags.DIRT))factor=.7;
         else factor=.6;
         if(factor<1&&level.isRainingAt(blockPosition().above()))factor*=.8;
+        // A share in the ground is the heaviest draught there is: the team leans into it at a slow walk.
+        if(spec.id().equals("plough")&&share)factor*=.6;
         if(isInWater())factor*=.25;
         // Heavy lorries and racing chariots suffer most off the road.
         if(spec.kind()==Kind.MOTOR||spec.id().equals("chariot"))factor*=factor;
@@ -185,7 +189,29 @@ public class VehicleEntity extends Entity {
             while(fuelBurn<=0){if(Ledger.take(cargo,"spawn_9b5fbb9:petrol",1)>0)fuelBurn+=3000;else if(Ledger.take(cargo,"spawn_9b5fbb9:fuel_alcohol",1)>0)fuelBurn+=2000;else{fuelBurn=0;velocity=0;break;}}
         }
         if(travelled>0)lubricate(level,travelled);
+        if(travelled>0&&velocity>0&&share&&spec.id().equals("plough"))plough(level,heading,driver);
         positionTeam(level,spec,heading);
+    }
+    /** Whether the share is in the ground, and how many blocks of furrow it has turned. */
+    public boolean share;public long ploughed;
+    /** Turns the ground under the share to tilled farmland. Broken ground cuts behind one horse; standing turf, with its mat of
+     * roots, only behind two. Grass and weeds on it are turned under; a sown crop or anything solid is passed over. */
+    private void plough(ServerLevel level,Vec3 heading,Entity driver){
+        Vec3 at=position().subtract(heading.scale(.5));BlockPos soil=BlockPos.containing(at.x,getY()-.2,at.z),above=soil.above();
+        var ground=level.getBlockState(soil);var cover=level.getBlockState(above);
+        boolean hard=ground.is(Blocks.COARSE_DIRT)||ground.is(Blocks.ROOTED_DIRT);
+        if(!(hard||ground.is(Blocks.DIRT)||ground.is(Blocks.DIRT_PATH)||ground.is(Blocks.GRASS_BLOCK)))return;
+        if(!cover.isAir()&&!(cover.canBeReplaced()&&cover.getFluidState().isEmpty()))return;
+        // Whoever holds the handles needs the right to work that ground, as with a hoe.
+        if(driver instanceof Player player&&(!player.mayBuild()||player.blockActionRestricted(level,soil,player instanceof ServerPlayer server?server.gameMode():net.minecraft.world.level.GameType.SURVIVAL)||!level.mayInteract(player,soil)))return;
+        // Stony or root-bound ground is only broken up by the first pass; the next turns it to tilth.
+        if(hard){level.setBlock(soil,Blocks.DIRT.defaultBlockState(),3);return;}
+        double pull=0;for(UUID id:team)pull+=Vehicles.draught(level.getEntity(id));
+        if(ground.is(Blocks.GRASS_BLOCK)&&pull<2-1e-6){if(driver instanceof Player player&&tickCount%40==0)player.sendOverlayMessage(Component.literal("The share skims the turf: breaking old grassland takes two horses"));return;}
+        if(!cover.isAir())level.setBlock(above,Blocks.AIR.defaultBlockState(),3);
+        if(!level.setBlock(soil,Blocks.FARMLAND.defaultBlockState(),3))return;
+        dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.tilled(level,soil);ploughed++;
+        if(driver instanceof LivingEntity living&&SurvivalApi.isHumanoid(living))SkillApi.award(living,Skill.FARMING,2);
     }
     /** Axles and engines run on grease: tallow or oil from the load, a litre every fifty kilometres. Run dry and the bearings burn out. */
     public void lubricate(ServerLevel level,double travelled){
@@ -277,14 +303,14 @@ public class VehicleEntity extends Entity {
     private static void point(ValueOutput out,String name,Vec3 value){out.putBoolean(name,value!=null);if(value!=null){out.putDouble(name+"X",value.x);out.putDouble(name+"Y",value.y);out.putDouble(name+"Z",value.z);}}
     private static Vec3 point(ValueInput in,String name){return in.getBooleanOr(name,false)?new Vec3(in.getDoubleOr(name+"X",0),in.getDoubleOr(name+"Y",0),in.getDoubleOr(name+"Z",0)):null;}
     @Override protected void addAdditionalSaveData(ValueOutput out){
-        out.putString("kind",kind());out.store("cargo",CompoundTag.CODEC,Ledger.save(cargo));out.putString("team",ids(team));point(out,"destination",destination);
+        out.putString("kind",kind());out.putBoolean("share",share);out.putLong("ploughed",ploughed);out.store("cargo",CompoundTag.CODEC,Ledger.save(cargo));out.putString("team",ids(team));point(out,"destination",destination);
         out.putDouble("water",water);out.putDouble("fuelBurn",fuelBurn);out.putFloat("damage",damage);out.putDouble("steam",steam);out.putDouble("grease",grease);out.putDouble("fodder",fodder);out.putInt("teamHunger",teamHunger);out.putLong("fedAt",fedAt);
         out.putString("shot",shot);out.putInt("charges",charges);out.putInt("shotsFired",shotsFired);out.putDouble("loadProgress",loadProgress);out.putBoolean("ready",ready);out.putString("crew",String.join(",",crew));point(out,"fireTarget",fireTarget);
         int[] nodes=new int[path.size()*3];for(int i=0;i<path.size();i++){nodes[i*3]=path.get(i).getX();nodes[i*3+1]=path.get(i).getY();nodes[i*3+2]=path.get(i).getZ();}
         out.putIntArray("path",nodes);out.putDouble("headS",headS);out.putString("cars",ids(cars));out.putString("facing",facing.getName());out.putString("coupledTo",coupledTo);out.putDouble("throttle",throttle);
     }
     @Override protected void readAdditionalSaveData(ValueInput in){
-        setKind(in.getStringOr("kind","cart"));Ledger.load(cargo,in.read("cargo",CompoundTag.CODEC).orElse(new CompoundTag()));ids(in.getStringOr("team",""),team);destination=point(in,"destination");
+        setKind(in.getStringOr("kind","cart"));share=in.getBooleanOr("share",false);ploughed=Math.max(0,in.getLongOr("ploughed",0));Ledger.load(cargo,in.read("cargo",CompoundTag.CODEC).orElse(new CompoundTag()));ids(in.getStringOr("team",""),team);destination=point(in,"destination");
         water=Mth.clamp(in.getDoubleOr("water",0),0,3000);fuelBurn=in.getDoubleOr("fuelBurn",0);damage=in.getFloatOr("damage",0);steam=Mth.clamp(in.getDoubleOr("steam",0),0,1);grease=in.getDoubleOr("grease",0);fodder=Math.max(0,in.getDoubleOr("fodder",0));teamHunger=Mth.clamp(in.getIntOr("teamHunger",0),0,60);fedAt=in.getLongOr("fedAt",0);
         shot=in.getStringOr("shot","");charges=in.getIntOr("charges",0);shotsFired=in.getIntOr("shotsFired",0);loadProgress=in.getDoubleOr("loadProgress",0);ready=in.getBooleanOr("ready",false);
         crew.clear();for(String id:in.getStringOr("crew","").split(","))if(!id.isBlank())crew.add(id);fireTarget=point(in,"fireTarget");

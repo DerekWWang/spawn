@@ -42,6 +42,9 @@ public final class SurvivalContent {
     public static final DeferredBlock<Block> LOOSE_STONES = BLOCKS.registerBlock("loose_stones",p->new GroundResourceBlock(p,"loose_stone"),p->p.noCollision().instabreak());
     public static final DeferredBlock<Block> WILD_PLANTS = BLOCKS.registerBlock("wild_plants",p->new GroundResourceBlock(p,"wild"),p->p.noCollision().instabreak());
     public static final DeferredBlock<Block> FRUIT_TREE = BLOCKS.registerBlock("fruit_tree",FruitTreeBlock::new,p->p.strength(0.4f).randomTicks().noOcclusion());
+    // Planted shrubs: coffee from its cherries, tea from its seed. Each bears after a year, in its own seasons.
+    public static final DeferredBlock<Block> COFFEE_BUSH = BLOCKS.registerBlock("coffee_bush",p->new FruitTreeBlock(p,FruitTreeBlock.COFFEE),p->p.strength(0.4f).randomTicks().noOcclusion().noCollision());
+    public static final DeferredBlock<Block> TEA_BUSH = BLOCKS.registerBlock("tea_bush",p->new FruitTreeBlock(p,FruitTreeBlock.TEA),p->p.strength(0.4f).randomTicks().noOcclusion().noCollision());
     public static final Map<String,DeferredBlock<CropBlock>> CROPS = new LinkedHashMap<>();
     public static final Map<String,DeferredBlock<GroundResourceBlock>> FORAGE = new LinkedHashMap<>();
     public static final DeferredBlock<Block> LIMESTONE=BLOCKS.registerSimpleBlock("limestone",p->p.strength(2.5f).requiresCorrectToolForDrops());
@@ -60,7 +63,9 @@ public final class SurvivalContent {
     static {
         for(String source:new String[]{"fallen_sticks","wild_flax","wild_yarrow","wild_bramble","wild_rice","wild_maize","wild_wheat","wild_carrot","wild_potato","wild_beetroot","wild_pumpkin","wild_melon",
             // Shore finds, then the dye and medicine plants of particular climates.
-            "seashells","murex_shells","pearl_oysters","wild_woad","wild_indigo","wild_madder","wild_weld","wild_meadowsweet","wild_sphagnum","wild_cinchona"}){
+            "seashells","murex_shells","pearl_oysters","wild_woad","wild_indigo","wild_madder","wild_weld","wild_meadowsweet","wild_sphagnum","wild_cinchona",
+            // Spring greens of the woods and wild peas of the grassland; coffee and tea where they grow wild.
+            "wild_garlic","wild_peas","wild_coffee","wild_tea"}){
             var block=BLOCKS.registerBlock(source,p->new GroundResourceBlock(p,source),p->p.noCollision().instabreak());FORAGE.put(source,block);MATERIALS.put(source,ITEMS.registerSimpleBlockItem(block));
         }
         for(String material:new String[]{"flax_fiber","yarrow_leaves","malachite","cassiterite","hematite"})MATERIALS.put(material,ITEMS.registerSimpleItem(material));
@@ -73,7 +78,14 @@ public final class SurvivalContent {
         for(String cloth:new String[]{"wool","fiber"}) for(String piece:new String[]{"shirt","pants","jacket","shoes"}) {
             String id=cloth+"_"+piece; MATERIALS.put(id,ITEMS.registerSimpleItem(id,p->p.durability(cloth.equals("wool")?384:192)));
         }
-        for(String crop:new String[]{"rice","maize","fiber","medicinal","flax","yarrow","bramble"}) {
+        // Planting stock that is also what is picked: a coffee cherry holds its seed; tea seed comes from the bush in autumn.
+        MATERIALS.put("coffee_cherries",ITEMS.registerSimpleBlockItem("coffee_cherries",COFFEE_BUSH));
+        MATERIALS.put("tea_seeds",ITEMS.registerSimpleBlockItem("tea_seeds",TEA_BUSH));
+        for(String id:new String[]{"tea_leaves","dried_tea","green_coffee","roasted_coffee"})MATERIALS.put(id,ITEMS.registerSimpleItem(id));
+        // A cup of tea or coffee: boiled water, so safe to drink, taken as a break from work.
+        for(String id:new String[]{"tea","coffee"})MATERIALS.put(id,ITEMS.registerSimpleItem(id,p->p.stacksTo(16)));
+        for(String food:new String[]{"peas","ramsons"})MATERIALS.put(food,ITEMS.registerSimpleItem(food,p->p.food(new FoodProperties.Builder().nutrition(food.equals("peas")?3:1).saturationModifier(food.equals("peas")?.3f:.1f).build())));
+        for(String crop:new String[]{"rice","maize","fiber","medicinal","flax","yarrow","bramble","pea"}) {
             var block=BLOCKS.registerBlock(crop+"_crop",CropBlock::new,p->p.noCollision().randomTicks().instabreak()); CROPS.put(crop,block);
             MATERIALS.put(crop+"_seeds",ITEMS.registerSimpleBlockItem(crop+"_seeds",block));
         }

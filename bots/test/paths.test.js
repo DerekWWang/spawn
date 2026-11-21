@@ -122,3 +122,15 @@ test('a crown overhead is no place to fell a tree from', () => {
   assert.equal(B.clearOverhead(bot, 3, 64, 3), false, 'leaves six above')
   assert.equal(B.clearOverhead(bot, 4, 64, 3), true)
 })
+
+test('a body with its head in a crown breaks the leaves it is caught in', async () => {
+  const bot = world(8, [[3, 65, 3, 'oak_leaves'], [4, 66, 3, 'oak_leaves']], [3, 64, 3])
+  const dug = []
+  bot.lookAt = async () => {}
+  bot.dig = async b => { dug.push(b.position.toString()) }
+  bot.entity.position = new Vec3(3.5, 64, 3.5)
+  assert.equal(await B.unwedge({ bot }), true)
+  assert.deepEqual(dug, [new Vec3(3, 65, 3).toString()], 'only the leaves inside the body, not those beside it')
+  bot.entity.position = new Vec3(6.5, 64, 6.5)
+  assert.equal(await B.unwedge({ bot }), false)
+})

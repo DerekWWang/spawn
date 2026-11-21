@@ -224,6 +224,37 @@ and annual fruit follow their own seasonal schedules. Moisture, warmth, frost,
 dormancy, and elapsed suitable days matter; bone meal cannot skip biological
 time. Player-planted fruit trees establish for one year.
 
+**Spring food.** Field peas are a hardy cool-season pulse: sown in spring (or
+autumn), they ripen in six days, inside the spring they were sown in, and give
+peas to eat and seed to sow again. Wild peas grow in open warm-temperate grass
+and pod from spring into summer; ramsons (wild garlic) carpet temperate
+broadleaf woods in spring only. Wild carrots, potatoes and beetroot can be dug
+in any season.
+
+**Ploughing.** Hand tilling with a hoe turns one block in about a hundred work
+ticks. A swing plough is made at a workshop (two planks, a log, 8 kg of wrought
+iron, rivets and a harness) and is drawn only by tamed horses: oxen, donkeys and
+mules are refused. Harness a horse (`/survival vehicle hitch <horse>`), set the
+share in the ground (`/survival vehicle lower`, `raise` to travel without
+cutting), and drive: the plough turns a furrow of farmland behind it at a slow
+walk. One horse cuts broken ground (dirt, paths); breaking old turf takes two.
+Grass and weeds are turned under; sown crops and anything solid are passed over.
+Turned ground lies open for a season before it closes back into dirt, and takes
+up water from rain or within four blocks of water as farmland does.
+
+**Coffee and tea.** Both start in the wild: arabica coffee in the understory of
+tropical forest (picked in autumn and winter), tea in warm, wet hill forest
+from the subtropics into the jungle (plucked from spring to autumn). A coffee
+cherry or a tea seed plants a shrub in soil (coffee with the rains of spring or
+summer, tea in spring or autumn). It bears from its second year: coffee once a
+year in autumn and winter, six handfuls of cherries; tea every week through the
+three flush seasons, four handfuls of leaf. Frost kills coffee; tea stands to
+about -12 °C. At a heated kiln, five cherries dry and hull to one green coffee,
+green coffee roasts, and four handfuls of fresh tea leaf fire to one of dried
+tea. Each is brewed in boiled water from an open pot in the offhand (roasted
+coffee makes two cups, dried tea three). A cup slakes thirst like boiled water,
+with no risk of sickness, and counts as a break from work.
+
 | Animal | Gestation/incubation | Maturity | Recovery/product rule |
 | --- | ---: | ---: | --- |
 | Cow | 12 days | 28 days | Milk after calving, once per adequately fed/watered day |

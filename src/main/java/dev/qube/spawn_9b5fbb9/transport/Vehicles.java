@@ -30,6 +30,7 @@ import net.minecraft.world.entity.animal.camel.Camel;
 import net.minecraft.world.entity.animal.cow.AbstractCow;
 import net.minecraft.world.entity.animal.equine.AbstractHorse;
 import net.minecraft.world.entity.animal.equine.Donkey;
+import net.minecraft.world.entity.animal.equine.Horse;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
@@ -62,6 +63,9 @@ public final class Vehicles {
         spec(new Spec("cart",Kind.DRAFT,1.9f,1.5f,3.0f,1,500,250,1,1,.14,3.2f,30,null));
         // Two tonnes behind a four-horse team at walking pace: the unit of pre-railway freight.
         spec(new Spec("wagon",Kind.DRAFT,2f,1.9f,4.2f,2,2000,700,2,4,.12,2.2f,50,null));
+        // A swing plough with an iron share and mouldboard, held by the ploughman at the handles: one horse in broken ground,
+        // two to cut old turf. It goes at a ploughing walk, about three kilometres an hour, and turns one furrow a pass.
+        spec(new Spec("plough",Kind.DRAFT,1.0f,1.0f,2.4f,1,0,60,1,2,.07,2.6f,20,null));
         // A light two-horse car for a driver and one fighter: a gallop on open level ground, useless in rough country.
         spec(new Spec("chariot",Kind.DRAFT,1.7f,1.4f,2.4f,2,100,60,2,2,.42,4.5f,24,null));
         // A three-ton lorry of the 1910s: 25 km/h on a made road.
@@ -194,12 +198,19 @@ public final class Vehicles {
         Spec spec=vehicle.spec();if(!spec.drawn())return fail("A "+spec.id().replace('_',' ')+" is not drawn by animals");
         if(animal==null||animal.level()!=vehicle.level()||animal.distanceToSqr(vehicle)>64)return fail("Bring the animal within eight blocks");
         if(draught(animal)<=0)return fail("Only tamed adult horses, mules, donkeys, camels or oxen can be harnessed");
+        if(spec.id().equals("plough")&&!(animal instanceof Horse))return fail("The plough is drawn by tamed horses");
         if(animal.isVehicle())return fail("A ridden animal cannot be put in harness");
         if(vehicle.team.contains(animal.getUUID()))return fail("Already in this team");
         if(animal.getPersistentData().contains("survivalHitched"))return fail("That animal is harnessed elsewhere");
         if(vehicle.team.size()>=spec.teamMax())return fail("The harness takes at most "+spec.teamMax());
         vehicle.hitch((Mob)animal);
         return ok("Harnessed ("+vehicle.team.size()+"/"+spec.teamMax()+"; needs "+spec.teamMin()+" to move)");
+    }
+    /** Sets the plough's share into the ground, or lifts it to move between fields without cutting the way. */
+    public static ActionResult share(LivingEntity actor,VehicleEntity vehicle,boolean down){
+        String invalid=reach(actor,vehicle);if(!invalid.isEmpty())return fail(invalid);
+        if(!vehicle.spec().id().equals("plough"))return fail("Only a plough has a share to set");
+        vehicle.share=down;return ok(down?"Share set in the ground: driving now turns a furrow":"Share lifted: the plough travels without cutting");
     }
     public static ActionResult unhitch(LivingEntity actor,VehicleEntity vehicle){
         String invalid=reach(actor,vehicle);if(!invalid.isEmpty())return fail(invalid);
@@ -223,6 +234,7 @@ public final class Vehicles {
     public static String status(VehicleEntity vehicle){
         Spec spec=vehicle.spec();var out=new StringBuilder(spec.id().replace('_',' '));
         out.append(" | cargo ").append(Math.round(Ledger.mass(vehicle.cargo))).append('/').append(spec.capacity()).append(" kg: ").append(Ledger.describe(vehicle.cargo));
+        if(spec.id().equals("plough"))out.append(" | share ").append(vehicle.share?"down":"lifted").append(" | ").append(vehicle.ploughed).append(" furrow blocks turned");
         if(spec.drawn())out.append(" | team ").append(vehicle.team.size()).append('/').append(spec.teamMax()).append(" (needs ").append(spec.teamMin()).append(')').append(vehicle.teamHunger>0?", unfed for "+vehicle.teamHunger+" feeds":"");
         if(spec.kind()==Kind.MOTOR)out.append(" | petrol ").append(Ledger.count(vehicle.cargo,"spawn_9b5fbb9:petrol")).append(" L, alcohol ").append(Ledger.count(vehicle.cargo,"spawn_9b5fbb9:fuel_alcohol")).append(" L");
         if(spec.kind()==Kind.ENGINE)out.append(" | steam ").append(Math.round(vehicle.steam*100)).append("% | water ").append((long)vehicle.water).append("/3000 L | cars ").append(vehicle.cars.size());
@@ -255,6 +267,8 @@ public final class Vehicles {
         node.then(literal("deliver").executes(c->{var a=actor.get(c);return say(c.getSource(),deliver(a,nearest(a)));}));
         node.then(literal("pickup").executes(c->{var a=actor.get(c);return say(c.getSource(),pickup(a,nearest(a)));}));
         node.then(literal("hitch").then(argument("animal",EntityArgument.entity()).executes(c->{var a=actor.get(c);return say(c.getSource(),hitch(a,nearest(a),EntityArgument.getEntity(c,"animal")));})));
+        node.then(literal("lower").executes(c->{var a=actor.get(c);return say(c.getSource(),share(a,nearest(a),true));}));
+        node.then(literal("raise").executes(c->{var a=actor.get(c);return say(c.getSource(),share(a,nearest(a),false));}));
         node.then(literal("unhitch").executes(c->{var a=actor.get(c);return say(c.getSource(),unhitch(a,nearest(a)));}));
         node.then(literal("board").executes(c->{var a=actor.get(c);return say(c.getSource(),board(a,nearest(a)));}));
         node.then(literal("leave").executes(c->{var a=actor.get(c);a.stopRiding();return say(c.getSource(),ok("Dismounted"));}));

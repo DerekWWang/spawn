@@ -21,7 +21,10 @@ public class GroundResourceBlock extends Block {
     public String resource(){return resource;}
     /** Lies on the strand, on sand or shingle, not rooted in soil. */
     private boolean shore(){return resource.equals("seashells")||resource.equals("murex_shells")||resource.equals("pearl_oysters");}
-    public boolean harvestable(LivingEntity actor){int season=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.season(SurvivalApi.calendar((ServerLevel)actor.level()));return switch(resource){case "wild_bramble","wild_rice","wild_maize","wild_pumpkin","wild_melon"->season==1||season==2;case "wild_flax","wild_yarrow","wild_woad","wild_weld","wild_madder","wild_meadowsweet"->season!=3;case "wild_wheat"->season==0||season==2;default->true;};}
+    public boolean harvestable(LivingEntity actor){int season=dev.qube.spawn_9b5fbb9.agriculture.SeasonalCrops.season(SurvivalApi.calendar((ServerLevel)actor.level()));return switch(resource){case "wild_bramble","wild_rice","wild_maize","wild_pumpkin","wild_melon"->season==1||season==2;case "wild_flax","wild_yarrow","wild_woad","wild_weld","wild_madder","wild_meadowsweet"->season!=3;case "wild_wheat"->season==0||season==2;
+        // Ramsons carpet the woods in spring and are gone by summer; wild peas pod from spring into summer; wild coffee ripens
+        // after the rains, in autumn and winter; wild tea flushes from spring to autumn.
+        case "wild_garlic"->season==0;case "wild_peas"->season==0||season==1;case "wild_coffee"->season==2||season==3;case "wild_tea"->season!=3;default->true;};}
     @Override protected boolean canSurvive(BlockState state,LevelReader level,BlockPos pos){var support=level.getBlockState(pos.below());return resource.equals("loose_stone")||resource.equals("fallen_sticks")||shore()?support.isFaceSturdy(level,pos.below(),net.minecraft.core.Direction.UP):support.is(Blocks.GRASS_BLOCK)||support.is(net.minecraft.tags.BlockTags.DIRT)||support.is(Blocks.FARMLAND)||support.is(Blocks.MUD);}
     @Override protected BlockState updateShape(BlockState state,LevelReader level,ScheduledTickAccess ticks,BlockPos pos,net.minecraft.core.Direction direction,BlockPos neighborPos,BlockState neighborState,net.minecraft.util.RandomSource random){return canSurvive(state,level,pos)?state:Blocks.AIR.defaultBlockState();}
     @Override protected InteractionResult useWithoutItem(BlockState state,Level level,BlockPos pos,Player player,BlockHitResult hit){
@@ -53,6 +56,10 @@ public class GroundResourceBlock extends Block {
                 case "wild_meadowsweet"->drop(level,pos,"meadowsweet",2);
                 case "wild_sphagnum"->drop(level,pos,"sphagnum",3);
                 case "wild_cinchona"->drop(level,pos,"cinchona_bark",2);
+                case "wild_garlic"->drop(level,pos,"ramsons",3);
+                case "wild_peas"->{drop(level,pos,"peas",2);drop(level,pos,"pea_seeds",1);}
+                case "wild_coffee"->drop(level,pos,"coffee_cherries",3);
+                case "wild_tea"->{drop(level,pos,"tea_leaves",3);drop(level,pos,"tea_seeds",1);}
                 case "wild_carrot"->Block.popResource(level,pos,new ItemStack(Items.CARROT,2));
                 case "wild_potato"->Block.popResource(level,pos,new ItemStack(Items.POTATO,2));
                 case "wild_beetroot"->{Block.popResource(level,pos,new ItemStack(Items.BEETROOT));Block.popResource(level,pos,new ItemStack(Items.BEETROOT_SEEDS,2));}

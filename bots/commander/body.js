@@ -219,6 +219,21 @@ async function steer (actor, cell, ms = 3500) {
   } finally { bot.clearControlStates() }
   return false
 }
+/** Free a body caught in foliage: leaves inside the space it occupies (a crown it has stepped up under, a hedge it has
+ * been pushed into) are broken. Answers whether anything was cleared. */
+async function unwedge (actor) {
+  const bot = actor.bot; const p = bot.entity.position; let cleared = false
+  for (let x = Math.floor(p.x - 0.3); x <= Math.floor(p.x + 0.3); x++) {
+    for (let z = Math.floor(p.z - 0.3); z <= Math.floor(p.z + 0.3); z++) {
+      for (let y = Math.floor(p.y); y <= Math.floor(p.y + 1.79); y++) {
+        const b = bot.blockAt(new Vec3(x, y, z))
+        if (!b || b.boundingBox !== 'block' || !LEAVES.test(b.name)) continue
+        try { await bot.lookAt(b.position.offset(0.5, 0.5, 0.5), true); await withTimeout(bot.dig(b, true), 6000, 'clearing ' + b.name); cleared = true } catch { try { bot.stopDigging() } catch {} }
+      }
+    }
+  }
+  return cleared
+}
 /** Walk to within `within` blocks of (x, z) on dry land. */
 async function walk (actor, x, z, within = 1.5) {
   const bot = actor.bot
@@ -234,6 +249,8 @@ async function walk (actor, x, z, within = 1.5) {
       if (actor.order && actor.order.abort) return { arrived: false, why: actor.order.abort, pos: pos(bot.entity.position) }
       if (!(await steer(actor, cell))) { failed = true; break }
     }
+    // Not moved at all: the body may be caught with its head in a crown. Break out, then try again.
+    if (failed && was - left() < 0.3 && await unwedge(actor)) { await settle(bot); continue }
     const gained = was - left()
     if (!failed && route.partial && gained < 3) return { arrived: false, why: `no dry way found; stopped ${round(left())} blocks short`, pos: pos(bot.entity.position) }
     if (gained < 1) stalls++
@@ -426,7 +443,7 @@ async function work (actor, p) {
   if (!(await approach(actor, p, 3.7, safe))) return { ok: false, why: 'could not get within reach of ' + block.name, unreachable: true }
   const before = itemsOf(bot)
   let reply = null
-  const timed = GROUND.test(block.name) ? 'gather' : /fruit_tree/.test(block.name) ? 'harvest' : mineable(block) ? 'mine' : null
+  const timed = GROUND.test(block.name) ? 'gather' : /fruit_tree|coffee_bush|tea_bush/.test(block.name) ? 'harvest' : mineable(block) ? 'mine' : null
   if (timed) {
     reply = await command(actor, `/survival ${timed} ${p.x} ${p.y} ${p.z}`, 300)
     if (!started(reply)) return { ok: false, block: block.name, server: firstLine(reply) }
@@ -523,4 +540,4 @@ async function resync (actor) {
   if (!bot._syncWindow || !bot.inventory) return false
   try { await Promise.race([bot._syncWindow(bot.inventory), sleep(2500)]); actor.syncedAt = Date.now(); return true } catch { return false }
 }
-module.exports = { clearOverhead, comeBack, footing, climbable, clearWay, onScan, floods, inland, resync, byReach, scanIndex, nearIndex,  started, firstLine, inReach, GROUND, Vec3, sleep, full, round, pos, MOD, itemsOf, isWater, passable, solid, water, surface, findBlocks, nearby, standable, groundAt, findPath, steer, walk, settle, openAbove, drinkable, nearestDry, leaveWater, command, commandJson, job, finishJob, readBody, bodySummary, pickup, approach, gainsBetween, work, place, hold, mineable }
+module.exports = { unwedge, clearOverhead, comeBack, footing, climbable, clearWay, onScan, floods, inland, resync, byReach, scanIndex, nearIndex,  started, firstLine, inReach, GROUND, Vec3, sleep, full, round, pos, MOD, itemsOf, isWater, passable, solid, water, surface, findBlocks, nearby, standable, groundAt, findPath, steer, walk, settle, openAbove, drinkable, nearestDry, leaveWater, command, commandJson, job, finishJob, readBody, bodySummary, pickup, approach, gainsBetween, work, place, hold, mineable }

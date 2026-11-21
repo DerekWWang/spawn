@@ -144,6 +144,23 @@ def chariot():
     v.sym(.5,1.2,-.3,.57,1.27,.42,'beam');v.box(-.57,1.3,.35,.57,1.37,.43,'beam')
     v.box(-.05,.56,.42,.05,.66,2.6,'beam',('x',-22.5,(0,.6,.42)));v.box(-.75,1.4,2.35,.75,1.48,2.43,'beam')
     return v
+def plough():
+    """A swing plough: an oak beam forward to the hake, an iron share and coulter under it, a mouldboard turning the
+    furrow to the right, and two handles back to the ploughman. No wheels: it rides on its sole."""
+    v=Vehicle()
+    v.box(-.07,.0,-.95,.07,.07,.25,'iron')                                   # sole and landside
+    v.box(-.12,.0,.15,.07,.06,.45,'iron')                                    # share point
+    v.box(.05,.04,-.6,.12,.36,.25,'iron',('y',-22.5,(.05,0,.25)))             # mouldboard
+    v.box(-.05,.06,.0,.04,.55,.12,'iron')                                    # standard
+    v.box(-.04,.06,.42,.03,.5,.48,'iron',('x',-22.5,(0,.06,.45)))             # coulter
+    v.box(-.07,.5,-.6,.07,.62,1.35,'beam')              # beam
+    v.box(-.09,.62,1.3,.09,.76,1.42,'iron')                                  # hake
+    v.sym(.16,.1,-.9,.22,.2,-.2,'beam')                                      # handle stays
+    for i in range(6):
+        z=-.6-.12*i;y=.2+.13*i
+        v.sym(.17+.02*i,y,z-.1,.23+.02*i,y+.12,z,'beam')                     # handles climbing back
+    v.box(-.32,.95,-1.36,.32,1.01,-1.3,'beam')                               # rung between the handles
+    return v
 def motor_truck():
     v=Vehicle().wheel('wheel_truck',.98,1.75,.5).wheel('wheel_truck',.98,-1.6,.5)
     v.sym(.44,.62,-2.7,.56,.8,2.7,'black');v.cyl_x(.5,1.75,.07,-.98,.98,'iron');v.cyl_x(.5,-1.6,.07,-.98,.98,'iron')
@@ -263,7 +280,7 @@ def trebuchet():
     v.box(-.03,2.25,-3.02,.03,4.2,-2.96,'rope');v.box(-.2,2.1,-3.12,.2,2.25,-2.86,'leather')
     v.box(-.32,.27,-2.4,.32,.33,.2,'wood');v.cyl_x(.75,-1.95,.11,-1.3,1.3,'beam');v.sym(1.2,.25,-2.05,1.34,.95,-1.85,'beam');v.sym(1.3,.6,-2.0,1.5,.9,-1.9,'dark')
     return v
-VEHICLES={'cart':cart(),'wagon':wagon(),'chariot':chariot(),'motor_truck':motor_truck(),'locomotive':locomotive(),'rail_wagon':rail_wagon(),
+VEHICLES={'plough':plough(),'cart':cart(),'wagon':wagon(),'chariot':chariot(),'motor_truck':motor_truck(),'locomotive':locomotive(),'rail_wagon':rail_wagon(),
           'rail_carriage':rail_carriage(),'cannon':cannon(),'field_gun':field_gun(),'bombard':bombard(),'trebuchet':trebuchet()}
 
 def clip(box,lo,hi):

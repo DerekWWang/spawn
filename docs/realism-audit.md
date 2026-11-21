@@ -288,6 +288,16 @@ cross, and none is hidden behind a number that pretends otherwise.
     keep no territories, do not climb or swim after prey, borrow the voices of other animals, and
     there is one lion and one brown bear model with no cubs or lionesses.
 
+16. **The plough's furrow.** The plough moves at a real ploughing walk (two clocks, above), so a
+   horse turns about one block of furrow a second of real time against a hoe's hundred work ticks.
+   A real one-horse plough turns perhaps a quarter of a hectare a day; one block a pass stands for
+   the several furrows a ploughman lays side by side in a land. Ground freezes in winter and wet clay
+   sticks to the mouldboard; neither stops the plough here.
+17. **Plantation timing.** Coffee and tea bear from their second year, as apples do. Real arabica
+   and tea need three or four years from seed; the one-year establishment is the same compression
+   the fruit trees already use. In worlds without the regional climate model, a coffee shrub dies
+   only where the coarse biome-and-season temperature falls below freezing.
+
 ## Verification
 
 An independent re-check of this report against the code and published figures found, and this

@@ -41,6 +41,13 @@ const SOURCES = [
   [MOD + 'wild_pumpkin', { pumpkin_seeds: 2 }, [1, 2]],
   [MOD + 'wild_melon', { melon_slice: 2, melon_seeds: 1 }, [1, 2]],
   [MOD + 'fruit_tree', { apple: 6 }, [1, 2]],
+  // Spring greens and pulses, and wild coffee and tea; then the planted shrubs, which bear from their second year.
+  [MOD + 'wild_garlic', { [MOD + 'ramsons']: 3 }, [0]],
+  [MOD + 'wild_peas', { [MOD + 'peas']: 2, [MOD + 'pea_seeds']: 1 }, [0, 1]],
+  [MOD + 'wild_coffee', { [MOD + 'coffee_cherries']: 3 }, [2, 3]],
+  [MOD + 'wild_tea', { [MOD + 'tea_leaves']: 3, [MOD + 'tea_seeds']: 1 }, [0, 1, 2]],
+  [MOD + 'coffee_bush', { [MOD + 'coffee_cherries']: 6 }, [2, 3]],
+  [MOD + 'tea_bush', { [MOD + 'tea_leaves']: 4 }, [0, 1, 2]],
   // Luxuries: what a shore gives, the dye and medicine plants of particular climates, and the stones worth working.
   [MOD + 'seashells', { [MOD + 'seashell']: 3 }],
   [MOD + 'murex_shells', { [MOD + 'murex']: 4 }],

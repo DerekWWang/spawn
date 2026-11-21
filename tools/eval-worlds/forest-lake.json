@@ -1,17 +1,38 @@
 {
   "name": "forest-lake",
   "seed": "20261118",
-  "spawn": [42, 64, -54],
+  "spawn": [
+    42,
+    64,
+    -54
+  ],
   "summary": "Sand beach on the north shore of a freshwater lake, jungle and oak woodland behind it, grass plains with pigs across the water. Spring day 1, 1000 ticks, clear.",
-  "start": {"calendar": "Spring day 1, year 1", "time": 1000, "weather": "clear", "difficulty": "easy", "respawn_radius": 0, "air_c": 18},
+  "start": {
+    "calendar": "Spring day 1, year 1",
+    "time": 1000,
+    "weather": "clear",
+    "difficulty": "easy",
+    "respawn_radius": 0,
+    "air_c": 18
+  },
   "features": {
     "water": "lake surface y 62 along the beach; stand at (40, 63, -52) to drink. Raw water poisons 18% of drinks: boil it in a fired pot for safety. A river biome lies west of the lake (about -16, 64, 0).",
     "wood": "about 60 trunks within 48 blocks, mostly jungle with oak, e.g. oak at (12, -57), (29, -76); jungle at (22, -66), (48, -62).",
-    "sticks": "fallen sticks at (44, 64, -58), (59, 63, -58), (26, 64, -51) and more within 48 blocks.",
-    "stone": "loose stones at (56, 63, -64), (57, 65, -78), (83, 64, -55).",
+    "sticks": "fallen sticks at (44, 64, -58), (48, 64, -60), (49, 64, -65); 42 within 64 blocks.",
+    "stone": "loose stones at (22, 66, -92), (97, 64, -61), (9, 63, -9); 4 within 64 blocks.",
     "clay": "under the lake off the beach at (46, 55, -49), 7 deep; shallow clay banks on the south shore around (13..17, 62, -23..-13).",
-    "food": "wild melons at (77, 63, -59), (79, 64, -56), (80, 63, -55); a chicken on the beach; pigs and sheep on the south plains (about 20, 63, -20); salmon in the lake.",
-    "dirt": "grass and dirt on the slopes behind the beach (x 34..37, y 64..67) and across the plains south of the lake."
+    "food": "no wild food plants within 64 blocks; the nearest wild melons are about 157 blocks east at (199, 83, -52), (199, 84, -53). A chicken on the beach, pigs and sheep on the south plains (about 20, 63, -20) and salmon in the lake were seen in the earlier copy and not counted again.",
+    "dirt": "grass and dirt on the slopes behind the beach (x 34..37, y 64..67) and across the plains south of the lake.",
+    "fibre": "wild plant patches (plant fibre) in the woods behind the beach: (38, 66, -57), (45, 64, -58), (38, 66, -69), (31, 67, -70); 29 within 64 blocks. No wild flax within 64 blocks.",
+    "shells": "freshwater shells on the lake shore: (42, 63, -32), (64, 63, -58), (37, 63, -32); 10 patches within 64 blocks.",
+    "dye_plants": "indigo in the jungle at (46, 64, -85) (1 stands within 64 blocks, 14 generated in all); one weld stand at (37, 63, 31); madder only far off at (-148, 108, 99); no woad.",
+    "medicine_plants": "fever-bark saplings in the jungle to the north at (23, 76, -181), (24, 75, -182) (8 generated in all, nearest 128 blocks); no meadowsweet or bog moss.",
+    "ornamental_stone": "no marble in the generated area. Topaz in a tin lode at (185, 44, -183), (190, 43, -180), about 190 blocks north-east and 20 below ground. Amber-bearing sand at (210, 53, 53), (211, 53, 52), about 200 blocks south-east. Lapis ore deep under the beach, nearest (35, 16, -55).",
+    "spring_food": "wild peas on the grass south of the beach at (38, 63, -27), (36, 63, -27), (36, 63, -26) (3 stands within 64 blocks); ramsons in the woods to the west at (-45, 89, -78), (-46, 88, -77), nearest about 90 blocks. Both are picked in spring.",
+    "coffee_and_tea": "wild tea in the jungle hills to the north-west at (7, 76, -97), (5, 80, -97), nearest about 55 blocks; wild coffee in the jungle about 126 blocks east at (167, 77, -38), (167, 78, -39). Coffee is picked in autumn and winter, tea from spring to autumn."
   },
-  "notes": "Generated with the ocelot spawn fix (jungle ocelots spawn as creatures). Chunks within about 160 blocks of the spawn were generated when saved."
+  "notes": "Regenerated 2026-11-21 from the same seed with spring forage (wild peas, ramsons) and wild coffee and tea. World spawn (42, 64, -54), respawn_radius 0, time 1000, clear, easy. Chunks within about 160 blocks of the spawn were generated when saved. Earlier copies: forest-lake-pre-farming, forest-lake-pre-luxury, forest-lake-pre-fibre.",
+  "saved": "2026-11-20 02:54",
+  "commit": "71f87d8",
+  "dirty": true
 }

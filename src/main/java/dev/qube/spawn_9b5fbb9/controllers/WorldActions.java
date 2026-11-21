@@ -158,7 +158,7 @@ public final class WorldActions {
                 var cropKey=BuiltInRegistries.BLOCK.getKey(crop);String id=cropKey.getPath();long now=SurvivalApi.calendar(level);
                 if(!state.isAir())return "Sow into an empty position";
                 if((crop instanceof CropBlock||crop instanceof StemBlock)&&(!level.getBlockState(pos.below()).is(Blocks.FARMLAND)||level.getBlockState(pos.below()).getValue(FarmlandBlock.MOISTURE)<=0))return "This crop requires moist prepared farmland";
-                if(!SeasonalCrops.sowable(cropKey.toString(),now)||(crop instanceof FruitTreeBlock&&SeasonalCrops.season(now)!=0&&SeasonalCrops.season(now)!=2))return "Outside this crop's seasonal sowing window";
+                if(!SeasonalCrops.sowable(cropKey.toString(),now)||(crop instanceof FruitTreeBlock tree&&!tree.plantable(now)))return "Outside this crop's seasonal sowing window";
                 if(id.equals("rice_crop")&&!SeasonalCrops.flooded(level,pos))return "Rice requires a flooded paddy";
                 var planted=plantingState(level,pos,seed);if(planted==null)return "Crop cannot survive on its actual substrate or support";
                 if(actor instanceof Player player&&!player.mayBuild()&&!seed.canPlaceOnBlockInAdventureMode(new net.minecraft.world.level.block.state.pattern.BlockInWorld(level,plantingSupport(pos,planted),false)))return "Adventure mode requires CAN_PLACE_ON permission for the planting support";
@@ -174,7 +174,7 @@ public final class WorldActions {
             case "minecraft:wheat_seeds"->Blocks.WHEAT;case "minecraft:carrot"->Blocks.CARROTS;case "minecraft:potato"->Blocks.POTATOES;case "minecraft:beetroot_seeds"->Blocks.BEETROOTS;
             case "minecraft:melon_seeds"->Blocks.MELON_STEM;case "minecraft:pumpkin_seeds"->Blocks.PUMPKIN_STEM;
             case "spawn_9b5fbb9:rice_seeds"->SurvivalContent.CROPS.get("rice").get();case "spawn_9b5fbb9:maize_seeds"->SurvivalContent.CROPS.get("maize").get();
-            case "spawn_9b5fbb9:fiber_seeds"->SurvivalContent.CROPS.get("fiber").get();case "spawn_9b5fbb9:medicinal_seeds"->SurvivalContent.CROPS.get("medicinal").get();case "spawn_9b5fbb9:fruit_tree"->SurvivalContent.FRUIT_TREE.get();
+            case "spawn_9b5fbb9:fiber_seeds"->SurvivalContent.CROPS.get("fiber").get();case "spawn_9b5fbb9:medicinal_seeds"->SurvivalContent.CROPS.get("medicinal").get();case "spawn_9b5fbb9:fruit_tree"->SurvivalContent.FRUIT_TREE.get();case "spawn_9b5fbb9:coffee_cherries"->SurvivalContent.COFFEE_BUSH.get();case "spawn_9b5fbb9:tea_seeds"->SurvivalContent.TEA_BUSH.get();case "spawn_9b5fbb9:pea_seeds"->SurvivalContent.CROPS.get("pea").get();
             default->seed.getItem() instanceof BlockItem blockItem&&SeasonalCrops.schedule(BuiltInRegistries.BLOCK.getKey(blockItem.getBlock()).toString())!=null?blockItem.getBlock():null;
         };
     }
@@ -311,7 +311,7 @@ public final class WorldActions {
                     completed=level.destroyBlock(pos,false,actor);
                     if(completed){useful=dev.qube.spawn_9b5fbb9.world.ExtractionHistory.claim(level,pos,state);Block.dropResources(state,level,pos,null,actor,tool);tool.getItem().mineBlock(tool,level,state,pos,actor);SurvivalApi.syncFood(actor,SurvivalApi.state(actor));}break;
                 }
-                case "till":completed=level.setBlock(pos,Blocks.FARMLAND.defaultBlockState(),3);if(completed)wear(actor,1,jobHand(job));break;
+                case "till":completed=level.setBlock(pos,Blocks.FARMLAND.defaultBlockState(),3);if(completed){SeasonalCrops.tilled(level,pos);wear(actor,1,jobHand(job));}break;
                 case "sow":{
                     var seed=stack(actor,job,"seed");var planted=plantingState(level,pos,seed);if(planted==null)break;
                     completed=level.setBlock(pos,planted,3);

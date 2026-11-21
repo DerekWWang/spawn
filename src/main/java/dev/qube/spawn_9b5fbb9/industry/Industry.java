@@ -99,6 +99,8 @@ public final class Industry {
         make("wooden_wheel","workshop","wooden_wheel",1,16,C,4,bill("#minecraft:planks",1,V+"iron_ingot",10,"metal_rivet",8));
         make("vehicle_frame","workshop","vehicle_frame",1,24,C,6,bill("#minecraft:planks",2,"#minecraft:logs",1,V+"iron_ingot",10,"metal_rivet",40));
         make("harness","workshop","harness",1,12,W,4,bill(V+"leather",6,"cordage",4,"metal_rivet",8));
+        // An oak beam and handles, a wrought-iron share, coulter and mouldboard plate, and the traces: two days' joinery and smith's fitting.
+        make("plough","workshop","vehicle:plough",1,16,C,3,bill("#minecraft:planks",2,"#minecraft:logs",1,V+"iron_ingot",8,"metal_rivet",12,"harness",1));
         make("saddle","workshop",V+"saddle",1,30,W,6,bill(V+"leather",5,"cordage",2,"metal_rivet",4,"#minecraft:planks",1));
         make("sleeper","workshop","sleeper",7,3.5,C,2,bill("#minecraft:logs",1));
         make("gun_carriage","workshop","gun_carriage",1,80,C,8,bill("#minecraft:planks",2,V+"iron_ingot",40,"wooden_wheel",2));

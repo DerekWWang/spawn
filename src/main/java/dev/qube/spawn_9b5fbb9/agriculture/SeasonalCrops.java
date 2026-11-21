@@ -39,7 +39,9 @@ public final class SeasonalCrops {
     static {
         rule("wheat",8,5,false,false,false);rule("carrots",8,3,false,false,false);rule("potatoes",10,1,false,true,false);rule("beetroots",6,5,false,false,false);
         rule("rice_crop",12,1,true,true,true);rule("maize_crop",10,3,true,true,false);rule("fiber_crop",6,3,false,false,false);rule("medicinal_crop",8,1,false,false,false);
-        rule("flax_crop",8,3,false,false,false);rule("yarrow_crop",8,1,false,false,false);rule("bramble_crop",8,3,false,false,false);
+        rule("flax_crop",8,3,false,false,false);
+        // Field peas: a cool-season pulse, sown in early spring (or autumn where winters are mild), hardy to frost, ripe in six days.
+        rule("pea_crop",6,5,false,false,false);rule("yarrow_crop",8,1,false,false,false);rule("bramble_crop",8,3,false,false,false);
         rule("sweet_berry_bush",8,5,false,false,false);rule("cave_vines",8,5,false,false,false);rule("cave_vines_plant",8,5,false,false,false);
         rule("melon_stem",10,3,true,true,false);rule("attached_melon_stem",3,3,true,true,false);rule("pumpkin_stem",12,3,false,false,false);rule("attached_pumpkin_stem",4,3,false,false,false);
         rule("cocoa",12,3,true,true,false);rule("sugar_cane",6,3,true,true,false);rule("brown_mushroom",4,15,false,false,false);rule("red_mushroom",4,15,false,false,false);
@@ -132,7 +134,7 @@ public final class SeasonalCrops {
         boolean invalid=!sowable(crop,now)||(crop.equals("fruit_tree")&&season(now)!=0&&season(now)!=2)||(crop.equals("rice_crop")&&!flooded(level,event.getPos().above()));
         if(invalid){event.setCanceled(true);event.getEntity().sendOverlayMessage(Component.literal("Unsuitable sowing season or rice paddy. Spring/autumn wheat; spring rice; late spring/early summer maize."));}
     }
-    private static void placed(BlockEvent.EntityPlaceEvent event){if(event.getLevel() instanceof ServerLevel level&&(isPlant(event.getPlacedBlock())||event.getPlacedBlock().is(SurvivalContent.FRUIT_TREE.get()))){
+    private static void placed(BlockEvent.EntityPlaceEvent event){if(event.getLevel() instanceof ServerLevel level&&(isPlant(event.getPlacedBlock())||event.getPlacedBlock().getBlock() instanceof dev.qube.spawn_9b5fbb9.content.FruitTreeBlock)){
         var all=records(level);var record=new CompoundTag();long now=SurvivalApi.calendar(level);record.putLong("last",now);record.putLong("born",now);record.putBoolean("sown",event.getEntity() instanceof LivingEntity);record.putString("type",BuiltInRegistries.BLOCK.getKey(event.getPlacedBlock().getBlock()).toString());all.put(Long.toString(event.getPos().asLong()),record);
         if(event.getEntity() instanceof LivingEntity actor&&!WorldActions.completing(actor)&&(requiresCalendarTick(event.getPlacedBlock())||event.getPlacedBlock().getBlock() instanceof dev.qube.spawn_9b5fbb9.content.FruitTreeBlock))queuePractice(actor,event.getPos(),event.getPlacedBlock(),Skill.FARMING,3,false);
     }}
@@ -158,7 +160,7 @@ public final class SeasonalCrops {
         String crop=id.substring(0,id.length()-5);int age=event.getState().getValue(CropBlock.AGE);
         if(definition==null||old.getLongOr("growth",0)<definition.days*DAY)age=0;
         Block.popResource(level,event.getPos(),new ItemStack(SurvivalContent.item(crop+"_seeds"),age==7?3:1));
-        if(age==7){String out=switch(crop){case "rice"->"rice_grain";case "fiber"->"plant_fiber";case "medicinal"->"medicinal_leaves";case "flax"->"flax_fiber";case "yarrow"->"yarrow_leaves";case "bramble"->"blackberries";default->"maize";};Block.popResource(level,event.getPos(),new ItemStack(SurvivalContent.item(out),3));}
+        if(age==7){String out=switch(crop){case "rice"->"rice_grain";case "fiber"->"plant_fiber";case "medicinal"->"medicinal_leaves";case "flax"->"flax_fiber";case "pea"->"peas";case "yarrow"->"yarrow_leaves";case "bramble"->"blackberries";default->"maize";};Block.popResource(level,event.getPos(),new ItemStack(SurvivalContent.item(out),3));}
     }
     public static boolean berries(BlockState state){String id=BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();return id.equals("sweet_berry_bush")||id.equals("cave_vines")||id.equals("cave_vines_plant");}
     public static Skill harvestSkill(ServerLevel level,BlockPos pos,BlockState state){if(state.getBlock() instanceof dev.qube.spawn_9b5fbb9.content.FruitTreeBlock)return Skill.FORAGING;return state.getBlock() instanceof CropBlock||state.getBlock() instanceof StemBlock||state.is(Blocks.MELON)||state.is(Blocks.PUMPKIN)||records(level).getCompoundOrEmpty(Long.toString(pos.asLong())).getBooleanOr("sown",false)?Skill.FARMING:Skill.FORAGING;}
@@ -208,7 +210,7 @@ public final class SeasonalCrops {
         if(requiresCalendarTick(state))randomTick(state,level,crop,level.getRandom());
         var all=records(level);var soil=all.getCompoundOrEmpty(soilKey(ground));advanceSoil(level,ground,soil,SurvivalApi.calendar(level),null,false);
         double before=soil.getDoubleOr("water",.25);if(before>=.95){all.put(soilKey(ground),soil);return false;}
-        soil.putDouble("water",Math.min(1,before+amount));all.put(soilKey(ground),soil);
+        soil.putDouble("water",Math.min(1,before+amount));soil.remove("bareSince");all.put(soilKey(ground),soil);
         level.setBlock(ground,level.getBlockState(ground).setValue(FarmlandBlock.MOISTURE,7),2);return true;
     }
     /** Fixed weather buckets make historical weather independent of random-tick frequency. */
@@ -228,7 +230,24 @@ public final class SeasonalCrops {
         }
         soil.putDouble("water",water);soil.putLong("last",now);return new double[]{growth,frost?1:0};
     }
+    /** Tilled ground left bare. Vanilla lets dry farmland slump back to dirt within a minute or two; turned soil really lies
+     * open for weeks before weeds and rain close it. It takes water as vanilla farmland does, and goes back to dirt only
+     * after lying bare and dry for a whole season. */
+    /** Ground has just been turned: whatever clock it kept while it lay bare before starts again. */
+    public static void tilled(ServerLevel level,BlockPos pos){var all=records(level);String key=soilKey(pos);var soil=all.getCompoundOrEmpty(key);if(soil.contains("bareSince")){soil.remove("bareSince");all.put(key,soil);}}
+    public static boolean farmland(BlockState state,ServerLevel level,BlockPos pos){
+        var above=level.getBlockState(pos.above());if(!above.isAir()&&!above.canBeReplaced())return false;
+        boolean water=level.isRainingAt(pos.above())||net.neoforged.neoforge.common.FarmlandWaterManager.hasBlockWaterTicket(level,pos)
+            ||level.findBlocksIn(pos.offset(-4,0,-4),pos.offset(4,1,4)).filterState(near->state.canBeHydrated(level,pos,near.getFluidState())).anyMatched();
+        int moisture=state.getValue(FarmlandBlock.MOISTURE);var all=records(level);String key=soilKey(pos);var soil=all.getCompoundOrEmpty(key);long now=SurvivalApi.calendar(level);
+        if(water){if(moisture<7)level.setBlock(pos,state.setValue(FarmlandBlock.MOISTURE,7),2);if(soil.contains("bareSince")){soil.remove("bareSince");all.put(key,soil);}return true;}
+        if(moisture>0){level.setBlock(pos,state.setValue(FarmlandBlock.MOISTURE,moisture-1),2);if(soil.contains("bareSince")){soil.remove("bareSince");all.put(key,soil);}return true;}
+        if(!soil.contains("bareSince")){soil.putLong("bareSince",now);all.put(key,soil);return true;}
+        if(now-soil.getLongOr("bareSince",now)>=DAY*Config.SEASON_DAYS.get()){soil.remove("bareSince");all.put(key,soil);((FarmlandBlock)state.getBlock()).turnToBaseBlock(null,state,level,pos);}
+        return true;
+    }
     public static boolean randomTick(BlockState state,ServerLevel level,BlockPos pos,RandomSource random){
+        if(state.is(Blocks.FARMLAND))return farmland(state,level,pos);
         // Nearly every random tick is grass, leaves or water: leave those to vanilla before doing any lookups by name.
         if(!requiresCalendarTick(state)&&!(state.getBlock() instanceof CropBlock))return false;
         String id=BuiltInRegistries.BLOCK.getKey(state.getBlock()).getPath();Schedule rule=schedule(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());

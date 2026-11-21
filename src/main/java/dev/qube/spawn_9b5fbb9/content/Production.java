@@ -59,6 +59,13 @@ public final class Production {
         // Boiler rivets and track spikes are wrought iron.
         skilled("iron_rivets","minecraft:iron_ingot",1,"spawn_9b5fbb9:metal_rivet",4,800,"forge",Skill.SMITHING,0,true,true,25,.15,"",0);
         for(String food:new String[]{"beef","porkchop","chicken","mutton","rabbit","cod","salmon"})recipe("cook_"+food,"minecraft:"+food,1,"minecraft:cooked_"+food,1,1000,false,"",0);
+        // Coffee: cherries dried and hulled to green beans (five to one by weight), roasted, then brewed with boiled water.
+        recipe("dry_coffee","spawn_9b5fbb9:coffee_cherries",5,"spawn_9b5fbb9:green_coffee",1,3000,false,"",0);
+        recipe("roast_coffee","spawn_9b5fbb9:green_coffee",1,"spawn_9b5fbb9:roasted_coffee",1,300,false,"",0);
+        recipe("brew_coffee","spawn_9b5fbb9:roasted_coffee",1,"spawn_9b5fbb9:coffee",2,200,false,"@safe_water",1);
+        // Tea: fresh leaf withered and fired dry (four to one), then steeped in boiled water.
+        recipe("dry_tea","spawn_9b5fbb9:tea_leaves",4,"spawn_9b5fbb9:dried_tea",1,600,false,"",0);
+        recipe("brew_tea","spawn_9b5fbb9:dried_tea",1,"spawn_9b5fbb9:tea",3,200,false,"@safe_water",1);
         recipe("dry_fiber","spawn_9b5fbb9:plant_fiber",3,"spawn_9b5fbb9:dried_fiber",3,1000,false,"",0);
         // A clamp of four cubic metres of wood chars for two days on its own charge and gives a tenth of its weight in charcoal.
         skilled("charcoal","minecraft:oak_log",4,"minecraft:charcoal",8,48000,"kiln",null,0,false,false,0,.05,"",0);
